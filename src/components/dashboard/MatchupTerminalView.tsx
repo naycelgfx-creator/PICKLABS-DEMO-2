@@ -9,6 +9,8 @@ import { SoccerField } from './SoccerField';
 import { NFLField } from './NFLField';
 import { BaseballField } from './BaseballField';
 import { HockeyRink } from './HockeyRink';
+import { TennisCourt } from './tennis/TennisCourt';
+import { GolfCourse } from './golf/GolfCourse';
 
 import { SimulationResults } from './SimulationResults';
 import { OffenseVsDefense } from './OffenseVsDefense';
@@ -107,29 +109,8 @@ export const MatchupTerminalView: React.FC<MatchupTerminalViewProps> = ({
                     if (s === 'NFL' || s === 'CFB') return <NFLField game={game} />;
                     if (s === 'MLB') return <BaseballField game={game} />;
                     if (s === 'NHL') return <HockeyRink game={game} />;
-                    // Tennis / Golf / unknown — show a styled info banner
-                    const isTennis = s.startsWith('Tennis');
-                    const isGolf = s.startsWith('Golf');
-                    if (isTennis || isGolf) {
-                        return (
-                            <div className="terminal-panel mt-2 p-8 flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-neutral-900/80 to-neutral-800/40">
-                                <div className="text-6xl">{isTennis ? '🎾' : '⛳'}</div>
-                                <div className="text-center">
-                                    <h3 className="text-xl font-black uppercase tracking-[0.2em] text-text-main italic">
-                                        {game.awayTeam.name} <span className="text-primary">vs</span> {game.homeTeam.name}
-                                    </h3>
-                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-2">
-                                        {isTennis ? 'Live Court Visualization Coming Soon' : 'Course Leaderboard Coming Soon'}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-6">
-                                    {game.awayTeam.logo && <img src={game.awayTeam.logo} alt={game.awayTeam.name} className="w-16 h-16 object-contain" />}
-                                    <span className="text-2xl font-black text-slate-600">VS</span>
-                                    {game.homeTeam.logo && <img src={game.homeTeam.logo} alt={game.homeTeam.name} className="w-16 h-16 object-contain" />}
-                                </div>
-                            </div>
-                        );
-                    }
+                    if (s.startsWith('Tennis') || s === 'tennis-atp' || s === 'tennis-wta') return <TennisCourt game={game} />;
+                    if (s.startsWith('Golf') || s === 'golf-pga') return <GolfCourse game={game} />;
                     return null;
                 })()}
 
