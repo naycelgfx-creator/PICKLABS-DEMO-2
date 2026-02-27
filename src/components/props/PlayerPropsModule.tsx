@@ -105,7 +105,7 @@ const OrdinalSuffix = (n: number) => {
 };
 
 // ── Stat value ranges per prop type ────────────────────────────────────────
-const getStatRange = (sport: string, propType: string, line: number) => {
+const getStatRange = (_sport: string, _propType: string, line: number) => {
     const spread = Math.max(line * 0.7, 2);
     return { min: Math.max(0, line - spread), max: line + spread };
 };
@@ -226,7 +226,7 @@ interface PropBarChartProps {
     playerName: string;
 }
 
-const PropBarChart: React.FC<PropBarChartProps> = ({ logs, line, propType, playerName }) => {
+const PropBarChart: React.FC<PropBarChartProps> = ({ logs, line, propType, playerName: _playerName }) => {
     const [hover, setHover] = useState<HoverInfo | null>(null);
     const svgRef = useRef<SVGSVGElement>(null);
 
@@ -239,7 +239,6 @@ const PropBarChart: React.FC<PropBarChartProps> = ({ logs, line, propType, playe
 
     // Chart layout constants
     const CHART_HEIGHT = 220;
-    const CHART_WIDTH = 100; // percent-based, use viewBox
     const PAD_LEFT = 36;
     const PAD_RIGHT = 12;
     const PAD_TOP = 28;
@@ -327,7 +326,7 @@ const PropBarChart: React.FC<PropBarChartProps> = ({ logs, line, propType, playe
                                 fill={fill}
                                 opacity={isActiveHover ? 1 : 0.85}
                                 style={{ cursor: 'pointer', transition: 'opacity 0.1s' }}
-                                onMouseEnter={(e) => {
+                                onMouseEnter={() => {
                                     const svgRect = svgRef.current?.getBoundingClientRect();
                                     if (!svgRect) return;
                                     const scaleX = svgRect.width / CHART_VB_W;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Game } from '../../data/mockGames';
+import { Game } from '../../../data/mockGames';
 
 interface BaseballDiamondProps {
     game: Game;

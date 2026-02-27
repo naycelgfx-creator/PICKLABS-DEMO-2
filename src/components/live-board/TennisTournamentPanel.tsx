@@ -102,8 +102,8 @@ function parseTennisEvent(event: RawObj, sportKey: SportKey): TennisMatch[] {
 }
 
 // ---------- Set score display ----------
-const SetScore: React.FC<{ sets: number[]; tiebreaks: (number | null)[]; winner: boolean; inProgress: boolean }> = ({
-    sets, tiebreaks, winner, inProgress,
+const SetScore: React.FC<{ sets: number[]; tiebreaks: (number | null)[]; winner: boolean }> = ({
+    sets, tiebreaks, winner,
 }) => {
     if (sets.length === 0) return <span className="text-slate-600 text-sm">—</span>;
     return (
@@ -165,7 +165,6 @@ const TennisMatchCard: React.FC<{ match: TennisMatch }> = ({ match }) => {
                     sets={player.sets}
                     tiebreaks={player.tiebreaks}
                     winner={player.winner}
-                    inProgress={inProgress}
                 />
             </div>
         );

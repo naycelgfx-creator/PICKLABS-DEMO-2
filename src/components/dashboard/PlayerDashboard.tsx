@@ -50,7 +50,7 @@ export const PlayerDashboard: React.FC<PlayerDashboardProps> = ({ player, prop, 
     const maxMins = Math.max(...minutes, 40);
 
     const handleBarEnter = (
-        e: React.MouseEvent<SVGRectElement>,
+        _e: React.MouseEvent<SVGRectElement>,
         log: PlayerLog,
         isOver: boolean,
         barX: number,
@@ -282,7 +282,7 @@ export const PlayerDashboard: React.FC<PlayerDashboardProps> = ({ player, prop, 
                     Minutes Played — Last 10 Games
                 </p>
                 <div className="space-y-1.5">
-                    {logs.map((log, i) => {
+                    {logs.map((log) => {
                         const mins = parseMinutes(log.minutes);
                         const pct = (mins / maxMins) * 100;
                         const isLow = mins < 25;
