@@ -14,7 +14,7 @@ export interface Game {
     id: string;
     sport: string;
     sportLogo: string;
-    status: 'LIVE' | 'UPCOMING';
+    status: 'LIVE' | 'UPCOMING' | 'FINAL';
     timeLabel: string;
     matchupId: string;
     homeTeam: Team;
