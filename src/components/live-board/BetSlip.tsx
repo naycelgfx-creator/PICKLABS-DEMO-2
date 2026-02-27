@@ -149,7 +149,7 @@ export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip }) => {
                         <span>Total Payout</span>
                         <span className="text-primary">${totalPayout.toFixed(2)}</span>
                     </div>
-                    <div className="theme-dark grid grid-cols-2 gap-2 pt-2">
+                    <div className="grid grid-cols-2 gap-2 pt-2">
                         {SPORTSBOOKS.filter(b => isBookEnabled(b.id)).map(book => (
                             <button
                                 key={book.id}
