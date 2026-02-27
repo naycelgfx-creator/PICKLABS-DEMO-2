@@ -5,6 +5,7 @@ import { GlowingEffect } from '../ui/glowing-effect';
 import { PricingSection } from '../ui/pricing-section';
 import { LogoCloud } from '../ui/logo-cloud-3';
 import { BetSlipCompare } from '../ui/BetSlipCompare';
+import { ThemeToggle } from '../ui/theme-toggle';
 import { Sparkles, Zap, Shield, Star } from 'lucide-react';
 
 type ViewType = 'live-board' | 'matchup-terminal' | 'sharp-tools' | 'bankroll' | 'teams-directory' | 'popular-bets' | 'saved-picks' | 'value-finder' | 'landing-page' | 'login-page';
@@ -174,11 +175,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                     <a className="hover:text-primary transition-colors" href="#pricing">API</a>
                 </nav>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleScrollToPricing}
-                        className="hidden md:block px-5 py-2 bg-primary/10 border border-primary/40 rounded-full text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/20 transition-all">
-                        Free Trial
-                    </button>
+                    <ThemeToggle className="hidden md:flex" />
                     <button
                         onClick={() => onNavigate(isAuthValid() ? 'live-board' : 'login-page')}
                         className="hidden md:block px-5 py-2 bg-neutral-800 border border-border-muted rounded-full text-[10px] font-black uppercase tracking-widest text-text-main hover:border-primary/50 transition-all">
