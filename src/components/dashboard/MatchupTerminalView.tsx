@@ -36,8 +36,8 @@ export const MatchupTerminalView: React.FC<MatchupTerminalViewProps> = ({
 }) => {
     const [showBetSlip, setShowBetSlip] = useState<boolean>(true);
     return (
-        <main className="max-w-[1536px] mx-auto p-6 grid grid-cols-12 gap-6 relative">
-            <div className="col-span-12 lg:col-span-9 space-y-6">
+        <main className="max-w-[1536px] mx-auto p-4 md:p-6 grid grid-cols-12 gap-4 md:gap-6 relative">
+            <div className={`${showBetSlip ? 'col-span-12 lg:col-span-9' : 'col-span-12'} space-y-6 transition-all duration-300`}>
                 <div className="flex flex-col items-center justify-center py-4 gap-4">
                     <div className="flex items-center gap-4 flex-wrap justify-center">
                         <a
