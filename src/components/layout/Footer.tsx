@@ -13,7 +13,7 @@ export const Footer: React.FC = () => {
                     <img src="/xcc.svg" alt="XCC" className="h-6 w-auto opacity-80" onError={(e) => { e.currentTarget.src = "/picklabs-logo.svg"; }} />
                     <div>
                         <p className="font-black text-text-main text-sm uppercase italic">PickLabs Advanced Matchup Terminal</p>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest">NAYCELGFX LL©</p>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest">POWERED BY NAYCELGFX LLC©</p>
                     </div>
                 </div>
 
