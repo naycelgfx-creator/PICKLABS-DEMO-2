@@ -42,6 +42,7 @@ interface GameLog {
 interface BookOffer {
     name: string; abbr: string; letter: string;
     bg: string; text: string; odds: string;
+    logo?: string;
 }
 interface AltLineEntry {
     line: number;
@@ -518,13 +519,50 @@ const generateInsights = (player: string, line: number, propType: string, logs: 
     ].filter(Boolean) as string[];
 };
 
-// ── BookBadge ─────────────────────────────────────────────────────────────
-const BookBadge: React.FC<{ book: Pick<BookOffer, 'letter' | 'bg' | 'text'>; size?: 'sm' | 'md' }> = ({ book, size = 'sm' }) => (
-    <span className={`${size === 'md' ? 'w-5 h-5 text-[9px]' : 'w-4 h-4 text-[8px]'} rounded-full flex items-center justify-center font-black shrink-0`}
-        style={{ background: book.bg, color: book.text }}>
-        {book.letter}
-    </span>
-);
+// ── BookBadge — shows real sportsbook logo + name ─────────────────────────
+const LOGO_FALLBACKS: Record<string, string> = {
+    DK: 'https://sportsbook.draftkings.com/favicon.ico',
+    FD: 'https://www.fanduel.com/favicon.ico',
+    MGM: 'https://sports.betmgm.com/favicon.ico',
+    CZR: 'https://www.williamhill.com/favicon.ico',
+    PP: 'https://app.prizepicks.com/favicon.ico',
+    UD: 'https://underdogfantasy.com/favicon.ico',
+};
+
+const BookBadge: React.FC<{ book: Pick<BookOffer, 'letter' | 'bg' | 'text' | 'name' | 'abbr' | 'logo'>; size?: 'sm' | 'md' }> = ({ book, size = 'sm' }) => {
+    const logoUrl = book.logo || LOGO_FALLBACKS[book.abbr];
+    const imgSize = size === 'md' ? 'w-5 h-5' : 'w-4 h-4';
+    return (
+        <span className="flex items-center gap-1.5 shrink-0">
+            {/* Logo circle */}
+            <span
+                className={`${imgSize} rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-white/10`}
+                style={{ background: book.bg }}
+                title={book.name}
+            >
+                <img
+                    src={logoUrl}
+                    alt={book.abbr}
+                    className="w-full h-full object-contain p-0.5"
+                    onError={e => {
+                        const el = e.currentTarget;
+                        el.style.display = 'none';
+                        if (el.nextElementSibling) (el.nextElementSibling as HTMLElement).style.display = 'flex';
+                    }}
+                />
+                {/* Fallback letter */}
+                <span
+                    className="hidden w-full h-full items-center justify-center text-[8px] font-black"
+                    style={{ color: book.text }}
+                >
+                    {book.letter}
+                </span>
+            </span>
+            {/* Sportsbook name */}
+            <span className="text-[9px] font-bold text-slate-300 whitespace-nowrap leading-none">{book.name}</span>
+        </span>
+    );
+};
 
 // ── AltLinesPanel ─────────────────────────────────────────────────────────
 const AltLinesPanel: React.FC<{
@@ -556,33 +594,15 @@ const AltLinesPanel: React.FC<{
                     <button className="flex-1 py-2.5 text-xs font-black text-white border-b-2 border-primary tracking-widest">Available odds</button>
                     <button className="flex-1 py-2.5 text-xs font-black text-slate-500 tracking-widest">Custom</button>
                 </div>
-                {/* Over/Under toggle — each button shows all sportsbook logos + name */}
+                {/* Over/Under toggle — simple pill */}
                 <div className="flex gap-2 px-4 py-3">
-                    {(['over', 'under'] as const).map(d => {
-                        const isActive = dir === d;
-                        return (
-                            <button key={d} onClick={() => setDir(d)}
-                                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all cursor-pointer flex flex-col items-center gap-2
-                                ${isActive ? 'bg-white text-black border-white' : 'bg-transparent text-slate-400 border-[#1e293b] hover:text-white'}`}>
-                                <span className={isActive ? 'text-black' : 'text-slate-400'}>{d === 'over' ? '▲ Over' : '▼ Under'}</span>
-                                {/* Sportsbook logos row */}
-                                <span className="flex items-center gap-1.5 flex-wrap justify-center">
-                                    {SPORTSBOOKS.map(bk => (
-                                        <span key={bk.abbr} className="flex flex-col items-center gap-0.5">
-                                            <span
-                                                className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black shrink-0 overflow-hidden"
-                                                style={{ background: bk.bg, color: bk.text }}
-                                                title={bk.name}
-                                            >
-                                                {bk.abbr}
-                                            </span>
-                                            <span className={`text-[7px] font-bold leading-none ${isActive ? 'text-black/70' : 'text-slate-600'}`}>{bk.abbr}</span>
-                                        </span>
-                                    ))}
-                                </span>
-                            </button>
-                        );
-                    })}
+                    {(['over', 'under'] as const).map(d => (
+                        <button key={d} onClick={() => setDir(d)}
+                            className={`flex-1 py-2 rounded-full text-xs font-black uppercase tracking-widest border transition-all cursor-pointer
+                            ${dir === d ? 'bg-white text-black border-white' : 'bg-transparent text-slate-400 border-[#1e293b] hover:text-white'}`}>
+                            {d === 'over' ? '▲ Over' : '▼ Under'}
+                        </button>
+                    ))}
                 </div>
                 {/* Lines */}
                 <div className="overflow-y-auto max-h-[42vh] px-4 pb-2 space-y-2 custom-scrollbar">
@@ -798,8 +818,8 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
                         {activeBook
                             ? <BookBadge book={activeBook} size="sm" />
                             : <>
-                                <BookBadge book={{ letter: 'K', bg: '#0a2e1a', text: '#4ade80' }} size="sm" />
-                                <BookBadge book={{ letter: 'F', bg: '#0a1e3a', text: '#60a5fa' }} size="sm" />
+                                <BookBadge book={{ letter: 'K', abbr: 'DK', name: 'DraftKings', bg: '#0a2e1a', text: '#4ade80' }} size="sm" />
+                                <BookBadge book={{ letter: 'F', abbr: 'FD', name: 'FanDuel', bg: '#0a1e3a', text: '#60a5fa' }} size="sm" />
                             </>}
                         <span className="text-[9px] font-black text-slate-300 group-hover:text-white">
                             {selectedAltLine ? `${selectedAltLine.dir === 'over' ? 'Over' : 'Under'} ${selectedAltLine.line}` : `Over ${baseLine}`}
