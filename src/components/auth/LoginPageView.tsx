@@ -51,8 +51,12 @@ const MATCHUPS = [
 
 export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
     const [activeIndex, setActiveIndex] = useState(0);
     const [isFading, setIsFading] = useState(false);
+    const [shaking, setShaking] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -70,8 +74,13 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (email) {
+        if (email === 'admin@picklabs.bet' && password === 'admin12345') {
+            setError('');
             onNavigate('live-board');
+        } else {
+            setError('Invalid email or password.');
+            setShaking(true);
+            setTimeout(() => setShaking(false), 600);
         }
     };
 
@@ -93,46 +102,77 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
                 </div>
                 <div className="flex-grow flex flex-col justify-center">
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-black italic uppercase text-text-main mb-2">LOG IN OR SIGN UP</h1>
-                        <p className="text-sm font-bold text-text-muted">Enter your email to access the terminal.</p>
+                        <h1 className="text-3xl font-black italic uppercase text-text-main mb-2">ADMIN LOGIN</h1>
+                        <p className="text-sm font-bold text-text-muted">Enter your credentials to access the terminal.</p>
                     </div>
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Email */}
                         <div className="space-y-2">
                             <input
                                 className="input-field"
                                 placeholder="name@company.com"
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => { setEmail(e.target.value); setError(''); }}
                                 required
                             />
                         </div>
-                        <div className="space-y-3">
+
+                        {/* Password */}
+                        <div className="space-y-2 relative">
+                            <input
+                                className="input-field pr-12"
+                                placeholder="Password"
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(p => !p)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                                tabIndex={-1}
+                            >
+                                <span className="material-symbols-outlined text-[20px]">
+                                    {showPassword ? 'visibility_off' : 'visibility'}
+                                </span>
+                            </button>
+                        </div>
+
+                        {/* Error message */}
+                        {error && (
+                            <div className={`flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2.5 ${shaking ? 'animate-[shake_0.5s_ease-in-out]' : ''}`}>
+                                <span className="material-symbols-outlined text-red-400 text-[16px]">error</span>
+                                <span className="text-red-400 text-xs font-bold">{error}</span>
+                            </div>
+                        )}
+
+                        <div className="space-y-3 pt-1">
                             <button
                                 type="submit"
                                 className="w-full py-4 bg-primary text-black font-black uppercase tracking-[0.2em] italic rounded-xl hover:scale-[1.01] transition-transform"
                                 style={{ boxShadow: '0 0 20px rgba(13,242,13,0.2)' }}
                             >
-                                Continue with Email
+                                Sign In
                             </button>
-                            <p className="text-center text-[10px] text-primary/70 font-bold uppercase tracking-widest italic">We'll send you a code</p>
-                        </div>
-                        <div className="flex items-center gap-4 py-2">
-                            <div className="h-px flex-grow bg-border-muted"></div>
-                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">OR</span>
-                            <div className="h-px flex-grow bg-border-muted"></div>
-                        </div>
-                        <div className="space-y-3">
-                            <button type="button" className="social-btn">
-                                <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="currentColor"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="currentColor"></path></svg>
-                                Continue with Google
-                            </button>
-                            <button type="button" className="social-btn">
-                                <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.11.78.9-.04 2.19-.83 3.69-.65 1.58.19 2.73.81 3.46 1.83-3.13 1.88-2.58 6.32.48 7.57-.61 1.49-1.43 2.97-2.74 3.44zM12.03 7.25c-.02-2.39 1.95-4.4 4.19-4.25.26 2.51-2.2 4.6-4.19 4.25z" fill="currentColor"></path></svg>
-                                Continue with Apple
-                            </button>
-                            <div className="text-center pt-2">
-                                <a className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4" href="#">Use phone instead</a>
+                            <div className="flex items-center gap-4 py-2">
+                                <div className="h-px flex-grow bg-border-muted"></div>
+                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">OR</span>
+                                <div className="h-px flex-grow bg-border-muted"></div>
+                            </div>
+                            <div className="space-y-3">
+                                <button type="button" className="social-btn">
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="currentColor"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="currentColor"></path></svg>
+                                    Continue with Google
+                                </button>
+                                <button type="button" className="social-btn">
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.11.78.9-.04 2.19-.83 3.69-.65 1.58.19 2.73.81 3.46 1.83-3.13 1.88-2.58 6.32.48 7.57-.61 1.49-1.43 2.97-2.74 3.44zM12.03 7.25c-.02-2.39 1.95-4.4 4.19-4.25.26 2.51-2.2 4.6-4.19 4.25z" fill="currentColor"></path></svg>
+                                    Continue with Apple
+                                </button>
+                                <div className="text-center pt-2">
+                                    <a className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4" href="#">Use phone instead</a>
+                                </div>
                             </div>
                         </div>
                     </form>
