@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { SportKey, ESPN_SCOREBOARD_URLS } from '../../data/espnScoreboard';
+import { Game } from '../../data/mockGames';
 
 // ---------- Raw ESPN shape (tennis/golf) ----------
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -121,8 +122,29 @@ const SetScore: React.FC<{ sets: number[]; tiebreaks: (number | null)[]; winner:
     );
 };
 
+// ---------- Convert TennisMatch → Game ----------
+function tennisMatchToGame(match: TennisMatch, sportKey: SportKey): Game {
+    return {
+        id: match.id,
+        sport: sportKey as string,
+        matchupId: match.id,
+        awayTeam: { name: match.player2.displayName, abbr: match.player2.shortName || match.player2.displayName.split(' ').pop() || 'P2', logo: match.player2.flagUrl, score: match.player2.sets.reduce((a, b) => a + b, 0) },
+        homeTeam: { name: match.player1.displayName, abbr: match.player1.shortName || match.player1.displayName.split(' ').pop() || 'P1', logo: match.player1.flagUrl, score: match.player1.sets.reduce((a, b) => a + b, 0) },
+        status: match.inProgress ? 'LIVE' : match.completed ? 'FINAL' : 'SCHEDULED',
+        timeLabel: match.status,
+        league: match.tournament,
+        venue: { name: match.court || match.tournament, location: '' },
+        sportLogo: 'https://a.espncdn.com/i/espn/misc_logos/500/sports_tennis.png',
+        broadcast: '',
+        odds: { spread: 'N/A', moneyline: { away: 0, home: 0 }, overUnder: { value: 0, pick: 'over' } },
+        winProbability: { away: 50, home: 50 },
+        streakLabel: '',
+        date: new Date().toISOString().split('T')[0],
+    } as unknown as Game;
+}
+
 // ---------- Single match card ----------
-const TennisMatchCard: React.FC<{ match: TennisMatch }> = ({ match }) => {
+const TennisMatchCard: React.FC<{ match: TennisMatch; onSelect?: () => void }> = ({ match, onSelect }) => {
     const { player1, player2, round, court, status, inProgress, completed, notes } = match;
 
     const statusColor = inProgress
@@ -171,7 +193,10 @@ const TennisMatchCard: React.FC<{ match: TennisMatch }> = ({ match }) => {
     }
 
     return (
-        <div className="bg-neutral-900/60 border border-neutral-800/60 rounded-xl overflow-hidden hover:border-primary/20 transition-colors">
+        <div
+            className={`bg-neutral-900/60 border border-neutral-800/60 rounded-xl overflow-hidden hover:border-primary/40 transition-colors ${onSelect ? 'cursor-pointer' : ''}`}
+            onClick={onSelect}
+        >
             {/* Card header */}
             <div className="flex items-center justify-between px-4 py-2 bg-neutral-800/30 border-b border-neutral-800/50">
                 <div className="flex items-center gap-2">
@@ -208,9 +233,10 @@ const TennisMatchCard: React.FC<{ match: TennisMatch }> = ({ match }) => {
 interface TennisTournamentPanelProps {
     sportKey: SportKey;
     selectedDate?: string;
+    onSelectGame?: (game: Game) => void;
 }
 
-export const TennisTournamentPanel: React.FC<TennisTournamentPanelProps> = ({ sportKey, selectedDate }) => {
+export const TennisTournamentPanel: React.FC<TennisTournamentPanelProps> = ({ sportKey, selectedDate, onSelectGame }) => {
     const [matches, setMatches] = useState<TennisMatch[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -323,7 +349,11 @@ export const TennisTournamentPanel: React.FC<TennisTournamentPanelProps> = ({ sp
             {/* Match cards */}
             <div className="space-y-3">
                 {matches.map(match => (
-                    <TennisMatchCard key={match.id} match={match} />
+                    <TennisMatchCard
+                        key={match.id}
+                        match={match}
+                        onSelect={onSelectGame ? () => onSelectGame(tennisMatchToGame(match, sportKey)) : undefined}
+                    />
                 ))}
             </div>
         </div>

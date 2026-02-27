@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { SportKey } from '../../data/espnScoreboard';
+import { Game } from '../../data/mockGames';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RawObj = Record<string, any>;
@@ -81,9 +82,30 @@ function scoreColor(score: string): string {
 interface GolfLeaderboardPanelProps {
     sportKey: SportKey;
     selectedDate?: string;
+    onSelectGame?: (game: Game) => void;
 }
 
-export const GolfLeaderboardPanel: React.FC<GolfLeaderboardPanelProps> = ({ selectedDate }) => {
+function golfTournamentToGame(tournament: GolfTournament, golfer: GolferEntry, sportKey: SportKey): Game {
+    return {
+        id: `golf-${golfer.id}`,
+        sport: sportKey as string,
+        matchupId: `golf-${golfer.id}`,
+        awayTeam: { name: tournament.name, abbr: 'PGA', logo: '', score: 0 },
+        homeTeam: { name: golfer.displayName, abbr: golfer.shortName || golfer.displayName.split(' ').pop() || 'PLY', logo: golfer.flagUrl, score: 0 },
+        status: 'LIVE' as const,
+        timeLabel: `${tournament.round} · ${golfer.score}`,
+        league: tournament.name,
+        venue: { name: tournament.name, location: '' },
+        sportLogo: 'https://a.espncdn.com/i/espn/misc_logos/500/golf_course.png',
+        broadcast: tournament.broadcast,
+        odds: { spread: 'N/A', moneyline: { away: 0, home: 0 }, overUnder: { value: 0, pick: 'over' } },
+        winProbability: { away: 50, home: 50 },
+        streakLabel: '',
+        date: new Date().toISOString().split('T')[0],
+    } as unknown as Game;
+}
+
+export const GolfLeaderboardPanel: React.FC<GolfLeaderboardPanelProps> = ({ sportKey, selectedDate, onSelectGame }) => {
     const [tournament, setTournament] = useState<GolfTournament | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -219,7 +241,8 @@ export const GolfLeaderboardPanel: React.FC<GolfLeaderboardPanelProps> = ({ sele
                         return (
                             <div
                                 key={g.id}
-                                className={`grid grid-cols-12 px-4 py-2.5 items-center hover:bg-neutral-800/20 transition-colors ${isTop3 ? 'bg-primary/[0.03]' : ''}`}
+                                className={`grid grid-cols-12 px-4 py-2.5 items-center hover:bg-neutral-800/30 transition-colors ${isTop3 ? 'bg-primary/[0.03]' : ''} ${onSelectGame ? 'cursor-pointer' : ''}`}
+                                onClick={onSelectGame ? () => onSelectGame(golfTournamentToGame(tournament!, g, sportKey)) : undefined}
                             >
                                 {/* Position */}
                                 <div className="col-span-1">

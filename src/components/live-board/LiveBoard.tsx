@@ -334,12 +334,20 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                             <TennisTournamentPanel
                                 sportKey={effectiveEspnKey!}
                                 selectedDate={selectedDate}
+                                onSelectGame={(game) => {
+                                    onSelectGame(game);
+                                    setCurrentView('matchup-terminal');
+                                }}
                             />
                         ) : useGolfPanel ? (
                             // Golf: full tournament leaderboard
                             <GolfLeaderboardPanel
                                 sportKey={effectiveEspnKey!}
                                 selectedDate={selectedDate}
+                                onSelectGame={(game) => {
+                                    onSelectGame(game);
+                                    setCurrentView('matchup-terminal');
+                                }}
                             />
                         ) : (
                             // All team sports: standard ESPN scoreboard panel
