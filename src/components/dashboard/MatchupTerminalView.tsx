@@ -98,10 +98,14 @@ export const MatchupTerminalView: React.FC<MatchupTerminalViewProps> = ({
                 <MatchupScouting game={game} />
 
                 {/* Sport-specific field / court / pitch */}
-                {(game.sport === 'NBA' || game.sport === 'NCAAB' || game.sport === 'WNBA') && <BasketballCourt game={game} />}
-                {game.sport === 'Soccer' && <SoccerField game={game} />}
-                {game.sport === 'NFL' && <NFLField game={game} />}
-                {game.sport === 'MLB' && <BaseballField game={game} />}
+                {(() => {
+                    const s = game.sport as string;
+                    if (s === 'NBA' || s === 'NCAAB' || s === 'CBB' || s === 'WNBA') return <BasketballCourt game={game} />;
+                    if (s.startsWith('Soccer')) return <SoccerField game={game} />;
+                    if (s === 'NFL' || s === 'CFB') return <NFLField game={game} />;
+                    if (s === 'MLB') return <BaseballField game={game} />;
+                    return null;
+                })()}
 
                 {game.sport === 'NBA' && (
                     <div className="mt-8 border-t-2 border-primary/30 pt-8" id="nba-context-dashboard">
