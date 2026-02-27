@@ -27,7 +27,7 @@ const generatePlays = (count: number, forRight: boolean): Array<{
 }> => Array.from({ length: count }, (_, i) => {
     const type: PlayType = ['shot', 'pass', 'tackle', 'chance'][Math.floor(Math.random() * 4)] as PlayType;
     let x = 20 + Math.random() * (W / 2 - 30);
-    let y = 30 + Math.random() * (H - 60);
+    const y = 30 + Math.random() * (H - 60);
     if (forRight) x = W - x;
     return { id: `p${i}`, x, y, type, successful: Math.random() > 0.4 };
 });

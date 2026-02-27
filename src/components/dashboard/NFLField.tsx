@@ -25,7 +25,7 @@ const generatePlays = (count: number, forRight: boolean) =>
     Array.from({ length: count }, (_, i) => {
         const type: PlayType = ['run', 'pass', 'kick', 'sack'][Math.floor(Math.random() * 4)] as PlayType;
         let x = EZ + YARD * 5 + Math.random() * (W / 2 - EZ - YARD * 5);
-        let y = 30 + Math.random() * (H - 60);
+        const y = 30 + Math.random() * (H - 60);
         if (forRight) x = W - x;
         return { id: `p${i}`, x, y, type, gain: Math.floor(Math.random() * 20) - 5 };
     });

@@ -143,7 +143,7 @@ const SCORE_TEMPLATES = [
 const generateGameDates = (count: number): string[] => {
     const now = new Date(2026, 1, 26); // Feb 26, 2026
     const dates: string[] = [];
-    let d = new Date(now);
+    const d = new Date(now);
     for (let i = 0; i < count; i++) {
         d.setDate(d.getDate() - (i === 0 ? 0 : seededInt(`date-${i}`, i, 1, 5)));
         dates.unshift(`${d.getMonth() + 1}/${d.getDate()}`);
@@ -246,6 +246,7 @@ interface PropBarChartProps {
 }
 
 const PropBarChart: React.FC<PropBarChartProps> = ({ logs, line, propType, playerName: _playerName }) => {
+    void _playerName; // acknowledged — reserved for future tooltip
     const [hover, setHover] = useState<HoverInfo | null>(null);
     const svgRef = useRef<SVGSVGElement>(null);
 

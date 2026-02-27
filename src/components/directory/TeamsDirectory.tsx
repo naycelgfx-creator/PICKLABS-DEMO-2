@@ -2,7 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SPORT_LOGOS } from '../../data/mockGames';
 import { TeamDetails } from './TeamDetails';
 
-// ── ESPN Teams API ─────────────────────────────────────────────────────────
+// ── ESPN Teams API response types ─────────────────────────────────────────────
+interface EspnLogoEntry { href: string; width?: number; height?: number; }
+interface EspnTeamEntry {
+    id?: string; name?: string; abbreviation?: string;
+    displayName?: string; shortDisplayName?: string;
+    logos?: EspnLogoEntry[]; color?: string; alternateColor?: string;
+    location?: string;
+}
+
 const ESPN_TEAM_ENDPOINTS: Record<string, string> = {
     NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams?limit=100',
     WNBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams?limit=100',
@@ -166,10 +174,10 @@ function parseESPNTeams(data: Record<string, any>): ESPNTeam[] {
         const leagues = sports[0]?.leagues ?? [];
         if (leagues.length > 0) {
             const rawTeams = leagues[0]?.teams ?? [];
-            return rawTeams.map((t: Record<string, any>) => {
+            return rawTeams.map((t: { team?: EspnTeamEntry } & EspnTeamEntry) => {
                 const team = t.team ?? t;
-                const logos: Record<string, any>[] = team.logos ?? [];
-                const logo = logos[0]?.href ?? logos.find((l: Record<string, any>) => l.href)?.href ?? '';
+                const logos: EspnLogoEntry[] = team.logos ?? [];
+                const logo = logos[0]?.href ?? logos.find((l: EspnLogoEntry) => l.href)?.href ?? '';
                 return {
                     id: team.id ?? '',
                     name: team.name ?? '',
@@ -185,9 +193,9 @@ function parseESPNTeams(data: Record<string, any>): ESPNTeam[] {
         }
     }
     const rawTeams = data?.teams ?? [];
-    return rawTeams.map((t: Record<string, any>) => {
+    return rawTeams.map((t: { team?: EspnTeamEntry } & EspnTeamEntry) => {
         const team = t.team ?? t;
-        const logos: Record<string, any>[] = team.logos ?? [];
+        const logos: EspnLogoEntry[] = team.logos ?? [];
         const logo = logos[0]?.href ?? '';
         return {
             id: team.id ?? '',

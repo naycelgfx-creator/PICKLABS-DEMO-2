@@ -135,6 +135,7 @@ const ri = (min: number, max: number) => Math.floor(Math.random() * (max - min +
 const rf = (min: number, max: number, dp = 1) => parseFloat((Math.random() * (max - min) + min).toFixed(dp));
 
 function generatePositionalMatchups(pos: string[], line: number, _opponent: string): PositionalMatchupRow[] {
+    void _opponent; // reserved for future opponent-specific logic
     const names = ['J. Brown', 'K. Durant', 'L. James', 'G. Antetokounmpo', 'P. George', 'D. Booker', 'B. Adebayo', 'Z. LaVine'];
     return Array.from({ length: 6 }).map((_, i) => ({
         player: names[i % names.length],
