@@ -53,27 +53,27 @@ interface AltLineEntry {
 const SPORTSBOOKS = [
     {
         name: 'DraftKings', abbr: 'DK', letter: 'K', bg: '#0a2e1a', text: '#4ade80',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/DraftKings_logo.jpg/320px-DraftKings_logo.jpg'
+        logo: 'https://www.google.com/s2/favicons?domain=draftkings.com&sz=64'
     },
     {
         name: 'FanDuel', abbr: 'FD', letter: 'F', bg: '#0a1e3a', text: '#60a5fa',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/FanDuel_logo_%282019%29.png/320px-FanDuel_logo_%282019%29.png'
+        logo: 'https://www.google.com/s2/favicons?domain=fanduel.com&sz=64'
     },
     {
         name: 'BetMGM', abbr: 'MGM', letter: 'M', bg: '#2d1500', text: '#fbbf24',
-        logo: 'https://sportsbook.betmgm.com/favicon.ico'
+        logo: 'https://www.google.com/s2/favicons?domain=betmgm.com&sz=64'
     },
     {
         name: 'Caesars', abbr: 'CZR', letter: 'C', bg: '#1e0a2e', text: '#c084fc',
-        logo: 'https://www.caesars.com/content/dam/shared/sportsbook/logos/caesars-sportsbook-logo.png'
+        logo: 'https://www.google.com/s2/favicons?domain=williamhill.com&sz=64'
     },
     {
         name: 'PrizePicks', abbr: 'PP', letter: 'P', bg: '#0a2020', text: '#2dd4bf',
-        logo: 'https://img.prizepicks.com/images/pp-logo.png'
+        logo: 'https://www.google.com/s2/favicons?domain=prizepicks.com&sz=64'
     },
     {
         name: 'Underdog', abbr: 'UD', letter: 'U', bg: '#2e1000', text: '#fb923c',
-        logo: 'https://underdogfantasy.com/favicon.ico'
+        logo: 'https://www.google.com/s2/favicons?domain=underdogfantasy.com&sz=64'
     },
 ];
 
