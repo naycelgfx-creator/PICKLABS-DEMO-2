@@ -1,0 +1,52 @@
+name: ⏰ Daily Auto-Redeploy
+
+# Runs every day at midnight Eastern Time (5:00 AM UTC)
+on:
+  schedule:
+    - cron: '0 5 * * *'    # 12:00 AM ET every day
+  workflow_dispatch:         # also allows manual trigger from GitHub UI
+
+jobs:
+  redeploy:
+    name: Trigger Daily Redeploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git identity
+        run: |
+          git config user.name  "PickLabs Bot"
+          git config user.email "bot@picklabs.bet"
+
+      - name: Bump build timestamp
+        run: |
+          DATE=$(date -u +"%Y-%m-%d")
+          echo "PICKLABS_BUILD_DATE=$DATE" > .build-date
+          git add .build-date
+          git commit -m "chore: daily redeploy — $DATE [skip ci]" || echo "Nothing to commit, skipping"
+
+      - name: Push to origin (main repo)
+        run: git push origin main
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      # ── If you connect Vercel or Netlify, they auto-deploy on push above ──
+      # ── The step below also deploys to GitHub Pages as a fallback ──────────
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          user_name: 'PickLabs Bot'
+          user_email: 'bot@picklabs.bet'
+          commit_message: '🚀 Daily deploy — ${{ env.DATE }}'
