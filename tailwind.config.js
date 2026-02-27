@@ -39,7 +39,16 @@ export default {
                 'marquee': {
                     '0%': { transform: 'translateX(0%)' },
                     '100%': { transform: 'translateX(-50%)' },
-                }
+                },
+                'spin-around': {
+                    '0%': { transform: 'translateZ(0) rotate(0)' },
+                    '15%, 35%': { transform: 'translateZ(0) rotate(90deg)' },
+                    '65%, 85%': { transform: 'translateZ(0) rotate(270deg)' },
+                    '100%': { transform: 'translateZ(0) rotate(360deg)' },
+                },
+                'shimmer-slide': {
+                    to: { transform: 'translate(calc(100cqw - 100%), 0)' },
+                },
             },
             animation: {
                 'neon-pulse': 'neon-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -47,6 +56,8 @@ export default {
                 'glow-hot': 'glow-hot 1.5s ease-in-out infinite',
                 'glow-cold': 'glow-cold 1.5s ease-in-out infinite',
                 'marquee': 'marquee 40s linear infinite',
+                'shimmer-slide': 'shimmer-slide var(--speed) ease-in-out infinite alternate',
+                'spin-around': 'spin-around calc(var(--speed) * 2) infinite linear',
             }
         },
     },

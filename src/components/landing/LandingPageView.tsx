@@ -7,7 +7,7 @@ import { LogoCloud } from '../ui/logo-cloud-3';
 import { BetSlipCompare } from '../ui/BetSlipCompare';
 import { ThemeToggle } from '../ui/theme-toggle';
 import { BlurFade } from '../ui/blur-fade';
-import { NeonButton } from '../ui/neon-button';
+import { ShimmerButton } from '../ui/shimmer-button';
 import { Sparkles, Zap, Shield, Star } from 'lucide-react';
 
 type ViewType = 'live-board' | 'matchup-terminal' | 'sharp-tools' | 'bankroll' | 'teams-directory' | 'popular-bets' | 'saved-picks' | 'value-finder' | 'landing-page' | 'login-page';
@@ -195,13 +195,17 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                             Professional-grade sports simulations and sharp betting alerts powered by proprietary neural networks. Built for the modern bettor.
                         </p>
                         <div className="flex flex-col md:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
-                            <NeonButton
+                            <ShimmerButton
                                 onClick={handleScrollToPricing}
-                                neon
-                                className="w-full md:w-auto px-10 py-5 font-black uppercase tracking-[0.2em] italic text-black bg-primary border-primary rounded-xl text-sm hover:scale-105 transition-transform [--neon-color:white]"
+                                shimmerColor="#ffffff"
+                                shimmerDuration="2.5s"
+                                shimmerSize="0.08em"
+                                borderRadius="12px"
+                                background="rgb(12 168 16)"
+                                className="w-full md:w-auto px-10 py-5 font-black uppercase tracking-[0.2em] italic text-black text-sm hover:scale-105 transition-transform"
                             >
                                 Start 7-Day Free Trial
-                            </NeonButton>
+                            </ShimmerButton>
                         </div>
                     </div>
 
