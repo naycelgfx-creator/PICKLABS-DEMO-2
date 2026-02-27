@@ -1,11 +1,10 @@
 import React from 'react';
 import { Game } from '../../../data/mockGames';
 import { NBAGameLeaders } from './NBAGameLeaders';
+import { NBABoxScoreLineup } from './NBABoxScoreLineup';
 import { NBAShotChart } from './NBAShotChart';
 import { NBATeamStats } from './NBATeamStats';
 import { NBANewsAndStandings } from './NBANewsAndStandings';
-
-import { PlayerPropsForm } from '../PlayerPropsForm';
 import { BetPick } from '../../../App';
 
 interface NBAMatchupDashboardProps {
@@ -13,17 +12,16 @@ interface NBAMatchupDashboardProps {
     onAddBet?: (bet: Omit<BetPick, 'id'>) => void;
 }
 
-export const NBAMatchupDashboard: React.FC<NBAMatchupDashboardProps> = ({ game, onAddBet }) => {
+export const NBAMatchupDashboard: React.FC<NBAMatchupDashboardProps> = ({ game }) => {
     return (
         <div className="space-y-6">
+            {/* Game leaders summary */}
             <NBAGameLeaders game={game} />
 
-            {onAddBet && (
-                <div className="py-4">
-                    <PlayerPropsForm game={game} onAddBet={onAddBet} />
-                </div>
-            )}
+            {/* Full box score lineup — both teams side by side */}
+            <NBABoxScoreLineup game={game} />
 
+            {/* Shot chart + team stats */}
             <div className="grid grid-cols-12 gap-6">
                 <NBAShotChart game={game} />
                 <NBATeamStats game={game} />
