@@ -348,6 +348,11 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                                 selectedDate={selectedDate}
                                 overrideSportKey={effectiveEspnKey ?? undefined}
                                 layoutMode={layoutMode}
+                                onSelectGame={(espnGame) => {
+                                    const game = espnGameToGame(espnGame);
+                                    onSelectGame(game);
+                                    setCurrentView('matchup-terminal');
+                                }}
                             />
                         )
                     )}

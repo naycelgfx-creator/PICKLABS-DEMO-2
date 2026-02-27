@@ -119,7 +119,8 @@ const TeamSection: React.FC<{
     teamLogo: string;
     players: BoxScorePlayer[];
     badgeColor: string;
-}> = ({ teamName, teamLogo, players, badgeColor }) => {
+    side: 'away' | 'home';
+}> = ({ teamName, teamLogo, players, badgeColor, side }) => {
     const [showBench, setShowBench] = useState(true);
     const starters = players.filter(p => p.starter && !p.didNotPlay);
     const bench = players.filter(p => !p.starter && !p.didNotPlay);
@@ -144,7 +145,7 @@ const TeamSection: React.FC<{
                 <tbody>
                     {starters.length > 0 && (<>
                         <tr><td colSpan={7} className="px-3 py-1 text-[7px] font-black uppercase tracking-widest text-slate-600 bg-white/2">Starters</td></tr>
-                        {starters.map(p => <PlayerRow key={p.id} player={p} badgeColor={badgeColor} />)}
+                        {starters.map(p => <PlayerRow key={`${side}-${p.id}`} player={p} badgeColor={badgeColor} />)}
                     </>)}
                     {bench.length > 0 && (<>
                         <tr className="cursor-pointer select-none" onClick={() => setShowBench(b => !b)}>
@@ -152,11 +153,11 @@ const TeamSection: React.FC<{
                                 Bench {showBench ? '▲' : '▼'}
                             </td>
                         </tr>
-                        {showBench && bench.map(p => <PlayerRow key={p.id} player={p} badgeColor={badgeColor} />)}
+                        {showBench && bench.map(p => <PlayerRow key={`${side}-${p.id}`} player={p} badgeColor={badgeColor} />)}
                     </>)}
                     {dnp.length > 0 && (<>
                         <tr><td colSpan={7} className="px-3 py-1 text-[7px] font-black uppercase tracking-widest text-slate-600 bg-white/2">DNP / Inactive</td></tr>
-                        {dnp.map(p => <PlayerRow key={p.id} player={p} badgeColor={badgeColor} />)}
+                        {dnp.map(p => <PlayerRow key={`${side}-${p.id}`} player={p} badgeColor={badgeColor} />)}
                     </>)}
                     {players.length === 0 && (
                         <tr><td colSpan={7} className="py-8 text-center text-[10px] font-black uppercase text-slate-500">No player data available</td></tr>
@@ -168,7 +169,7 @@ const TeamSection: React.FC<{
 };
 
 export const SportBoxScoreLineup: React.FC<SportBoxScoreLineupProps> = ({ game }) => {
-    const { data, loading, error } = useESPNBoxScore(game);
+    const { data, loading, error } = useESPNBoxScore(game.sport, game.matchupId);
     const label = sportLabel(game.sport as string);
     const icon = sportIcon(game.sport as string);
 
@@ -198,8 +199,8 @@ export const SportBoxScoreLineup: React.FC<SportBoxScoreLineupProps> = ({ game }
                 </div>
             ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-border-muted">
-                    <TeamSection teamName={awayTeamName} teamLogo={awayLogo} players={awayPlayers} badgeColor="bg-blue-500/20 text-blue-400" />
-                    <TeamSection teamName={homeTeamName} teamLogo={homeLogo} players={homePlayers} badgeColor="bg-primary/20 text-primary" />
+                    <TeamSection side="away" teamName={awayTeamName} teamLogo={awayLogo} players={awayPlayers} badgeColor="bg-blue-500/20 text-blue-400" />
+                    <TeamSection side="home" teamName={homeTeamName} teamLogo={homeLogo} players={homePlayers} badgeColor="bg-primary/20 text-primary" />
                 </div>
             )}
         </div>
