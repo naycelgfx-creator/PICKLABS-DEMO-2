@@ -2,8 +2,6 @@ import React from 'react';
 import { Game } from '../../../data/mockGames';
 import { NBAGameLeaders } from './NBAGameLeaders';
 import { NBABoxScoreLineup } from './NBABoxScoreLineup';
-import { NBAShotChart } from './NBAShotChart';
-import { NBATeamStats } from './NBATeamStats';
 import { NBANewsAndStandings } from './NBANewsAndStandings';
 import { BetPick } from '../../../App';
 
@@ -15,18 +13,13 @@ interface NBAMatchupDashboardProps {
 export const NBAMatchupDashboard: React.FC<NBAMatchupDashboardProps> = ({ game }) => {
     return (
         <div className="space-y-6">
-            {/* Game leaders summary */}
+            {/* Real ESPN game leaders */}
             <NBAGameLeaders game={game} />
 
             {/* Full box score lineup — both teams side by side */}
             <NBABoxScoreLineup game={game} />
 
-            {/* Shot chart + team stats */}
-            <div className="grid grid-cols-12 gap-6">
-                <NBAShotChart game={game} />
-                <NBATeamStats game={game} />
-            </div>
-
+            {/* News & standings */}
             <NBANewsAndStandings game={game} />
         </div>
     );

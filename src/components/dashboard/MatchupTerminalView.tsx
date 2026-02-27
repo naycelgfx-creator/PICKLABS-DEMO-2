@@ -8,6 +8,7 @@ import { BasketballCourt } from './BasketballCourt';
 import { SoccerField } from './SoccerField';
 import { NFLField } from './NFLField';
 import { BaseballField } from './BaseballField';
+import { HockeyRink } from './HockeyRink';
 
 import { SimulationResults } from './SimulationResults';
 import { OffenseVsDefense } from './OffenseVsDefense';
@@ -104,6 +105,7 @@ export const MatchupTerminalView: React.FC<MatchupTerminalViewProps> = ({
                     if (s.startsWith('Soccer')) return <SoccerField game={game} />;
                     if (s === 'NFL' || s === 'CFB') return <NFLField game={game} />;
                     if (s === 'MLB') return <BaseballField game={game} />;
+                    if (s === 'NHL') return <HockeyRink game={game} />;
                     return null;
                 })()}
 
