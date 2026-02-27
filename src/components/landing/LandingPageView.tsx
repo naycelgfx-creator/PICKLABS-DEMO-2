@@ -173,11 +173,23 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                     <a className="hover:text-primary transition-colors" href="#how-it-works">Data Feed</a>
                     <a className="hover:text-primary transition-colors" href="#pricing">API</a>
                 </nav>
-                <button
-                    onClick={() => onNavigate('login-page')}
-                    className="px-6 py-2 bg-neutral-800 border border-border-muted rounded-full text-[10px] font-black uppercase tracking-widest text-text-main hover:border-primary/50 transition-all">
-                    Login
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleScrollToPricing}
+                        className="hidden md:block px-5 py-2 bg-primary/10 border border-primary/40 rounded-full text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/20 transition-all">
+                        Free Trial
+                    </button>
+                    <button
+                        onClick={() => onNavigate(isAuthValid() ? 'live-board' : 'login-page')}
+                        className="hidden md:block px-5 py-2 bg-neutral-800 border border-border-muted rounded-full text-[10px] font-black uppercase tracking-widest text-text-main hover:border-primary/50 transition-all">
+                        Live Board
+                    </button>
+                    <button
+                        onClick={() => onNavigate('login-page')}
+                        className="px-6 py-2 bg-neutral-800 border border-border-muted rounded-full text-[10px] font-black uppercase tracking-widest text-text-main hover:border-primary/50 transition-all">
+                        Login
+                    </button>
+                </div>
             </header>
 
             <section className="relative pt-20 pb-16 px-6 hero-gradient">
