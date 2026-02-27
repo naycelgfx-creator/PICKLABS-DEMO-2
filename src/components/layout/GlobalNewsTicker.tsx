@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { fetchMultiSportNews, ESPNNewsItem } from '../../data/espnNews';
 
 const SPORTS = ['NBA', 'NFL', 'MLB', 'NHL', 'Soccer'];
-const REFRESH_MS = 120_000; // Refresh every 2 minutes
+const REFRESH_MS = 120_000;
 
 const CATEGORY_TAG_COLORS: Record<string, string> = {
     injury: 'text-red-400',
@@ -35,14 +35,12 @@ export const GlobalNewsTicker: React.FC = () => {
         };
     }, []);
 
-    // Build ticker text list from real ESPN headlines
     const tickerItems: { sport: string; category: string; text: string }[] = items.slice(0, 30).map(item => ({
         sport: item.sport,
         category: item.category,
         text: item.headline,
     }));
 
-    // Fallback while loading
     const fallback = [
         { sport: 'PickLabs', category: 'general', text: 'Loading live sports news feed...' },
     ];
@@ -50,14 +48,14 @@ export const GlobalNewsTicker: React.FC = () => {
     const displayItems = loading || tickerItems.length === 0 ? fallback : tickerItems;
 
     return (
-        <div className="w-full bg-neutral-900/90 border-b border-border-muted overflow-hidden sticky top-0 z-[100] h-8 flex items-center backdrop-blur-sm">
+        <div className="w-full bg-neutral-900/90 border-t border-border-muted overflow-hidden h-9 flex items-center">
             {/* PickLabs Tag */}
             <div className="flex items-center shrink-0 px-3 h-full border-r border-border-muted bg-primary/90">
-                <span className="text-black text-[10px] font-black tracking-widest uppercase">PickLabs</span>
+                <span className="text-black text-[10px] font-black tracking-widest uppercase">PickLabs News</span>
             </div>
 
             <div className="relative flex-1 h-full overflow-hidden flex items-center group">
-                <div className={`w-max flex ${loading ? '' : 'animate-marquee'} group-hover:[animation-play-state:paused]`}>
+                <div className={`w-max flex ${loading ? '' : 'animate-news-ticker'} group-hover:[animation-play-state:paused]`}>
                     {/* First pass */}
                     <div className="flex shrink-0 items-center">
                         {displayItems.map((item, i) => (
@@ -93,5 +91,3 @@ export const GlobalNewsTicker: React.FC = () => {
         </div>
     );
 };
-
-

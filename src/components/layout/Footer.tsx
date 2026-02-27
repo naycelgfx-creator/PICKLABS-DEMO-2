@@ -1,9 +1,14 @@
 import React from 'react';
+import { GlobalNewsTicker } from './GlobalNewsTicker';
 
 export const Footer: React.FC = () => {
     return (
-        <footer className="border-t border-border-muted py-10 bg-background-dark mt-auto">
-            <div className="max-w-[1440px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+        <footer className="border-t border-border-muted bg-background-dark mt-auto">
+            {/* News Ticker — stays in footer, scrolls at readable speed */}
+            <GlobalNewsTicker />
+
+            {/* Copyright info */}
+            <div className="max-w-[1440px] mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-4 opacity-50">
                     <img src="/xcc.svg" alt="XCC" className="h-6 w-auto opacity-80" onError={(e) => { e.currentTarget.src = "/picklabs-logo.svg"; }} />
                     <div>

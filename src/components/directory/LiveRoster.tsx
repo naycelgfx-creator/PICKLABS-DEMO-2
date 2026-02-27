@@ -1,10 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { fetchESPNTeamRoster, NBA_TEAM_IDS, ESPNRosterAthlete } from '../../data/espnService';
+import { fetchESPNRosterBySport, NBA_TEAM_IDS, NFL_TEAM_IDS, MLB_TEAM_IDS, NHL_TEAM_IDS, ESPNRosterAthlete } from '../../data/espnService';
 
 interface LiveRosterProps {
     teamName: string;
     sport: string;
 }
+
+const SPORT_TEAM_ID_MAPS: Record<string, Record<string, number>> = {
+    NBA: NBA_TEAM_IDS,
+    NFL: NFL_TEAM_IDS,
+    MLB: MLB_TEAM_IDS,
+    NHL: NHL_TEAM_IDS,
+};
 
 const SkeletonRow = () => (
     <tr className="border-b border-neutral-800/50">
@@ -22,17 +29,24 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
     const [error, setError] = useState<string | null>(null);
     const [lastFetched, setLastFetched] = useState<string | null>(null);
 
-    const isNBA = sport === 'NBA';
-    const hasTeamId = isNBA && NBA_TEAM_IDS[teamName] !== undefined;
+    // Check if we have a known team ID for this sport
+    const sportMap = SPORT_TEAM_ID_MAPS[sport] ?? NBA_TEAM_IDS;
+    const hasTeamId = (() => {
+        if (sportMap[teamName]) return true;
+        const lower = teamName.toLowerCase();
+        return Object.keys(sportMap).some(k =>
+            lower.includes(k.toLowerCase()) || k.toLowerCase().includes(lower.split(' ').pop() ?? '')
+        );
+    })();
 
     const fetchRoster = useCallback(async () => {
         if (!hasTeamId) return;
         setLoading(true);
         setError(null);
         try {
-            const data = await fetchESPNTeamRoster(teamName);
+            const data = await fetchESPNRosterBySport(teamName, sport);
             if (data.length === 0) {
-                setError('No roster data returned from ESPN.');
+                setError('No roster data returned from ESPN. The team page may not have live data right now.');
             } else {
                 setPlayers(data);
                 setLastFetched(new Date().toLocaleTimeString());
@@ -42,7 +56,7 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
         } finally {
             setLoading(false);
         }
-    }, [teamName, hasTeamId]);
+    }, [teamName, sport, hasTeamId]);
 
     useEffect(() => {
         fetchRoster();
@@ -51,9 +65,9 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
     if (!hasTeamId) {
         return (
             <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-8 text-center mt-6">
-                <span className="material-symbols-outlined text-slate-600 text-4xl block mb-3">sports_basketball</span>
-                <p className="text-slate-500 font-medium">Live roster data is only available for NBA teams.</p>
-                <p className="text-slate-600 text-sm mt-1">View the Player Profiles table below for generated data.</p>
+                <span className="material-symbols-outlined text-slate-600 text-4xl block mb-3">sports</span>
+                <p className="text-slate-500 font-medium">Live roster data is available for NBA, NFL, MLB, and NHL teams.</p>
+                <p className="text-slate-600 text-sm mt-1">"{teamName}" was not found in our team database for {sport}.</p>
             </div>
         );
     }
@@ -65,7 +79,7 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
                 <h4 className="font-black text-white uppercase tracking-widest text-sm flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-[18px]">wifi</span>
-                    Live Roster — PickLabs Data
+                    Live Roster — {sport} · ESPN Data
                 </h4>
                 <div className="ml-auto flex items-center gap-3">
                     {lastFetched && (
@@ -87,12 +101,13 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
                 <div className="px-6 py-3 bg-red-500/10 border-b border-red-500/20 flex items-center gap-2">
                     <span className="material-symbols-outlined text-red-400 text-[16px]">error</span>
                     <span className="text-red-400 text-xs font-medium">{error}</span>
+                    <button onClick={fetchRoster} className="ml-auto text-[10px] text-red-400 underline">Retry</button>
                 </div>
             )}
 
             {/* Table */}
             <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[820px]">
+                <table className="w-full text-left border-collapse min-w-[720px]">
                     <thead>
                         <tr className="bg-black/40 border-b border-neutral-700">
                             <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider w-10">#</th>
@@ -102,7 +117,7 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
                             <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider text-center">HT</th>
                             <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider text-center">WT</th>
                             <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider">EXP</th>
-                            <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider text-right">Salary</th>
+                            <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider">College</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-800/50">
@@ -166,13 +181,9 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
                                             : '—'}
                                     </td>
 
-                                    {/* Salary */}
-                                    <td className="py-3 px-4 text-right">
-                                        {p.salary ? (
-                                            <span className="text-primary font-black text-sm">{p.salaryFormatted}</span>
-                                        ) : (
-                                            <span className="text-slate-600 text-sm">—</span>
-                                        )}
+                                    {/* College */}
+                                    <td className="py-3 px-4 text-slate-500 text-sm">
+                                        {p.collegeName !== 'N/A' ? p.collegeName : '—'}
                                     </td>
                                 </tr>
                             ))
@@ -188,9 +199,9 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
             {/* Footer */}
             {players.length > 0 && (
                 <div className="px-6 py-3 bg-black/20 border-t border-neutral-800/50 flex items-center justify-between">
-                    <span className="text-[10px] text-slate-600 font-medium">{players.length} players · Source: PickLabs Data</span>
+                    <span className="text-[10px] text-slate-600 font-medium">{players.length} players · Source: ESPN</span>
                     <a
-                        href={`https://www.espn.com/nba/team/roster/_/name/${teamName.toLowerCase().replace(/\s/g, '-')}`}
+                        href={`https://www.espn.com/${sport.toLowerCase()}/team/roster/_/name/${teamName.toLowerCase().replace(/\s/g, '-')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[10px] text-primary hover:text-white transition-colors font-bold uppercase tracking-wider flex items-center gap-1"

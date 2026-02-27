@@ -218,7 +218,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
             )}
 
             <DateFilter selectedDate={selectedDate} onSelectDate={setSelectedDate} activeSport={activeSport} />
-            <main className="max-w-[1536px] mx-auto p-6 grid grid-cols-12 gap-6 relative pt-2">
+            <main className="max-w-[1536px] mx-auto px-3 sm:px-6 py-2 grid grid-cols-12 gap-3 sm:gap-6 relative">
                 <div className="col-span-12 lg:col-span-9 space-y-6">
                     {/* Header */}
                     <div className="flex items-center justify-between">
@@ -253,8 +253,8 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                                 onClick={() => setShowPublicBets(p => !p)}
                                 title={showPublicBets ? 'Hide Public Bets' : 'Show Public Bets'}
                                 className={`flex items-center gap-1.5 px-2.5 py-2 rounded border text-[10px] font-black uppercase tracking-wider transition-all ${showPublicBets
-                                        ? 'bg-primary/10 border-primary/40 text-primary'
-                                        : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
+                                    ? 'bg-primary/10 border-primary/40 text-primary'
+                                    : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
                                     }`}
                             >
                                 <span className="material-symbols-outlined text-sm">group</span>
@@ -265,8 +265,8 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                                 onClick={() => setShowBetSlip(p => !p)}
                                 title={showBetSlip ? 'Hide Bet Slip' : 'Show Bet Slip'}
                                 className={`flex items-center gap-1.5 px-2.5 py-2 rounded border text-[10px] font-black uppercase tracking-wider transition-all ${showBetSlip
-                                        ? 'bg-accent-purple/10 border-accent-purple/40 text-accent-purple'
-                                        : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
+                                    ? 'bg-accent-purple/10 border-accent-purple/40 text-accent-purple'
+                                    : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
                                     }`}
                             >
                                 <span className="material-symbols-outlined text-sm">receipt_long</span>
@@ -385,6 +385,8 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                                                     key={game.id}
                                                     game={game}
                                                     showPublicBets={showPublicBets}
+                                                    publicBettingOpen={showPublicBets}
+                                                    onPublicBettingToggle={() => setShowPublicBets(p => !p)}
                                                     onSelectGame={() => {
                                                         onSelectGame(game);
                                                         setCurrentView('matchup-terminal');

@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { Header } from './components/layout/Header';
-import { GlobalNewsTicker } from './components/layout/GlobalNewsTicker';
 import { Footer } from './components/layout/Footer';
 import { SimulationOverlay } from './components/ui/SimulationOverlay';
 import { LiveBoard } from './components/live-board/LiveBoard';
@@ -261,10 +260,7 @@ function App() {
           </main>
 
           {!isMarketingView && (
-            <>
-              <GlobalNewsTicker />
-              <Footer />
-            </>
+            <Footer />
           )}
 
           <SimulationOverlay

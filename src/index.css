@@ -349,9 +349,14 @@
     @apply flex flex-col items-center justify-center p-2 rounded border border-border-muted bg-white/[0.03] hover:bg-white/[0.06] transition-colors cursor-pointer;
   }
 
-  /* Marquee Animations for Landing Page */
+  /* Marquee — slow speed for logo strip on landing page */
   .animate-marquee {
     animation: marquee 500s linear infinite;
+  }
+
+  /* News ticker in footer — 200s for easy reading */
+  .animate-news-ticker {
+    animation: marquee 200s linear infinite;
   }
 
   .animate-marquee2 {

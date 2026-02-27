@@ -1,5 +1,6 @@
 // ESPN Athletes API Service — supports NBA, NFL, MLB, NHL
-// Base URL: https://sports.core.api.espn.com/v2/sports/...
+// Uses site.api.espn.com (public CORS-friendly API) for roster data
+// Falls back to headshot CDN for player photos
 
 export interface ESPNAthlete {
     id: string;
@@ -32,9 +33,24 @@ export interface ESPNRosterAthlete extends ESPNAthlete {
     collegeName: string;
 }
 
-const ESPN_NBA_BASE = 'https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba';
+// ─── Sport routing config ─────────────────────────────────────────────────────
+// site.api.espn.com is publicly accessible with CORS headers
 
-// ─── Team ID maps ────────────────────────────────────────────────────────────
+const ESPN_SITE_ROSTER: Record<string, string> = {
+    NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{id}/roster',
+    NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{id}/roster',
+    MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/{id}/roster',
+    NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/{id}/roster',
+};
+
+const ESPN_HEADSHOT_SPORT: Record<string, string> = {
+    NBA: 'nba',
+    NFL: 'nfl',
+    MLB: 'mlb',
+    NHL: 'nhl',
+};
+
+// ─── Team ID maps ─────────────────────────────────────────────────────────────
 
 export const NBA_TEAM_IDS: Record<string, number> = {
     'Hawks': 1, 'Celtics': 2, 'Nets': 17, 'Hornets': 30, 'Bulls': 4,
@@ -74,17 +90,6 @@ export const NHL_TEAM_IDS: Record<string, number> = {
     'Capitals': 15, 'Blue Jackets': 29, 'Devils': 1, 'Islanders': 6, 'Rangers': 7
 };
 
-// ─── Sport routing config ────────────────────────────────────────────────────
-
-interface SportConfig { sport: string; league: string; headshotSport: string; season: number; }
-
-const ESPN_SPORT_CONFIG: Record<string, SportConfig> = {
-    'NBA': { sport: 'basketball', league: 'nba', headshotSport: 'nba', season: 2026 },
-    'NFL': { sport: 'football', league: 'nfl', headshotSport: 'nfl', season: 2025 },
-    'MLB': { sport: 'baseball', league: 'mlb', headshotSport: 'mlb', season: 2025 },
-    'NHL': { sport: 'hockey', league: 'nhl', headshotSport: 'nhl', season: 2026 },
-};
-
 const SPORT_TEAM_IDS: Record<string, Record<string, number>> = {
     'NBA': NBA_TEAM_IDS,
     'NFL': NFL_TEAM_IDS,
@@ -92,7 +97,7 @@ const SPORT_TEAM_IDS: Record<string, Record<string, number>> = {
     'NHL': NHL_TEAM_IDS,
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export const formatSalary = (salary?: number): string => {
     if (!salary) return 'N/A';
@@ -101,100 +106,120 @@ export const formatSalary = (salary?: number): string => {
     return `$${salary}`;
 };
 
-const parseAthleteDetail = (d: Record<string, unknown>, sport: string): ESPNRosterAthlete => {
-    const salary = ((d.contract as Record<string, unknown>)?.salary as number) ?? undefined;
-    const pos = d.position as Record<string, string> | undefined;
-    const headshot = d.headshot as Record<string, string> | undefined;
-    const config = ESPN_SPORT_CONFIG[sport];
-    const espnHeadshot = config
-        ? `https://a.espncdn.com/i/headshots/${config.headshotSport}/players/full/${d.id}.png`
-        : undefined;
-    const photoUrl = headshot?.href
-        ?? espnHeadshot
-        ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(d.fullName as string)}&background=1a1a2e&color=39ff14&rounded=true`;
+// ─── Parse athlete from site.api ESPN roster response ────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const parseAthleteFromRoster = (athlete: Record<string, any>, sport: string): ESPNRosterAthlete => {
+    const id = String(athlete.id ?? '');
+    const headshotSport = ESPN_HEADSHOT_SPORT[sport] ?? sport.toLowerCase();
+    const photoUrl = athlete.headshot?.href
+        ?? `https://a.espncdn.com/i/headshots/${headshotSport}/players/full/${id}.png`;
+    const pos = athlete.position as { abbreviation?: string; displayName?: string } | undefined;
 
     return {
-        id: String(d.id ?? ''),
-        fullName: String(d.fullName ?? ''),
-        shortName: String(d.shortName ?? d.fullName ?? ''),
-        firstName: String(d.firstName ?? ''),
-        lastName: String(d.lastName ?? ''),
-        jersey: d.jersey as string | undefined,
-        age: d.age as number | undefined,
-        displayHeight: d.displayHeight as string | undefined,
-        displayWeight: d.displayWeight as string | undefined,
-        position: pos ? { abbreviation: pos.abbreviation, displayName: pos.displayName } : undefined,
-        headshot: headshot ? { href: headshot.href, alt: headshot.alt } : undefined,
-        salary,
-        active: d.active as boolean | undefined,
-        experience: d.experience as { years: number } | undefined,
+        id,
+        fullName: String(athlete.fullName ?? athlete.displayName ?? ''),
+        shortName: String(athlete.shortName ?? athlete.fullName ?? ''),
+        firstName: String(athlete.firstName ?? ''),
+        lastName: String(athlete.lastName ?? ''),
+        jersey: athlete.jersey as string | undefined,
+        age: athlete.age as number | undefined,
+        displayHeight: athlete.displayHeight as string | undefined,
+        displayWeight: athlete.displayWeight as string | undefined,
+        position: pos ? { abbreviation: pos.abbreviation ?? '', displayName: pos.displayName ?? '' } : undefined,
+        headshot: athlete.headshot ? { href: athlete.headshot.href, alt: athlete.headshot.alt ?? '' } : undefined,
+        salary: undefined, // salary not available in site.api roster
+        active: athlete.active !== false,
+        experience: athlete.experience ? { years: Number(athlete.experience.years ?? 0) } : undefined,
         photoUrl,
-        salaryFormatted: formatSalary(salary),
-        collegeName: 'N/A',
+        salaryFormatted: 'N/A',
+        collegeName: athlete.college?.name ?? 'N/A',
     };
+};
+
+// ─── Resolve team ID from team name ──────────────────────────────────────────
+const resolveTeamId = (teamName: string, sport: string): number | null => {
+    const teamIds = SPORT_TEAM_IDS[sport];
+    if (!teamIds) return null;
+
+    // Exact match
+    if (teamIds[teamName]) return teamIds[teamName];
+
+    // Case-insensitive partial match
+    const lower = teamName.toLowerCase();
+    const key = Object.keys(teamIds).find(k =>
+        lower.includes(k.toLowerCase()) || k.toLowerCase().includes(lower.split(' ').pop() ?? '')
+    );
+    return key ? teamIds[key] : null;
+};
+
+// ─── PRIMARY: site.api ESPN roster (CORS-friendly) ────────────────────────────
+const fetchRosterViaSiteAPI = async (teamId: number, sport: string): Promise<ESPNRosterAthlete[]> => {
+    const urlTemplate = ESPN_SITE_ROSTER[sport];
+    if (!urlTemplate) return [];
+
+    const url = urlTemplate.replace('{id}', String(teamId));
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`ESPN site API ${res.status}`);
+    const data = await res.json();
+
+    // site.api returns { athletes: [...] } where each entry has { position, items: [...athletes] }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allAthletes: Record<string, any>[] = [];
+
+    if (Array.isArray(data.athletes)) {
+        // Format: [{ position: "...", items: [athlete, ...] }]
+        for (const group of data.athletes) {
+            if (Array.isArray(group.items)) {
+                for (const athlete of group.items) {
+                    if (athlete.id) allAthletes.push(athlete);
+                }
+            } else if (group.id) {
+                // Direct athlete object
+                allAthletes.push(group);
+            }
+        }
+    }
+
+    return allAthletes.map(a => parseAthleteFromRoster(a, sport));
 };
 
 // ─── Generic multi-sport roster fetch ────────────────────────────────────────
 
 export const fetchESPNRosterBySport = async (teamName: string, sport: string): Promise<ESPNRosterAthlete[]> => {
-    const config = ESPN_SPORT_CONFIG[sport];
-    const teamIds = SPORT_TEAM_IDS[sport];
-    if (!config || !teamIds) return [];
-
-    // Find team ID — exact match first, then partial/last-word match
-    let teamId = teamIds[teamName];
+    const teamId = resolveTeamId(teamName, sport);
     if (!teamId) {
-        const lastWord = (teamName.toLowerCase().split(' ').pop() ?? '');
-        const key = Object.keys(teamIds).find(k =>
-            teamName.toLowerCase().includes(k.toLowerCase()) ||
-            k.toLowerCase().includes(lastWord)
-        );
-        if (key) teamId = teamIds[key];
+        console.warn(`No team ID found for "${teamName}" in ${sport}`);
+        return [];
     }
-    if (!teamId) return [];
-
-    const rosterUrl = `https://sports.core.api.espn.com/v2/sports/${config.sport}/leagues/${config.league}/seasons/${config.season}/teams/${teamId}/athletes?limit=60`;
 
     try {
-        const rosterRes = await fetch(rosterUrl);
-        if (!rosterRes.ok) throw new Error('Fetch failed');
-        const rosterData = await rosterRes.json();
-
-        const refs: string[] = (rosterData.items || []).map((item: { $ref: string }) => item.$ref);
-        const limit = sport === 'NFL' ? 30 : 25;
-
-        const details = await Promise.allSettled(
-            refs.slice(0, limit).map(ref => fetch(ref).then(r => r.json()))
-        );
-
-        return details
-            .filter(r => r.status === 'fulfilled')
-            .map(r => parseAthleteDetail((r as PromiseFulfilledResult<Record<string, unknown>>).value, sport));
+        const players = await fetchRosterViaSiteAPI(teamId, sport);
+        if (players.length > 0) return players;
+        throw new Error('Empty roster from site API');
     } catch (err) {
         console.warn(`ESPN ${sport} roster fetch failed for ${teamName}:`, err);
         return [];
     }
 };
 
-// Backward-compat: used by LiveRoster component
+// Backward-compat: used by LiveRoster component (NBA only)
 export const fetchESPNTeamRoster = async (teamName: string): Promise<ESPNRosterAthlete[]> => {
     return fetchESPNRosterBySport(teamName, 'NBA');
 };
 
-// ─── All active NBA athletes (used by discovery/search) ──────────────────────
-
-export const fetchAllNBAAthetes = async (limit = 100): Promise<ESPNRosterAthlete[]> => {
+// ─── All active NBA athletes via teams loop ───────────────────────────────────
+// (Used by discovery/search — fetches top teams)
+export const fetchAllNBAAthetes = async (_limit = 100): Promise<ESPNRosterAthlete[]> => {
+    // Fetch from first 5 NBA teams as a representative sample
+    const sampleTeamIds = [1, 2, 13, 14, 15]; // Hawks, Celtics, Lakers, Heat, Bucks
     try {
-        const res = await fetch(`${ESPN_NBA_BASE}/athletes?limit=${limit}&active=true`);
-        if (!res.ok) throw new Error('Failed to fetch athletes list');
-        const data = await res.json();
-        const refs: string[] = (data.items || []).map((item: { $ref: string }) => item.$ref);
-        const details = await Promise.allSettled(
-            refs.slice(0, limit).map(ref => fetch(ref.replace('http://', 'https://')).then(r => r.json()))
+        const results = await Promise.allSettled(
+            sampleTeamIds.map(id => fetchRosterViaSiteAPI(id, 'NBA'))
         );
-        return details
+        return results
             .filter(r => r.status === 'fulfilled')
-            .map(r => parseAthleteDetail((r as PromiseFulfilledResult<Record<string, unknown>>).value, 'NBA'));
+            .flatMap(r => (r as PromiseFulfilledResult<ESPNRosterAthlete[]>).value)
+            .slice(0, _limit);
     } catch (err) {
         console.error('ESPN athletes fetch failed:', err);
         return [];
