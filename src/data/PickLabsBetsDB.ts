@@ -74,7 +74,7 @@ export function logBet(email: string, betPick: BetPick): BetTracker {
     const newBet: BetTracker = {
         id: crypto.randomUUID(),
         userEmail: email,
-        gameType: betPick.type === 'Prop' ? 'Player Prop' : betPick.type === 'Value' ? 'Value Pick' : betPick.type,
+        gameType: betPick.type === 'Prop' ? 'Player Prop' : (betPick.type as any) === 'Value' ? 'Value Pick' : betPick.type,
         propType: betPick.team,
         matchup: betPick.matchupStr,
         wager: betPick.stake,

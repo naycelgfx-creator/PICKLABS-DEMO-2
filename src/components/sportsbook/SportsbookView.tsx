@@ -218,8 +218,8 @@ interface TeamOddsCardProps {
 
 const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport }) => {
     const pred = useMemo(() => generateAIPrediction(
-        game.homeTeam.record, game.awayTeam.record, 'NBA', [], []
-    ), [game.homeTeam.record, game.awayTeam.record]);
+        game.homeTeam.record, game.awayTeam.record, sport, [], []
+    ), [game.homeTeam.record, game.awayTeam.record, sport]);
 
     const isFinal = game.status === 'post';
     const isLive = game.status === 'in';
