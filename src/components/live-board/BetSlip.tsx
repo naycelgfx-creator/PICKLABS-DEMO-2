@@ -76,12 +76,12 @@ export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip }) => {
 
     return (
         <aside id="bet-slip-sidebar" className="col-span-12 xl:col-span-3">
-            <div className="xl:sticky xl:top-[140px] terminal-panel border-accent-purple/30 bg-accent-purple/5">
+            <div className="xl:sticky xl:top-[140px] terminal-panel bg-neutral-900/50 overflow-hidden">
 
                 {/* ── Header ── */}
-                <div className="p-4 border-b border-border-muted bg-white dark:bg-neutral-900/80 flex items-center justify-between">
+                <div className="p-4 border-b border-border-muted bg-neutral-900 flex items-center justify-between">
                     <h3 className="text-xs font-black text-text-main uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span className="material-symbols-outlined text-accent-purple text-sm">shopping_cart</span>
+                        <span className="material-symbols-outlined text-primary text-sm">receipt_long</span>
                         Bet Slip
                     </h3>
                     <div className="flex items-center gap-3">
@@ -138,12 +138,12 @@ export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip }) => {
                         <>
                             {/* Apply to all */}
                             {betSlip.length > 1 && (
-                                <div className="flex justify-between items-center bg-white dark:bg-neutral-900/40 border border-border-muted p-2.5 rounded-lg">
+                                <div className="flex justify-between items-center bg-white dark:bg-neutral-900/40 border border-border-muted p-2.5 rounded-sm">
                                     <span className="text-[9px] text-text-muted font-bold uppercase tracking-widest">Apply All</span>
                                     <div className="relative">
                                         <span className="absolute left-2 top-1.5 text-[10px] text-text-muted">$</span>
                                         <input
-                                            className="bg-neutral-800 border border-border-muted text-[10px] font-bold text-text-main rounded w-20 py-1 pl-5 pr-2 focus:ring-1 focus:ring-primary outline-none"
+                                            className="bg-neutral-800 border border-border-muted text-[10px] font-bold text-text-main rounded-sm w-20 py-1 pl-5 pr-2 focus:ring-1 focus:ring-primary outline-none"
                                             type="text"
                                             placeholder="Total"
                                             onChange={(e) => handleApplyToAll(e.target.value)}
@@ -154,7 +154,7 @@ export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip }) => {
 
                             {/* Individual picks */}
                             {betSlip.map((bet) => (
-                                <div key={bet.id} className="bg-white dark:bg-neutral-900/40 border border-border-muted p-3 rounded-lg space-y-2 relative group">
+                                <div key={bet.id} className="bg-white dark:bg-neutral-900/40 border border-border-muted p-3 rounded-sm space-y-2 relative group">
                                     {/* Remove */}
                                     <button
                                         onClick={() => handleRemove(bet.id)}
@@ -180,7 +180,7 @@ export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip }) => {
                                         <div className="relative">
                                             <span className="absolute left-2 top-1.5 text-[10px] text-text-muted">$</span>
                                             <input
-                                                className="bg-neutral-800 border border-border-muted text-[10px] font-bold text-text-main rounded w-20 py-1 pl-5 pr-2 focus:ring-1 focus:ring-primary outline-none"
+                                                className="bg-neutral-800 border border-border-muted text-[10px] font-bold text-text-main rounded-sm w-20 py-1 pl-5 pr-2 focus:ring-1 focus:ring-primary outline-none"
                                                 type="text"
                                                 placeholder="Stake"
                                                 value={bet.stake || ''}

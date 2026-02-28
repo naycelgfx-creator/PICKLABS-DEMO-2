@@ -7,26 +7,27 @@
 @layer base {
 
   /* ── Dark Theme (default) — true-black base, cold blue-tinted neutrals ── */
+  /* ── Dark Theme — Deep Neutral Grey with Vibrant Lime Green Accent ── */
   :root,
   html.dark {
-    --bg-dark: 4 5 10;
-    /* TRUE black like the screenshot */
-    --neutral-800: 13 15 26;
-    /* cold dark card surface */
-    --neutral-900: 8 9 18;
-    /* slightly darker card */
-    --border-muted: 28 32 55;
-    /* subtle cold border */
-    --text-main: 236 242 255;
-    /* cold white */
-    --text-muted: 130 145 180;
-    /* faded blue-grey */
-    --primary: 12 168 16;
-    /* vivid PickLabs green — matches screenshot exactly */
+    --bg-dark: 15 15 15;
+    /* Main background #0f0f0f */
+    --neutral-800: 30 30 30;
+    /* Lighter hover/surface #1e1e1e */
+    --neutral-900: 22 22 22;
+    /* Card backgrounds #161616 */
+    --border-muted: 44 44 44;
+    /* Borders #2c2c2c */
+    --text-main: 230 230 230;
+    /* Off-white text */
+    --text-muted: 140 140 140;
+    /* Muted text */
+    --primary: 163 255 0;
+    /* Vibrant lime green #a3ff00 */
     --accent-purple: 155 79 245;
     --accent-blue: 56 128 250;
-    --accent-green: 12 168 16;
-    --glass-bg: 13 15 26;
+    --accent-green: 163 255 0;
+    --glass-bg: 15 15 15;
   }
 
   /* ── Light Theme ── */
@@ -260,7 +261,7 @@
 
   /* ── Terminal panel: flatter, more surgical ── */
   .terminal-panel {
-    @apply bg-neutral-900/50 border border-border-muted rounded-xl backdrop-blur-sm transition-all;
+    @apply bg-neutral-900/50 border border-border-muted rounded-sm backdrop-blur-sm transition-all;
     border-color: rgba(28, 32, 55, 0.8);
   }
 
@@ -269,7 +270,7 @@
   }
 
   .pricing-card {
-    @apply relative overflow-hidden bg-neutral-900/80 border border-border-muted rounded-2xl p-8 flex flex-col transition-all duration-300;
+    @apply relative overflow-hidden bg-neutral-900/80 border border-border-muted rounded-md p-8 flex flex-col transition-all duration-300;
   }
 
   .pricing-card.featured {
@@ -342,14 +343,13 @@
     @apply w-5 h-5 rounded flex items-center justify-center text-[9px] font-black bg-red-500/15 text-red-500 border border-red-500/30;
   }
 
-  /* Sport chip — more compact + pill shape */
+  /* Sport chip — flat rectangular tab */
   .sport-chip {
-    @apply flex-shrink-0 px-4 py-1.5 rounded-full border border-border-muted bg-neutral-900 text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:border-primary/50 hover:text-primary transition-all cursor-pointer;
+    @apply flex-shrink-0 px-4 py-1.5 rounded-sm border border-border-muted bg-neutral-900 text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:border-primary/50 hover:text-primary transition-all cursor-pointer;
   }
 
   .sport-chip.active {
     @apply border-primary/60 bg-primary/10 text-primary;
-    box-shadow: 0 0 12px rgba(17, 248, 183, 0.12);
   }
 
   .odd-box {

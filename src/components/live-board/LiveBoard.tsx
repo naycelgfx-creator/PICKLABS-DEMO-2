@@ -253,7 +253,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                             <button
                                 onClick={() => setShowPublicBets(p => !p)}
                                 title={showPublicBets ? 'Hide Public Bets' : 'Show Public Bets'}
-                                className={`flex items-center gap-1.5 px-2.5 py-2 rounded border text-[10px] font-black uppercase tracking-wider transition-all ${showPublicBets
+                                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-sm border text-[10px] font-black uppercase tracking-wider transition-all ${showPublicBets
                                     ? 'bg-primary/10 border-primary/40 text-primary'
                                     : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
                                     }`}
@@ -265,7 +265,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                             <button
                                 onClick={() => setShowBetSlip(p => !p)}
                                 title={showBetSlip ? 'Hide Bet Slip' : 'Show Bet Slip'}
-                                className={`flex items-center gap-1.5 px-2.5 py-2 rounded border text-[10px] font-black uppercase tracking-wider transition-all ${showBetSlip
+                                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-sm border text-[10px] font-black uppercase tracking-wider transition-all ${showBetSlip
                                     ? 'bg-accent-purple/10 border-accent-purple/40 text-accent-purple'
                                     : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
                                     }`}
@@ -282,7 +282,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                             <button
                                 onClick={() => setLayoutMode('list')}
                                 title="List View"
-                                className={`p-2 rounded border transition-all ${layoutMode === 'list'
+                                className={`p-2 rounded-sm border transition-all ${layoutMode === 'list'
                                     ? 'bg-primary/10 border-primary/40 text-primary'
                                     : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
                                     }`}
@@ -293,7 +293,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                             <button
                                 onClick={() => setLayoutMode('grid')}
                                 title="Grid View"
-                                className={`p-2 rounded border transition-all ${layoutMode === 'grid'
+                                className={`p-2 rounded-sm border transition-all ${layoutMode === 'grid'
                                     ? 'bg-primary/10 border-primary/40 text-primary'
                                     : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
                                     }`}
@@ -304,11 +304,11 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                     </div>
 
                     {/* Tab Toggle */}
-                    <div className="flex gap-1 bg-neutral-900 border border-neutral-800 rounded-lg p-1 w-fit">
+                    <div className="flex gap-1 bg-neutral-900 border border-neutral-800 rounded p-1 w-fit">
                         <button
                             onClick={() => setActiveTab('espn')}
                             disabled={!hasESPN}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'espn' && hasESPN
+                            className={`flex items-center gap-2 px-4 py-2 rounded-sm text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'espn' && hasESPN
                                 ? 'bg-primary text-black shadow'
                                 : 'text-slate-500 hover:text-text-main disabled:opacity-30 disabled:cursor-not-allowed'
                                 }`}
@@ -318,7 +318,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                         </button>
                         <button
                             onClick={() => setActiveTab('simulated')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'simulated'
+                            className={`flex items-center gap-2 px-4 py-2 rounded-sm text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'simulated'
                                 ? 'bg-neutral-700 text-white shadow'
                                 : 'text-slate-500 hover:text-text-main'
                                 }`}
