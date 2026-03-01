@@ -141,57 +141,82 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                     const cleanTeamName = bet.team.replace(/ (ML|Spread|PK|\+|-).*$/i, '').trim();
 
                     return (
-                        <div key={bet.id} className="p-4 border-b border-neutral-800/40 hover:bg-white/[0.02] transition-colors relative flex gap-3">
-                            {/* Avatar */}
-                            {logoUrl.includes('ui-avatars') ? (
-                                <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-neutral-700 flex items-center justify-center shrink-0">
-                                    <span className="text-white text-xs font-bold">{cleanTeamName.substring(0, 2).toUpperCase()}</span>
-                                </div>
-                            ) : (
-                                <img src={logoUrl} alt={cleanTeamName} className="w-10 h-10 rounded-full bg-neutral-900 border-2 border-neutral-700 object-cover shrink-0" onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanTeamName)}&background=1d1d1d&color=fff&rounded=true&bold=true`; }} />
-                            )}
+                        <div key={bet.id} className="relative flex px-4 pt-4 hover:bg-white/[0.02] transition-colors group">
+                            {/* Timeline Track & Node */}
+                            <div className="flex flex-col items-center mr-3 relative z-10 w-4 pb-2">
+                                {/* Top connecting line (hide on first item) */}
+                                {i !== 0 && (
+                                    <div className="absolute top-0 bottom-[calc(100%-1rem)] w-px bg-neutral-800" />
+                                )}
+                                {/* Bottom connecting line (hide on last item) */}
+                                {i !== ticket.length - 1 && (
+                                    <div className="absolute top-5 -bottom-4 w-px bg-neutral-800" />
+                                )}
 
-                            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                {/* Title / Odds Row */}
-                                <div className="flex justify-between items-start mb-0.5">
-                                    <div className="flex flex-col min-w-0 pr-2">
-                                        <span className="text-sm font-black text-white truncate">{bet.team}</span>
-                                        <span className="text-[10px] text-slate-400 font-medium truncate uppercase tracking-wider mt-0.5">{bet.type}</span>
-                                    </div>
+                                {/* Status Icon Node */}
+                                <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center bg-[#111111] border relative z-20 ${isHitting ? 'border-[#A3FF00]' : 'border-neutral-700'}`}>
                                     {isHitting ? (
-                                        <div className="flex flex-col items-center shrink-0">
-                                            <span className="material-symbols-outlined text-[#A3FF00] text-sm font-bold">check_circle</span>
-                                            <span className="text-[10px] text-slate-400 font-black mt-0.5">{bet.odds}</span>
-                                        </div>
+                                        <span className="material-symbols-outlined text-[#A3FF00] text-[10px] font-bold">check</span>
                                     ) : (
-                                        <div className="flex flex-col items-center shrink-0">
-                                            <span className="material-symbols-outlined text-amber-500 text-sm font-bold">pending</span>
-                                            <span className="text-[10px] text-slate-400 font-black mt-0.5">{bet.odds}</span>
-                                        </div>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />
                                     )}
                                 </div>
-                                <span className="text-[11px] text-slate-500 mb-2 truncate font-medium">{bet.matchupStr}</span>
+                            </div>
 
-                                {/* Progress Row */}
-                                <div className="flex justify-between items-center mb-1.5 mt-0.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-[9px] font-bold text-slate-500 tracking-widest uppercase">Progress</span>
-                                        {targetNum !== null && (
-                                            <span className="text-[9px] font-bold text-white tracking-wider bg-neutral-800/80 px-1.5 py-0.5 rounded border border-neutral-700/50">
-                                                {currentNum} / <span className="text-slate-400">{targetNum}</span>
-                                            </span>
+                            {/* Main Content */}
+                            <div className="flex-1 min-w-0 pb-4 border-b border-neutral-800/60 group-last:border-b-0">
+                                {/* Logo & Core Info Row */}
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2 min-w-0 pr-2">
+                                        {/* Avatar */}
+                                        {logoUrl.includes('ui-avatars') ? (
+                                            <div className="w-6 h-6 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
+                                                <span className="text-white text-[8px] font-bold">{cleanTeamName.substring(0, 2).toUpperCase()}</span>
+                                            </div>
+                                        ) : (
+                                            <img src={logoUrl} alt={cleanTeamName} className="w-6 h-6 rounded-full bg-neutral-900 border border-neutral-800 object-cover shrink-0" onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanTeamName)}&background=1d1d1d&color=fff&rounded=true&bold=true`; }} />
                                         )}
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-sm font-bold text-white truncate">{bet.team}</span>
+                                            <span className="text-[9px] text-slate-500 font-bold truncate uppercase tracking-widest mt-px">{bet.type}</span>
+                                        </div>
                                     </div>
-                                    {targetNum === null && (
-                                        <span className={`text-[10px] font-black`} style={{ color: barColor }}>{pickProgress}%</span>
-                                    )}
+                                    {/* Odds */}
+                                    <span className="text-sm text-white font-black shrink-0">{bet.odds}</span>
                                 </div>
-                                <div className="h-1 bg-neutral-800 rounded-full w-full overflow-hidden relative">
-                                    <div
-                                        className="h-full rounded-full transition-all duration-500 ease-out"
-                                        style={{ width: `${pickProgress}%`, backgroundColor: barColor }}
-                                    />
-                                </div>
+
+                                {/* Progress Bar (Only if numeric) */}
+                                {targetNum !== null ? (
+                                    <div className="mt-4 mb-3 w-full relative px-2">
+                                        <div className="h-0.5 bg-neutral-800 w-full relative flex items-center rounded-full">
+                                            <div className="h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${pickProgress}%`, backgroundColor: barColor }} />
+                                            {/* Badge positioned absolutely along the bar */}
+                                            <div className="absolute w-5 h-5 flex items-center justify-center bg-[#111111] border border-neutral-700 text-[9px] font-bold text-white rounded-full transition-all duration-500 ease-out z-10 shadow-sm" style={{ left: `calc(${pickProgress}% - 10px)` }}>
+                                                {currentNum}
+                                            </div>
+                                        </div>
+                                        {/* Target value text right under the line */}
+                                        <div className="absolute right-2 top-2 text-[10px] font-bold text-slate-400">
+                                            {targetNum}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    /* MoneyLine Box Score Mockup */
+                                    <div className="flex flex-col text-[10px] text-slate-400 font-mono mt-3 w-full pl-8 pr-1">
+                                        <div className="flex justify-between items-center py-1">
+                                            <span className="truncate pr-2">Opponent</span>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span>21</span><span>25</span><span>30</span><span>22</span><span className="text-white font-bold ml-2">98</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center py-1">
+                                            <span className="truncate pr-2">{cleanTeamName}</span>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span>25</span><span>22</span><span>33</span><span>27</span><span className="text-white font-bold ml-2">107</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )
