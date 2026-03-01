@@ -61,27 +61,48 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
     if (!ticket || ticket.length === 0) return null;
 
     const totalLegs = ticket.length;
-    // Mock win calculations
-    const winningLegs = Math.max(0, Math.floor(totalLegs / 2));
+
+    // Create a stable random seed from the first ticket leg to mock realistic states
+    const mockSeed = Array.from(ticket[0]?.id || ticketId).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hasLostLeg = mockSeed % 4 === 0; // 25% chance this simulated ticket hit a loss
+    const isTicketFinished = mockSeed % 3 === 0; // 33% chance all games are finished
+
+    let ticketStatus = 'PENDING';
+    if (hasLostLeg) {
+        ticketStatus = 'LOST';
+    } else if (isTicketFinished) {
+        ticketStatus = 'WON';
+    }
+
+    let winningLegs = 0;
+    if (ticketStatus === 'WON') {
+        winningLegs = totalLegs;
+    } else if (ticketStatus === 'LOST') {
+        winningLegs = Math.max(0, totalLegs - 1); // Mock: last leg lost or is losing
+    } else {
+        winningLegs = Math.floor(totalLegs / 2); // Mock: some legs hit, rest pending
+    }
+
     const hitPercent = totalLegs > 0 ? Math.round((winningLegs / totalLegs) * 100) : 0;
     const isParlay = totalLegs > 1;
     const combinedOddsStr = isParlay ? calculateParlayOdds(ticket) : (ticket[0]?.odds || 'N/A');
     const sumStakes = ticket.reduce((acc, b) => acc + (b.stake || 0), 0);
     const riskAmount = isParlay ? (sumStakes > 0 ? sumStakes : 50) : (sumStakes || 10);
     const payoutAmount = riskAmount + toWin(riskAmount, combinedOddsStr);
-    const ticketStatus = hitPercent >= 50 ? 'WON' : 'LOST';
 
     return (
         <div className="w-full shrink-0 bg-[#0c0c0e] border border-neutral-700 rounded-none shadow-2xl font-sans mb-2 flex flex-col transition-all duration-300 relative group mt-3">
 
-            {/* Floating Status Badge — centered horizontally on the top border, near the right corner */}
-            <div className="absolute top-0 right-4 -translate-y-1/2 z-20 flex bg-[#0a0a0c] p-1 rounded-full items-center justify-center pointer-events-none">
-                <div
-                    className={`px-3 py-1 text-[9px] font-black uppercase tracking-[0.15em] rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] ${ticketStatus === 'WON' ? 'bg-[#A3FF00] text-black' : 'bg-red-500 text-white'}`}
-                >
-                    {ticketStatus}
+            {/* Floating Status Badge — Only display if the ticket is strictly WON or strictly LOST */}
+            {ticketStatus !== 'PENDING' && (
+                <div className="absolute top-0 right-4 -translate-y-1/2 z-20 flex bg-[#0a0a0c] p-1 rounded-full items-center justify-center pointer-events-none">
+                    <div
+                        className={`px-3 py-1 text-[9px] font-black uppercase tracking-[0.15em] rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] ${ticketStatus === 'WON' ? 'bg-[#A3FF00] text-black' : 'bg-red-500 text-white'}`}
+                    >
+                        {ticketStatus}
+                    </div>
                 </div>
-            </div>
+            )}
             {/* Remove Button */}
             {onRemove && (
                 <button
@@ -129,8 +150,12 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
             <div className="flex-1 overflow-y-auto max-h-[200px] custom-[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-neutral-800 bg-[#0a0a0c]">
                 {ticket.map((bet, i) => {
                     const isHitting = i < winningLegs;
-                    // Provide a nice target mock: 
-                    const pickProgress = isHitting ? 100 : 30 + (i * 25) % 65;
+                    // Provide a nice target mock depending on overall status
+                    let pickProgress = 0;
+                    if (ticketStatus === 'WON') pickProgress = 100;
+                    else if (ticketStatus === 'LOST' && i >= winningLegs) pickProgress = 20; // It lost heavily
+                    else pickProgress = isHitting ? 100 : 30 + (i * 25) % 65; // Pending or some progression
+
                     const logoUrl = getLogoForPick(bet);
 
                     // Extract the numerical target from either bet.type or bet.team
@@ -139,7 +164,7 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
 
                     let currentNum = 0;
                     if (targetNum !== null) {
-                        currentNum = isHitting ? targetNum : parseFloat(((targetNum * pickProgress) / 100).toFixed(1));
+                        currentNum = isHitting || ticketStatus === 'WON' ? targetNum : parseFloat(((targetNum * pickProgress) / 100).toFixed(1));
                         if (currentNum > targetNum) currentNum = targetNum;
                     }
 
@@ -176,20 +201,15 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                         bottomText = bet.type.toUpperCase();
                     }
 
-                    // Status Logic (0: Hit, 1: Miss, 2: Pending)
-                    // For mockup, let's say the very last ticket leg that isn't hitting is 'miss' and rest are 'pending'.
-                    // Actually, if hitPercent is calculation based on winningLegs, we can mock:
-                    // i < winningLegs -> HIT
-                    // i === winningLegs -> MISS (red X)
-                    // i > winningLegs -> PENDING (empty circle)
+                    // Status Logic Mock
                     let statusNode = null;
-                    if (i < winningLegs) {
+                    if (ticketStatus === 'WON' || isHitting) {
                         statusNode = (
                             <div className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center bg-[#111111] border border-[#A3FF00] relative z-20">
                                 <span className="material-symbols-outlined text-[#A3FF00] text-[10px] font-bold">check</span>
                             </div>
                         );
-                    } else if (i === winningLegs && hitPercent < 100) {
+                    } else if (ticketStatus === 'LOST' && i >= winningLegs) {
                         statusNode = (
                             <div className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center bg-[#111111] border border-red-500 relative z-20">
                                 <span className="material-symbols-outlined text-red-500 text-[10px] font-bold">close</span>
@@ -267,18 +287,49 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                                     if (matchParts.length === 2) {
                                         opponentName = matchParts[0].trim() === cleanTeamName ? matchParts[1].trim() : matchParts[0].trim();
                                     }
+
+                                    // Generate a deterministic random score based on the bet ID/index
+                                    const betSeed = Array.from(bet.id || "").reduce((acc, char) => acc + char.charCodeAt(0), i * 123);
+
+                                    // Generate 4 quarters
+                                    const q1A = 15 + (betSeed % 12);
+                                    const q2A = 15 + ((betSeed * 2) % 15);
+                                    const q3A = 15 + ((betSeed * 3) % 14);
+                                    const q4A = 15 + ((betSeed * 5) % 18);
+                                    const totalA = q1A + q2A + q3A + q4A;
+
+                                    const q1B = 15 + ((betSeed * 7) % 13);
+                                    const q2B = 15 + ((betSeed * 11) % 16);
+                                    const q3B = 15 + ((betSeed * 13) % 12);
+                                    const q4B = 15 + ((betSeed * 17) % 15);
+                                    const totalB = q1B + q2B + q3B + q4B;
+
+                                    // Make sure the chosen team matches the state if the game is finished
+                                    let isTeamSelectedWinning = isHitting || ticketStatus === 'WON';
+                                    if (ticketStatus === 'LOST' && i >= winningLegs) isTeamSelectedWinning = false;
+
+                                    // Adjust totals if we need to force a win/loss state for the mockup
+                                    let finalScoreOpp = totalA;
+                                    let finalScoreTeam = totalB;
+
+                                    if (isTeamSelectedWinning && finalScoreTeam <= finalScoreOpp) {
+                                        finalScoreTeam = finalScoreOpp + 1 + (betSeed % 8);
+                                    } else if (!isTeamSelectedWinning && finalScoreTeam >= finalScoreOpp) {
+                                        finalScoreOpp = finalScoreTeam + 1 + (betSeed % 8);
+                                    }
+
                                     return (
                                         <div className="flex flex-col text-[10px] text-slate-400 font-mono mt-3 w-full pl-8 pr-1">
                                             <div className="flex justify-between items-center py-1">
                                                 <span className="truncate pr-2">{opponentName}</span>
                                                 <div className="flex items-center gap-2 shrink-0">
-                                                    <span>21</span><span>25</span><span>30</span><span>22</span><span className="text-white font-bold ml-2">98</span>
+                                                    <span>{q1A}</span><span>{q2A}</span><span>{q3A}</span><span>{q4A}</span><span className="text-white font-bold ml-2">{finalScoreOpp}</span>
                                                 </div>
                                             </div>
                                             <div className="flex justify-between items-center py-1">
                                                 <span className="truncate pr-2">{cleanTeamName}</span>
                                                 <div className="flex items-center gap-2 shrink-0">
-                                                    <span>25</span><span>22</span><span>33</span><span>27</span><span className="text-white font-bold ml-2">107</span>
+                                                    <span>{q1B}</span><span>{q2B}</span><span>{q3B}</span><span>{q4B}</span><span className={`font-bold ml-2 ${isTeamSelectedWinning ? 'text-[#A3FF00]' : 'text-white'}`}>{finalScoreTeam}</span>
                                                 </div>
                                             </div>
                                         </div>
