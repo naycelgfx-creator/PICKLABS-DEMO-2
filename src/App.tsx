@@ -88,12 +88,18 @@ function App() {
   const handeAddBet = (bet: Omit<BetPick, 'id'>) => {
     setBetSlip(prev => {
       const existingIdx = prev.findIndex(
-        b => b.gameId === bet.gameId && b.type === bet.type
+        b => b.gameId === bet.gameId && b.type === bet.type && b.team === bet.team
       );
-      // Toggle: if already in slip → remove; otherwise → add
+      // Toggle: if already in slip → remove
       if (existingIdx !== -1) {
         return prev.filter((_, i) => i !== existingIdx);
       }
+      // If adding a new bet, enforce the 20 pick limit
+      if (prev.length >= 20) {
+        alert("You cannot add more than 20 picks to your bet slip.");
+        return prev;
+      }
+      // otherwise → add
       return [...prev, { ...bet, id: crypto.randomUUID() }];
     });
   };
