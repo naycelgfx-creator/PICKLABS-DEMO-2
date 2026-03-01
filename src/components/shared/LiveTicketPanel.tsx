@@ -251,22 +251,29 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                                 )}
 
                                 {/* MoneyLine Box Score Mockup */}
-                                {isMoneyline && (
-                                    <div className="flex flex-col text-[10px] text-slate-400 font-mono mt-3 w-full pl-8 pr-1">
-                                        <div className="flex justify-between items-center py-1">
-                                            <span className="truncate pr-2">Opponent</span>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <span>21</span><span>25</span><span>30</span><span>22</span><span className="text-white font-bold ml-2">98</span>
+                                {isMoneyline && (() => {
+                                    const matchParts = bet.matchupStr ? bet.matchupStr.split(' vs ') : [];
+                                    let opponentName = 'Opponent';
+                                    if (matchParts.length === 2) {
+                                        opponentName = matchParts[0].trim() === cleanTeamName ? matchParts[1].trim() : matchParts[0].trim();
+                                    }
+                                    return (
+                                        <div className="flex flex-col text-[10px] text-slate-400 font-mono mt-3 w-full pl-8 pr-1">
+                                            <div className="flex justify-between items-center py-1">
+                                                <span className="truncate pr-2">{opponentName}</span>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span>21</span><span>25</span><span>30</span><span>22</span><span className="text-white font-bold ml-2">98</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between items-center py-1">
+                                                <span className="truncate pr-2">{cleanTeamName}</span>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span>25</span><span>22</span><span>33</span><span>27</span><span className="text-white font-bold ml-2">107</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex justify-between items-center py-1">
-                                            <span className="truncate pr-2">{cleanTeamName}</span>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <span>25</span><span>22</span><span>33</span><span>27</span><span className="text-white font-bold ml-2">107</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+                                    );
+                                })()}
                             </div>
                         </div>
                     )
