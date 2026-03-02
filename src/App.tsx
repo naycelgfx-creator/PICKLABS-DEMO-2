@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { SimulationOverlay } from './components/ui/SimulationOverlay';
@@ -56,8 +56,24 @@ import { PremiumLockView, ViewType } from './components/shared/PremiumLockView';
 // ──────────────────────────────────────────────────────────────────────────────
 
 function App() {
-  const [currentView, setCurrentView] = useState<ViewType>('landing-page');
+  const [currentView, setCurrentView] = useState<ViewType>(() => {
+    if (!getCurrentUser()) return 'landing-page';
+    try {
+      const saved = localStorage.getItem('picklabs_last_view') as ViewType;
+      // Do not restore marketing views if already logged in
+      if (saved && saved !== 'login-page' && saved !== 'landing-page') {
+        return saved;
+      }
+    } catch { /* ignore */ }
+    return 'live-board';
+  });
+
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+
+  // Persist current view changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('picklabs_last_view', currentView);
+  }, [currentView]);
   const [betSlip, setBetSlip] = useState<BetPick[]>([]);
   const [bankroll, setBankroll] = useState<number>(1000);
   const [ticketHistory, setTicketHistory] = useState<ResolvedTicket[]>([]);

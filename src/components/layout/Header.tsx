@@ -3,8 +3,8 @@ import { useRookieMode } from '../../contexts/RookieModeContext';
 import { useLiveBets } from '../../contexts/LiveBetsContext';
 import { useSportsbooks, SPORTSBOOKS } from '../../contexts/SportsbookContext';
 import { PulsingBeacon } from '../ui/PulsingBeacon';
-import { ViewType } from '../../App';
-import { getCurrentUser, isAdminEmail } from '../../data/PickLabsAuthDB';
+import { ViewType } from '../shared/PremiumLockView';
+import { getCurrentUser, isAdminEmail, logout } from '../../data/PickLabsAuthDB';
 import { clearAuth } from '../../utils/auth';
 
 interface HeaderProps {
@@ -318,6 +318,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                     <button
                                         onClick={() => {
                                             clearAuth();
+                                            logout();
                                             setCurrentView('login-page');
                                         }}
                                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-left text-red-400 group"
@@ -552,7 +553,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                 <span className="material-symbols-outlined text-sm">bug_report</span>
                                 <span className="text-[11px] font-bold">Report Bug</span>
                             </button>
-                            <button onClick={() => { clearAuth(); setCurrentView('login-page'); }} className="w-full flex items-center gap-2 px-4 py-3 active:bg-red-500/10 text-red-400">
+                            <button onClick={() => { clearAuth(); logout(); setCurrentView('login-page'); }} className="w-full flex items-center gap-2 px-4 py-3 active:bg-red-500/10 text-red-400">
                                 <span className="material-symbols-outlined text-sm">logout</span>
                                 <span className="text-[11px] font-bold">Sign Out</span>
                             </button>
