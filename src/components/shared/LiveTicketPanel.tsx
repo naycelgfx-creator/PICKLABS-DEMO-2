@@ -52,12 +52,19 @@ const getLogoForPick = (bet: BetPick) => {
     return `https://a.espncdn.com/i/teamlogos/nba/500/${abbr}.png`;
 };
 
-const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void; onResolve?: (status: 'WON' | 'LOST', stake: number, payout: number) => void }> = ({ ticket, onRemove, onResolve }) => {
+export const TicketCard: React.FC<{
+    ticket: BetPick[];
+    onRemove?: () => void;
+    onResolve?: (status: 'WON' | 'LOST', stake: number, payout: number) => void;
+    forceStatus?: 'WON' | 'LOST';
+    dateOverride?: string;
+}> = ({ ticket, onRemove, onResolve, forceStatus, dateOverride }) => {
     const ticketId = React.useMemo(() => Math.floor(1000000000 + Math.random() * 9000000000).toString(), []);
     const ticketDate = React.useMemo(() => {
+        if (dateOverride) return dateOverride;
         const d = new Date();
         return `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
-    }, []);
+    }, [dateOverride]);
     const hasSGP = React.useMemo(() => {
         if (!ticket || ticket.length < 2) return false;
         const gameIds = ticket.filter(b => b.gameId).map(b => b.gameId);
@@ -70,14 +77,26 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void; onResolve
     const totalLegs = ticket.length;
 
     const legResults = ticket ? ticket.map((bet, i) => {
-        const isFinished = bet.gameStatusName === 'STATUS_FINAL' || bet.gameStatus === 'post' || bet.gameStatus === 'FINAL';
-        const isLive = bet.gameStatusName === 'STATUS_IN_PROGRESS' || bet.gameStatus === 'in' || bet.gameStatus === 'LIVE' || bet.gameStatus === 'inprogress';
+        const isFinished = forceStatus ? true : (bet.gameStatusName === 'STATUS_FINAL' || bet.gameStatus === 'post' || bet.gameStatus === 'FINAL');
+        const isLive = forceStatus ? false : (bet.gameStatusName === 'STATUS_IN_PROGRESS' || bet.gameStatus === 'in' || bet.gameStatus === 'LIVE' || bet.gameStatus === 'inprogress');
         const isUpcoming = !isFinished && !isLive;
 
         const betSeed = Array.from(bet.id || "").reduce((acc, char) => acc + char.charCodeAt(0), i * 123);
-        // If finished, 75% chance it won (mock evaluation since we lack settlement server)
-        const isWon = isFinished && (betSeed % 4 !== 0);
-        const isLost = isFinished && !isWon;
+
+        let isWon = false;
+        let isLost = false;
+
+        if (forceStatus === 'WON') {
+            isWon = true;
+        } else if (forceStatus === 'LOST') {
+            // If ticket is lost, make the first leg lost, and others random win/lost to simulate
+            if (i === 0) isLost = true;
+            else isWon = betSeed % 2 === 0;
+        } else {
+            // If finished, 75% chance it won (mock evaluation since we lack settlement server)
+            isWon = isFinished && (betSeed % 4 !== 0);
+            isLost = isFinished && !isWon;
+        }
 
         let status = 'PENDING';
         if (isWon) status = 'WON';
@@ -105,7 +124,9 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void; onResolve
     const allFinished = legResults.every(l => l.isFinished);
 
     let ticketStatus = 'PENDING';
-    if (hasLostLeg) {
+    if (forceStatus) {
+        ticketStatus = forceStatus;
+    } else if (hasLostLeg) {
         ticketStatus = 'LOST';
     } else if (allFinished && legResults.length > 0) {
         ticketStatus = 'WON';
@@ -120,7 +141,30 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void; onResolve
     const payoutAmount = riskAmount + toWin(riskAmount, combinedOddsStr);
 
     return (
-        <div className="w-full shrink-0 bg-[#0c0c0e] border border-neutral-700 rounded-none shadow-2xl font-sans mb-2 flex flex-col transition-all duration-300 relative group mt-3">
+        <div className="w-full shrink-0 bg-[#0c0c0e] border border-neutral-700 rounded-none shadow-2xl font-sans mb-2 flex flex-col transition-all duration-300 relative group overflow-hidden mt-3">
+
+            {/* Share Overlay (Appears on Hover) */}
+            <div className="absolute inset-0 bg-black/80 z-30 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-sm">
+                <h4 className="text-white font-black uppercase tracking-widest text-sm mb-4">Share Ticket</h4>
+                <div className="flex gap-4">
+                    {/* Mock Social Buttons */}
+                    <button title="Share on Instagram" className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 flex items-center justify-center text-white hover:scale-110 transition-transform shadow-[0_0_15px_rgba(236,72,153,0.5)]">
+                        <i className="fa-brands fa-instagram text-xl"></i>
+                    </button>
+                    <button title="Share on Facebook" className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-white hover:scale-110 transition-transform shadow-[0_0_15px_rgba(24,119,242,0.5)]">
+                        <i className="fa-brands fa-facebook-f text-xl"></i>
+                    </button>
+                    <button title="Share on Discord" className="w-10 h-10 rounded-full bg-[#5865F2] flex items-center justify-center text-white hover:scale-110 transition-transform shadow-[0_0_15px_rgba(88,101,242,0.5)]">
+                        <i className="fa-brands fa-discord text-xl"></i>
+                    </button>
+                    <button title="Share on Telegram" className="w-10 h-10 rounded-full bg-[#229ED9] flex items-center justify-center text-white hover:scale-110 transition-transform shadow-[0_0_15px_rgba(34,158,217,0.5)]">
+                        <i className="fa-brands fa-telegram text-xl"></i>
+                    </button>
+                    <button title="Share on WhatsApp" className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center text-white hover:scale-110 transition-transform shadow-[0_0_15px_rgba(37,211,102,0.5)]">
+                        <i className="fa-brands fa-whatsapp text-xl"></i>
+                    </button>
+                </div>
+            </div>
 
             {/* Floating Status Badge — Only display if the ticket is strictly WON or strictly LOST */}
             {ticketStatus !== 'PENDING' && (

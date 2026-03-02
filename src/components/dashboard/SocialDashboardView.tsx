@@ -1,126 +1,306 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
-// Mock profiles
+// Enhanced Mock Profile Type
 type UserProfile = {
     id: string;
     nickname: string;
-    avatar: string; // url or generic icon class
+    avatar: string;
+    stateLocation: string;
     earnings: number;
     winPercent: number;
     isFollowing: boolean;
-    recentParlay: string[]; // dummy desc
+    recentParlay: string[];
 };
 
-const initialUsers: UserProfile[] = [
-    { id: 'u1', nickname: 'BetaKing_99', avatar: 'https://i.pravatar.cc/150?u=u1', earnings: 14250, winPercent: 58.4, isFollowing: true, recentParlay: ['LAL ML', 'Over 225.5 Pts'] },
-    { id: 'u2', nickname: 'SharpShooter', avatar: 'https://i.pravatar.cc/150?u=u2', earnings: 104200, winPercent: 64.1, isFollowing: false, recentParlay: ['KC -3.5', 'Mahomes 2+ TDs', 'Kelce Anytime TD'] },
-    { id: 'u3', nickname: 'ParlayPrince', avatar: 'https://i.pravatar.cc/150?u=u3', earnings: 450, winPercent: 12.2, isFollowing: false, recentParlay: ['10-Leg Hail Mary'] },
-    { id: 'u4', nickname: 'ValueHunter', avatar: 'https://i.pravatar.cc/150?u=u4', earnings: 38900, winPercent: 55.8, isFollowing: true, recentParlay: ['BOS ML', 'NYK +4.5'] }
-];
+// Generate 50+ Users
+const states = ['NY', 'NJ', 'PA', 'OH', 'MI', 'IL', 'MA', 'CT', 'CO', 'NV', 'FL', 'MD', 'VA', 'AZ', 'TN', 'NC'];
+const names = ['BetaKing', 'SharpShooter', 'ParlayPrince', 'ValueHunter', 'FadeThePublic', 'DogBettor', 'ClosingLineVP', 'ArbGod', 'TheLocksmith', 'StatHead', 'AlgoPro'];
+
+const generateMockUsers = (count: number): UserProfile[] => {
+    return Array.from({ length: count }).map((_, i) => {
+        const id = `u${i + 1}`;
+        const nameBase = names[Math.floor(Math.random() * names.length)];
+        const nickname = `${nameBase}_${Math.floor(Math.random() * 999)}`;
+        const stateLocation = states[Math.floor(Math.random() * states.length)];
+        // Mix of highly profitable, break even, and heavy losses
+        const performanceTier = Math.random();
+        let earnings = 0;
+        let winPercent = 0;
+
+        if (performanceTier > 0.8) {
+            // Hot Bettors
+            earnings = Math.floor(Math.random() * 150000) + 10000;
+            winPercent = 55 + (Math.random() * 15);
+        } else if (performanceTier > 0.3) {
+            // Average
+            earnings = Math.floor(Math.random() * 10000) - 2000;
+            winPercent = 48 + (Math.random() * 6);
+        } else {
+            // Cold Bettors
+            earnings = -Math.floor(Math.random() * 20000) - 1000;
+            winPercent = 35 + (Math.random() * 10);
+        }
+
+        return {
+            id,
+            nickname,
+            avatar: `https://i.pravatar.cc/150?u=${id}`,
+            stateLocation,
+            earnings,
+            winPercent: Number(winPercent.toFixed(1)),
+            isFollowing: Math.random() > 0.8,
+            recentParlay: ['LAL ML', 'Over 225.5 Pts', 'LeBron 25+ Pts'].slice(0, Math.floor(Math.random() * 3) + 1)
+        };
+    });
+};
+
+const allMockUsers = generateMockUsers(60);
 
 export const SocialDashboardView: React.FC = () => {
-    const [users, setUsers] = useState<UserProfile[]>(initialUsers);
+    const [users, setUsers] = useState<UserProfile[]>(allMockUsers);
 
-    const toggleFollow = (id: string) => {
+    // Sort all users by earnings (highest to lowest)
+    const sortedLeaderboard = useMemo(() => {
+        return [...users].sort((a, b) => b.earnings - a.earnings);
+    }, [users]);
+
+    // Initial featured spots are the top 4
+    const [featuredIds, setFeaturedIds] = useState<string[]>(() => sortedLeaderboard.slice(0, 4).map(u => u.id));
+
+    const featuredUsers = useMemo(() => {
+        // Map over the featuredIds array to return the user objects, maintaining the order
+        const mapped = featuredIds.map(fid => users.find(u => u.id === fid)).filter(Boolean) as UserProfile[];
+        // Pad with nulls if we somehow have fewer than 4 features, though we shouldn't
+        return mapped.slice(0, 4);
+    }, [featuredIds, users]);
+
+    const toggleFollow = (id: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
         setUsers(users.map(u => u.id === id ? { ...u, isFollowing: !u.isFollowing } : u));
     };
 
-    const copyParlay = (parlay: string[]) => {
+    const copyParlay = (parlay: string[], e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
         alert(`Copied ${parlay.length}-Leg Parlay to clipboard! (Feature Simulation)`);
+    };
+
+    const addToFeatured = (userId: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        if (featuredIds.includes(userId)) return; // Already featured
+
+        setFeaturedIds(prev => {
+            // Push new ID to the front, remove the last one (oldest) from the 4-slot roster
+            const newFeatured = [userId, ...prev];
+            return newFeatured.slice(0, 4);
+        });
     };
 
     return (
         <div className="w-full bg-[#121212] min-h-[calc(100vh-144px)] flex justify-center py-8 px-4 font-sans text-white">
-            <div className="max-w-[1200px] w-full flex flex-col gap-6 animate-fade-in">
+            <div className="max-w-[1536px] w-full flex flex-col gap-10 animate-fade-in pb-12">
 
                 {/* Header */}
-                <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 border-b border-border-muted pb-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-accent-blue/10 border border-accent-blue/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                            <span className="material-symbols-outlined text-accent-blue text-3xl">groups</span>
+                <div className="flex flex-col md:flex-row items-end justify-between gap-4 border-b border-[#333] pb-6">
+                    <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(163,255,0,0.15)]">
+                            <span className="material-symbols-outlined text-primary text-4xl">travel_explore</span>
                         </div>
                         <div className="flex flex-col">
-                            <h2 className="text-3xl font-black text-white uppercase italic tracking-tight">Social Dashboard</h2>
-                            <p className="text-text-muted text-sm font-medium mt-1">Discover sharp bettors, tail their parlays, and track performance.</p>
+                            <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter">Global Leaderboard</h2>
+                            <p className="text-white/50 text-sm font-medium mt-1 uppercase tracking-widest">Discover & tail top sharp bettors</p>
+                        </div>
+                    </div>
+                    {/* Metrics Summary Top Right */}
+                    <div className="flex gap-4">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] text-white/50 font-bold tracking-widest uppercase">Active Bettors</span>
+                            <span className="text-xl font-black text-white">{users.length}</span>
+                        </div>
+                        <div className="w-px bg-white/10 h-10"></div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] text-white/50 font-bold tracking-widest uppercase">Live Tickets</span>
+                            <span className="text-xl font-black text-white">1,402</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Main Feed / Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {users.map(user => (
-                        <div key={user.id} className="relative bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden hover:border-neutral-600 transition-colors shadow-lg group">
+                {/* ── Featured Top 4 Row ── */}
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-xl">star</span>
+                        <h3 className="text-xl font-black text-white italic tracking-widest uppercase">Featured Bettors</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {featuredUsers.map(user => (
+                            <div key={user.id} className="relative bg-black border border-neutral-800 rounded-none hover:border-primary/50 transition-colors shadow-2xl group flex flex-col">
 
-                            {/* Card Background Accent */}
-                            <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-accent-blue via-primary to-accent-purple opacity-70"></div>
+                                {/* Card Edge Glow */}
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-                            <div className="p-5 flex flex-col gap-4">
-                                {/* Top: Identity & Stats */}
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <img src={user.avatar} alt={user.nickname} className="w-12 h-12 rounded-full border-2 border-neutral-700 shadow-md" />
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-base text-white tracking-wide">{user.nickname}</span>
-                                            <span className="text-xs text-primary font-black uppercase tracking-widest">${user.earnings.toLocaleString()} Profit</span>
+                                <div className="p-5 flex flex-col gap-4 flex-1">
+                                    {/* Top: Identity & Stats */}
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative">
+                                                <img src={user.avatar} alt={user.nickname} className="w-12 h-12 rounded bg-neutral-900 border border-neutral-700 object-cover" />
+                                                <div className="absolute -bottom-1 -right-1 bg-black border border-neutral-700 text-[8px] font-black px-1 rounded uppercase tracking-widest">{user.stateLocation}</div>
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="font-bold text-base text-white truncate max-w-[120px]">{user.nickname}</span>
+                                                <span className={`text-[11px] font-black uppercase tracking-widest ${user.earnings >= 0 ? 'text-primary' : 'text-red-500'}`}>
+                                                    {user.earnings >= 0 ? '+' : '-'}${Math.abs(user.earnings).toLocaleString()}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
+
+                                    {/* Heat/Win Meter */}
+                                    <div className="flex flex-col gap-1.5 mt-2">
+                                        <div className="flex justify-between items-center text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                                            <span className="flex items-center gap-1">
+                                                Win Rate
+                                                {user.winPercent >= 55 && <span className="text-orange-500 text-[10px]">🔥</span>}
+                                                {user.winPercent <= 45 && <span className="text-blue-400 text-[10px]">❄️</span>}
+                                            </span>
+                                            <span className={user.winPercent >= 55 ? 'text-primary' : user.winPercent <= 45 ? 'text-red-400' : 'text-yellow-400'}>{user.winPercent}%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-neutral-900 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all duration-1000 ${user.winPercent >= 55 ? 'bg-primary' : user.winPercent <= 45 ? 'bg-red-500' : 'bg-yellow-500'}`}
+                                                style={{ width: `${user.winPercent}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Recent Play */}
+                                    <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-neutral-800">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Live Slip / Picks</span>
+                                            <span className="text-[9px] text-primary font-bold uppercase tracking-widest">{user.recentParlay.length} Legs</span>
+                                        </div>
+                                        <div className="bg-[#0a0a0c] border border-neutral-800 rounded-sm p-2 flex flex-col gap-1">
+                                            {user.recentParlay.map((leg, i) => (
+                                                <div key={i} className="flex justify-between items-center text-xs text-white/80 font-mono">
+                                                    <span>{leg}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                </div>
+                                {/* Full Width Actions Bottom */}
+                                <div className="flex w-full mt-auto">
                                     <button
-                                        onClick={() => toggleFollow(user.id)}
-                                        className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors border ${user.isFollowing ? 'bg-white/10 text-white border-white/20 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30' : 'bg-primary text-black border-primary hover:bg-[#85e600]'}`}
+                                        onClick={(e) => copyParlay(user.recentParlay, e)}
+                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#0a0a0c] hover:bg-neutral-900 text-white text-[10px] font-black uppercase tracking-widest transition-colors border-t border-r border-neutral-800"
+                                    >
+                                        <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                                        Tail Picks
+                                    </button>
+                                    <button
+                                        onClick={(e) => toggleFollow(user.id, e)}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${user.isFollowing ? 'bg-primary/10 text-primary border-t border-primary/20 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20' : 'bg-primary text-black hover:bg-[#8aea00]'}`}
                                     >
                                         {user.isFollowing ? 'Following' : 'Follow'}
                                     </button>
                                 </div>
-
-                                {/* Heat/Win Meter */}
-                                <div className="flex flex-col gap-1.5 bg-black/40 p-3 rounded-lg border border-white/5">
-                                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                        <span>Accuracy</span>
-                                        <span className={user.winPercent >= 55 ? 'text-primary' : user.winPercent <= 45 ? 'text-red-400' : 'text-yellow-400'}>{user.winPercent.toFixed(1)}%</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-neutral-800 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full transition-all duration-1000 ${user.winPercent >= 55 ? 'bg-primary' : user.winPercent <= 45 ? 'bg-red-500' : 'bg-yellow-500'}`}
-                                            style={{ width: `${user.winPercent}%` }}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Recent Play */}
-                                <div className="flex flex-col gap-3 mt-1">
-                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Recent Parlay</span>
-                                    <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 flex flex-col gap-2">
-                                        <ul className="text-sm text-white/80 font-medium space-y-1">
-                                            {user.recentParlay.map((leg, i) => (
-                                                <li key={i} className="flex items-center gap-2">
-                                                    <div className="w-1 h-1 rounded-full bg-white/30" />
-                                                    {leg}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-2 mt-2 pt-4 border-t border-white/5">
-                                    <button
-                                        onClick={() => copyParlay(user.recentParlay)}
-                                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-[11px] font-black uppercase tracking-widest rounded-lg transition-colors border border-white/5"
-                                    >
-                                        <span className="material-symbols-outlined text-[16px]">content_copy</span>
-                                        Copy Parlay
-                                    </button>
-                                    <button
-                                        onClick={() => alert('Shared Profile!')}
-                                        className="w-10 h-10 flex items-center justify-center bg-neutral-800 hover:bg-neutral-700 text-slate-300 hover:text-white rounded-lg transition-colors border border-white/5"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">share</span>
-                                    </button>
-                                </div>
-
                             </div>
+                        ))}
+                    </div>
+                </div>
+
+
+                {/* ── Leaderboard Table ── */}
+                <div className="flex flex-col mt-4">
+                    <div className="flex items-center justify-between mb-4 px-2">
+                        <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-white/50 text-xl">leaderboard</span>
+                            <h3 className="text-xl font-black text-white italic tracking-widest uppercase">Global Standings</h3>
                         </div>
-                    ))}
+                    </div>
+
+                    <div className="w-full bg-black border border-neutral-800 overflow-x-auto rounded-none">
+                        <table className="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr className="border-b border-neutral-800 bg-[#0a0a0c] text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
+                                    <th className="p-4 w-16 text-center">Rank</th>
+                                    <th className="p-4">Bettor</th>
+                                    <th className="p-4">Location</th>
+                                    <th className="p-4 w-48">Win Rate</th>
+                                    <th className="p-4 text-right">Profit</th>
+                                    <th className="p-4 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sortedLeaderboard.map((user, idx) => {
+                                    const isFeatured = featuredIds.includes(user.id);
+                                    const isHot = user.winPercent >= 55;
+                                    const isCold = user.winPercent <= 45;
+
+                                    return (
+                                        <tr key={user.id} className="border-b border-neutral-800/50 hover:bg-white/[0.02] transition-colors group">
+                                            <td className="p-4 text-center">
+                                                <span className={`text-sm font-bold font-mono ${idx < 3 ? 'text-primary' : 'text-white/40'}`}>
+                                                    #{idx + 1}
+                                                </span>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-3">
+                                                    <img src={user.avatar} className="w-8 h-8 rounded shrink-0 bg-neutral-900 border border-neutral-800" alt="" />
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold text-white text-sm">{user.nickname}</span>
+                                                        {isHot && <span className="text-orange-500 text-xs" title="Hot Streak">🔥</span>}
+                                                        {isCold && <span className="text-blue-400 text-xs" title="Ice Cold">❄️</span>}
+                                                        {isFeatured && <span className="material-symbols-outlined text-primary text-[14px]" title="Currently Featured">star</span>}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <span className="px-2 py-1 bg-neutral-900 border border-neutral-800 rounded text-[10px] font-bold text-white/70 uppercase">
+                                                    {user.stateLocation}
+                                                </span>
+                                            </td>
+                                            <td className="p-4 w-48">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xs font-bold w-10 text-right">{user.winPercent}%</span>
+                                                    <div className="h-1.5 flex-1 bg-neutral-900 rounded-full overflow-hidden shrink-0 min-w-[60px]">
+                                                        <div
+                                                            className={`h-full ${isHot ? 'bg-primary' : isCold ? 'bg-red-500' : 'bg-yellow-500'}`}
+                                                            style={{ width: `${user.winPercent}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <span className={`text-sm font-black font-mono tracking-wider ${user.earnings >= 0 ? 'text-primary' : 'text-red-500'}`}>
+                                                    {user.earnings >= 0 ? '+' : '-'}${Math.abs(user.earnings).toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => copyParlay(user.recentParlay)}
+                                                        className="text-white/50 hover:text-white p-1"
+                                                        title="Tail Parlay"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => addToFeatured(user.id)}
+                                                        className={`${isFeatured ? 'text-primary' : 'text-white/50 hover:text-primary'} p-1 disabled:opacity-50`}
+                                                        title={isFeatured ? "Already Featured" : "Pin to Featured"}
+                                                        disabled={isFeatured}
+                                                    >
+                                                        <span className="material-symbols-outlined text-[18px]">push_pin</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>
