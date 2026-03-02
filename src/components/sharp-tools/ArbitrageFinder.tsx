@@ -1,6 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export const ArbitrageFinder: React.FC = () => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [statusText, setStatusText] = useState("View 12 More Opportunities");
+
+    const handleLoadMore = () => {
+        setIsLoading(true);
+        setStatusText("Scanning books...");
+        setTimeout(() => {
+            setIsLoading(false);
+            setStatusText("No more opportunities at this time");
+            setTimeout(() => setStatusText("View 12 More Opportunities"), 3000);
+        }, 1500);
+    };
+
     return (
         <div className="col-span-12 lg:col-span-4 terminal-panel border-primary/20 hover:shadow-[0_0_15px_rgba(13,242,13,0.1)] transition-shadow overflow-hidden flex flex-col">
             <div className="p-4 border-b border-border-muted bg-white dark:bg-neutral-900/40 flex items-center justify-between">
@@ -49,8 +62,13 @@ export const ArbitrageFinder: React.FC = () => {
                 </div>
             </div>
 
-            <button className="w-full py-4 text-[#A3FF00] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#A3FF00]/5 transition-colors bg-black/20">
-                View 12 More Opportunities
+            <button
+                onClick={handleLoadMore}
+                disabled={isLoading}
+                className="w-full py-4 text-[#A3FF00] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#A3FF00]/5 transition-colors bg-black/20 flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+                {isLoading && <span className="material-symbols-outlined text-sm animate-spin">sync</span>}
+                {statusText}
             </button>
         </div>
     );

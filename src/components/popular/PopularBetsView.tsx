@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { fetchMultiSportScoreboard, ESPNGame } from '../../data/espnScoreboard';
 import { generateAIPrediction } from '../../data/espnTeams';
+import { BetPick } from '../../App';
 
 // ── Types ──────────────────────────────────────────────────────────────────
+export interface PopularBetsViewProps {
+    onAddBet?: (bet: Omit<BetPick, 'id'>) => void;
+}
+
 interface SGPLeg {
     player: string;
     prop: string;
@@ -106,7 +111,7 @@ const SPORT_COLORS: Record<string, string> = {
 };
 
 // ── Component ─────────────────────────────────────────────────────────────
-export const PopularBetsView: React.FC = () => {
+export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) => {
     const [bets, setBets] = useState<SGPBet[]>([]);
     const [loading, setLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState('');
@@ -140,6 +145,27 @@ export const PopularBetsView: React.FC = () => {
         const interval = setInterval(load, 120_000); // refresh every 2 min
         return () => clearInterval(interval);
     }, []);
+
+    // Helper to add the SGP legs
+    const handleAddSGP = (betMatch: SGPBet) => {
+        if (!onAddBet) return;
+        betMatch.legs.forEach(leg => {
+            const teamStr = leg.player === 'Game' || leg.player.includes(betMatch.homeTeam) || leg.player.includes(betMatch.awayTeam)
+                ? leg.player // If it's a team/game prop, the player field describes it nicely
+                : `${leg.player} Over ${leg.line.replace('+', '')} ${leg.prop}`; // player prop string format
+
+            onAddBet({
+                gameId: betMatch.id.replace(/^sgp-/, 'espn-').replace(/-\d+$/, ''),
+                type: 'Prop',
+                team: teamStr,
+                odds: '-110', // SGP individual legs are often standard odds
+                matchupStr: `${betMatch.awayTeam} vs ${betMatch.homeTeam}`,
+                stake: 20, // default stake
+                gameStatus: betMatch.isLive ? 'in' : 'pre',
+                gameStatusName: betMatch.isLive ? 'In Progress' : 'Scheduled',
+            });
+        });
+    };
 
     return (
         <div className="w-full flex justify-center bg-background-dark py-8 px-6 min-h-[calc(100vh-200px)]">
@@ -262,7 +288,10 @@ export const PopularBetsView: React.FC = () => {
                                         <span className="material-symbols-outlined text-sm">local_fire_department</span>
                                         {bet.placedCount} <span className="text-[9px] font-bold opacity-80">Placed</span>
                                     </div>
-                                    <button className="bg-primary/20 text-primary border border-primary/50 hover:bg-primary hover:text-black transition-colors px-4 py-2 rounded font-black text-xs uppercase tracking-widest">
+                                    <button
+                                        onClick={() => handleAddSGP(bet)}
+                                        className="bg-primary/20 text-primary border border-primary/50 hover:bg-primary hover:text-black transition-colors px-4 py-2 rounded font-black text-xs uppercase tracking-widest filter active:brightness-75"
+                                    >
                                         Add to Slip
                                     </button>
                                 </div>

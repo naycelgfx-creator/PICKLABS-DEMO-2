@@ -368,7 +368,7 @@ function App() {
                 )}
 
                 {currentView === 'popular-bets' && (
-                  <PopularBetsView />
+                  <PopularBetsView onAddBet={handeAddBet} />
                 )}
 
                 {currentView === 'saved-picks' && (
