@@ -62,28 +62,50 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
 
     const totalLegs = ticket.length;
 
-    // Create a stable random seed from the first ticket leg to mock realistic states
-    const mockSeed = Array.from(ticket[0]?.id || ticketId).reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const hasLostLeg = mockSeed % 4 === 0; // 25% chance this simulated ticket hit a loss
-    const isTicketFinished = mockSeed % 3 === 0; // 33% chance all games are finished
+    const legResults = ticket ? ticket.map((bet, i) => {
+        const isFinished = bet.gameStatusName === 'STATUS_FINAL' || bet.gameStatus === 'post' || bet.gameStatus === 'FINAL';
+        const isLive = bet.gameStatusName === 'STATUS_IN_PROGRESS' || bet.gameStatus === 'in' || bet.gameStatus === 'LIVE' || bet.gameStatus === 'inprogress';
+        const isUpcoming = !isFinished && !isLive;
+
+        const betSeed = Array.from(bet.id || "").reduce((acc, char) => acc + char.charCodeAt(0), i * 123);
+        // If finished, 75% chance it won (mock evaluation since we lack settlement server)
+        const isWon = isFinished && (betSeed % 4 !== 0);
+        const isLost = isFinished && !isWon;
+
+        let status = 'PENDING';
+        if (isWon) status = 'WON';
+        else if (isLost) status = 'LOST';
+
+        let progress = 0;
+        if (status === 'WON') progress = 100;
+        else if (status === 'LOST') progress = 20 + (betSeed % 30);
+        else if (isLive) progress = 10 + (betSeed % 80);
+        else progress = 0; // Upcoming game
+
+        return {
+            bet,
+            index: i,
+            isFinished,
+            isLive,
+            isUpcoming,
+            status,
+            progress,
+            betSeed
+        };
+    }) : [];
+
+    const hasLostLeg = legResults.some(l => l.status === 'LOST');
+    const allFinished = legResults.every(l => l.isFinished);
 
     let ticketStatus = 'PENDING';
     if (hasLostLeg) {
         ticketStatus = 'LOST';
-    } else if (isTicketFinished) {
+    } else if (allFinished && legResults.length > 0) {
         ticketStatus = 'WON';
     }
 
-    let winningLegs = 0;
-    if (ticketStatus === 'WON') {
-        winningLegs = totalLegs;
-    } else if (ticketStatus === 'LOST') {
-        winningLegs = Math.max(0, totalLegs - 1); // Mock: last leg lost or is losing
-    } else {
-        winningLegs = Math.floor(totalLegs / 2); // Mock: some legs hit, rest pending
-    }
-
-    const hitPercent = totalLegs > 0 ? Math.round((winningLegs / totalLegs) * 100) : 0;
+    const winningOrPendingGood = legResults.filter(l => l.status === 'WON' || (l.status === 'PENDING' && l.progress >= 50)).length;
+    const hitPercent = totalLegs > 0 ? Math.round((winningOrPendingGood / totalLegs) * 100) : 0;
     const isParlay = totalLegs > 1;
     const combinedOddsStr = isParlay ? calculateParlayOdds(ticket) : (ticket[0]?.odds || 'N/A');
     const sumStakes = ticket.reduce((acc, b) => acc + (b.stake || 0), 0);
@@ -149,13 +171,8 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
             {/* Pick List */}
             <div className="flex-1 overflow-y-auto max-h-[200px] custom-[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-neutral-800 bg-[#0a0a0c]">
                 {ticket.map((bet, i) => {
-                    const isHitting = i < winningLegs;
-                    // Provide a nice target mock depending on overall status
-                    let pickProgress = 0;
-                    if (ticketStatus === 'WON') pickProgress = 100;
-                    else if (ticketStatus === 'LOST' && i >= winningLegs) pickProgress = 20; // It lost heavily
-                    else pickProgress = isHitting ? 100 : 30 + (i * 25) % 65; // Pending or some progression
-
+                    const leg = legResults[i];
+                    const pickProgress = leg.progress;
                     const logoUrl = getLogoForPick(bet);
 
                     // Extract the numerical target from either bet.type or bet.team
@@ -164,8 +181,12 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
 
                     let currentNum = 0;
                     if (targetNum !== null) {
-                        currentNum = isHitting || ticketStatus === 'WON' ? targetNum : parseFloat(((targetNum * pickProgress) / 100).toFixed(1));
-                        if (currentNum > targetNum) currentNum = targetNum;
+                        if (leg.isUpcoming) {
+                            currentNum = 0;
+                        } else {
+                            currentNum = leg.status === 'WON' ? targetNum : parseFloat(((targetNum * pickProgress) / 100).toFixed(1));
+                            if (currentNum > targetNum) currentNum = targetNum;
+                        }
                     }
 
                     const getColor = (prog: number) => {
@@ -173,7 +194,7 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                         if (prog < 66) return '#f97316'; // orange
                         return '#A3FF00'; // lime green
                     };
-                    const barColor = getColor(pickProgress);
+                    const barColor = leg.status === 'WON' ? '#A3FF00' : leg.status === 'LOST' ? '#ef4444' : getColor(pickProgress);
 
                     // Clean the team/player name for display and avatar fallback
                     const cleanTeamName = bet.team.replace(/(Over|Under|Prop|ML|Spread|PK|\+|-|[0-9.]+|Pts|Rebs|Asts|Threes|Points|Rebounds|Assists|Steals|Blocks|Turnovers|O\/U).*$/i, '').trim();
@@ -193,26 +214,30 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                         const val = valMatch ? valMatch[0] : '';
 
                         topText = `${bet.team} ${isUnder ? 'Under' : isOver ? 'Over' : ''} ${val}`.trim();
-                        // Assume standard player prop if not moneyline/spread but let's mock the category
                         bottomText = `${bet.team.toUpperCase()} - ${(bet.type.split(' ')[0] || 'PROP').toUpperCase()}`;
                     } else if (bet.type.toLowerCase().includes('+')) {
-                        // e.g. "To Score 25+ Points"
                         topText = bet.team;
                         bottomText = bet.type.toUpperCase();
                     }
 
                     // Status Logic Mock
                     let statusNode = null;
-                    if (ticketStatus === 'WON' || isHitting) {
+                    if (leg.status === 'WON') {
                         statusNode = (
                             <div className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center bg-[#111111] border border-[#A3FF00] relative z-20">
                                 <span className="material-symbols-outlined text-[#A3FF00] text-[10px] font-bold">check</span>
                             </div>
                         );
-                    } else if (ticketStatus === 'LOST' && i >= winningLegs) {
+                    } else if (leg.status === 'LOST') {
                         statusNode = (
                             <div className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center bg-[#111111] border border-red-500 relative z-20">
                                 <span className="material-symbols-outlined text-red-500 text-[10px] font-bold">close</span>
+                            </div>
+                        );
+                    } else if (leg.isLive) {
+                        statusNode = (
+                            <div className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center bg-[#111111] border border-[#f97316] relative z-20">
+                                <div className="w-1.5 h-1.5 bg-[#f97316] rounded-full animate-pulse"></div>
                             </div>
                         );
                     } else {
@@ -288,34 +313,33 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                                         opponentName = matchParts[0].trim() === cleanTeamName ? matchParts[1].trim() : matchParts[0].trim();
                                     }
 
-                                    // Generate a deterministic random score based on the bet ID/index
-                                    const betSeed = Array.from(bet.id || "").reduce((acc, char) => acc + char.charCodeAt(0), i * 123);
-
                                     // Generate 4 quarters
-                                    const q1A = 15 + (betSeed % 12);
-                                    const q2A = 15 + ((betSeed * 2) % 15);
-                                    const q3A = 15 + ((betSeed * 3) % 14);
-                                    const q4A = 15 + ((betSeed * 5) % 18);
-                                    const totalA = q1A + q2A + q3A + q4A;
+                                    let q1A = 0, q2A = 0, q3A = 0, q4A = 0, totalA = 0;
+                                    let q1B = 0, q2B = 0, q3B = 0, q4B = 0, totalB = 0;
 
-                                    const q1B = 15 + ((betSeed * 7) % 13);
-                                    const q2B = 15 + ((betSeed * 11) % 16);
-                                    const q3B = 15 + ((betSeed * 13) % 12);
-                                    const q4B = 15 + ((betSeed * 17) % 15);
-                                    const totalB = q1B + q2B + q3B + q4B;
+                                    if (!leg.isUpcoming) {
+                                        q1A = 15 + (leg.betSeed % 12);
+                                        q2A = 15 + ((leg.betSeed * 2) % 15);
+                                        q3A = 15 + ((leg.betSeed * 3) % 14);
+                                        q4A = 15 + ((leg.betSeed * 5) % 18);
+                                        totalA = q1A + q2A + q3A + q4A;
 
-                                    // Make sure the chosen team matches the state if the game is finished
-                                    let isTeamSelectedWinning = isHitting || ticketStatus === 'WON';
-                                    if (ticketStatus === 'LOST' && i >= winningLegs) isTeamSelectedWinning = false;
+                                        q1B = 15 + ((leg.betSeed * 7) % 13);
+                                        q2B = 15 + ((leg.betSeed * 11) % 16);
+                                        q3B = 15 + ((leg.betSeed * 13) % 12);
+                                        q4B = 15 + ((leg.betSeed * 17) % 15);
+                                        totalB = q1B + q2B + q3B + q4B;
+                                    }
 
-                                    // Adjust totals if we need to force a win/loss state for the mockup
+                                    const isTeamSelectedWinning = leg.status === 'WON' || (leg.status === 'PENDING' && leg.progress >= 50);
+
                                     let finalScoreOpp = totalA;
                                     let finalScoreTeam = totalB;
 
-                                    if (isTeamSelectedWinning && finalScoreTeam <= finalScoreOpp) {
-                                        finalScoreTeam = finalScoreOpp + 1 + (betSeed % 8);
-                                    } else if (!isTeamSelectedWinning && finalScoreTeam >= finalScoreOpp) {
-                                        finalScoreOpp = finalScoreTeam + 1 + (betSeed % 8);
+                                    if (leg.status === 'WON' && finalScoreTeam <= finalScoreOpp) {
+                                        finalScoreTeam = finalScoreOpp + 1 + (leg.betSeed % 8);
+                                    } else if (leg.status === 'LOST' && finalScoreTeam >= finalScoreOpp) {
+                                        finalScoreOpp = finalScoreTeam + 1 + (leg.betSeed % 8);
                                     }
 
                                     return (
@@ -323,13 +347,13 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                                             <div className="flex justify-between items-center py-1">
                                                 <span className="truncate pr-2">{opponentName}</span>
                                                 <div className="flex items-center gap-2 shrink-0">
-                                                    <span>{q1A}</span><span>{q2A}</span><span>{q3A}</span><span>{q4A}</span><span className="text-white font-bold ml-2">{finalScoreOpp}</span>
+                                                    <span>{leg.isUpcoming ? '-' : q1A}</span><span>{leg.isUpcoming ? '-' : q2A}</span><span>{leg.isUpcoming ? '-' : q3A}</span><span>{leg.isUpcoming ? '-' : q4A}</span><span className="text-white font-bold ml-2">{finalScoreOpp}</span>
                                                 </div>
                                             </div>
                                             <div className="flex justify-between items-center py-1">
                                                 <span className="truncate pr-2">{cleanTeamName}</span>
                                                 <div className="flex items-center gap-2 shrink-0">
-                                                    <span>{q1B}</span><span>{q2B}</span><span>{q3B}</span><span>{q4B}</span><span className={`font-bold ml-2 ${isTeamSelectedWinning ? 'text-[#A3FF00]' : 'text-white'}`}>{finalScoreTeam}</span>
+                                                    <span>{leg.isUpcoming ? '-' : q1B}</span><span>{leg.isUpcoming ? '-' : q2B}</span><span>{leg.isUpcoming ? '-' : q3B}</span><span>{leg.isUpcoming ? '-' : q4B}</span><span className={`font-bold ml-2 ${isTeamSelectedWinning ? 'text-[#A3FF00]' : 'text-white'}`}>{finalScoreTeam}</span>
                                                 </div>
                                             </div>
                                         </div>

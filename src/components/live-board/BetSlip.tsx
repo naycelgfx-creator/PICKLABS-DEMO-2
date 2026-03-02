@@ -40,7 +40,7 @@ const toWin = (stake: number, oddsStr: string): number => {
     return odds > 0 ? stake * (odds / 100) : stake / (Math.abs(odds) / 100);
 };
 
-export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip, activeTickets, setActiveTickets }) => {
+export const BetSlip: React.FC<BetSlipProps & { onClose?: () => void }> = ({ betSlip, setBetSlip, activeTickets, setActiveTickets, onClose }) => {
     const { isBookEnabled } = useSportsbooks();
     const { isRookieModeActive } = useRookieMode();
     const [mode, setMode] = useState<SlipMode>('singles');
@@ -81,11 +81,20 @@ export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip, activeTic
         <aside id="bet-slip-sidebar" className="col-span-12 xl:col-span-3">
             <div className="xl:sticky xl:top-[140px] terminal-panel bg-neutral-900/50 overflow-hidden">
 
-                <div className="p-4 border-b border-border-muted bg-neutral-900 pb-3">
+                <div className="p-4 border-b border-border-muted bg-neutral-900 pb-3 group relative">
                     <div className="text-[9px] font-black tracking-[0.2em] text-[#A3FF00] flex items-center gap-1.5 mb-2">
                         <span className="w-1.5 h-1.5 bg-[#A3FF00] inline-block rotate-45 transform"></span>
                         SESSION LOG
                     </div>
+                    {onClose && (
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 w-6 h-6 rounded-full bg-neutral-800 text-text-muted flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-neutral-700 hover:text-text-main"
+                            title="Close Bet Slip"
+                        >
+                            <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                    )}
                     <div className="flex items-center justify-between">
                         <h3 className="text-[14px] font-black text-white tracking-[0.1em] flex items-center gap-2 uppercase">
                             <span className="material-symbols-outlined text-[#9B4FF5] text-lg">receipt_long</span>
@@ -339,8 +348,8 @@ export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip, activeTic
                             }}
                             disabled={betSlip.length === 0}
                             className={`w-full py-3 rounded-lg font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${betSlip.length > 0
-                                    ? 'bg-[#A3FF00] text-black hover:bg-[#8ee600] shadow-[0_4px_14px_rgba(163,255,0,0.3)]'
-                                    : 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                                ? 'bg-[#A3FF00] text-black hover:bg-[#8ee600] shadow-[0_4px_14px_rgba(163,255,0,0.3)]'
+                                : 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
                                 }`}
                         >
                             <span className="material-symbols-outlined text-lg">description</span>
@@ -353,7 +362,7 @@ export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip, activeTic
                         <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Distribute to station:</p>
                         <div className="grid grid-cols-2 gap-x-2 gap-y-2">
                             {enabledBooks.map(book => (
-                                <div key={book.id} className="flex items-center gap-2.5 p-1.5 border border-[#2c2c2c] rounded-sm bg-[#161616] hover:bg-white/5 cursor-pointer relative group transition-colors">
+                                <a key={book.id} href={`https://${book.domain}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 p-1.5 border border-[#2c2c2c] rounded-sm bg-[#161616] hover:bg-white/5 cursor-pointer relative group transition-colors">
                                     <div className="absolute left-0 top-0 bottom-0 w-[2px] rounded-l-sm" style={{ backgroundColor: book.color }}></div>
                                     <div className="w-5 h-5 rounded-sm bg-white flex items-center justify-center p-0.5 shrink-0 ml-1.5">
                                         <img
@@ -365,7 +374,7 @@ export const BetSlip: React.FC<BetSlipProps> = ({ betSlip, setBetSlip, activeTic
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate group-hover:text-white transition-colors">
                                         {book.shortName.length > 4 ? book.name : book.shortName}
                                     </span>
-                                </div>
+                                </a>
                             ))}
                             {enabledBooks.length === 0 && (
                                 <div className="col-span-2 text-[9px] text-slate-600 font-bold uppercase py-2 tracking-widest">No books enabled.</div>

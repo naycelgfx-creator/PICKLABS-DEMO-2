@@ -59,7 +59,7 @@ export const EVOpportunities: React.FC = () => {
                 </div>
             </div>
 
-            <button className="w-full py-3 bg-accent-purple/5 text-accent-purple text-[10px] font-black uppercase tracking-widest hover:bg-accent-purple/10 transition-colors border-t border-border-muted">
+            <button className="w-full py-4 text-[#A855F7] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-accent-purple/5 transition-colors bg-black/20">
                 Refresh AI Probabilities
             </button>
         </div>

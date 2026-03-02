@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BetPick } from '../../App';
 
 // Mock Value Bet data
 interface ValueBet {
@@ -82,7 +83,12 @@ const mockValueBets: ValueBet[] = [
     }
 ];
 
-export const ValueFinderView: React.FC = () => {
+interface ValueFinderViewProps {
+    betSlip: BetPick[];
+    onAddBet: (bet: Omit<BetPick, 'id'>) => void;
+}
+
+export const ValueFinderView: React.FC<ValueFinderViewProps> = ({ betSlip, onAddBet }) => {
     const [valueBets] = useState<ValueBet[]>(mockValueBets);
 
     return (
@@ -170,9 +176,37 @@ export const ValueFinderView: React.FC = () => {
                                 <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
                                     <span className="material-symbols-outlined text-sm text-[#A3FF00]">verified</span> High-Conviction AI Play
                                 </span>
-                                <button className="bg-[#A3FF00]/20 text-[#A3FF00] border border-[#A3FF00]/50 hover:bg-[#A3FF00] hover:text-black hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all px-6 py-2 rounded font-black text-xs uppercase tracking-widest flex items-center gap-2">
-                                    Add to Slip <span className="material-symbols-outlined text-sm">add_circle</span>
-                                </button>
+                                {(() => {
+                                    const isSelected = betSlip.some(b => b.gameId === `vf-${bet.id}` && b.team === bet.play);
+                                    return (
+                                        <button
+                                            onClick={() => {
+                                                if (!isSelected) {
+                                                    onAddBet({
+                                                        gameId: `vf-${bet.id}`,
+                                                        type: 'Prop',
+                                                        team: bet.play,
+                                                        odds: bet.bookOdds.split(' ')[0],
+                                                        matchupStr: bet.matchup,
+                                                        stake: 50,
+                                                        gameStatus: 'UPCOMING',
+                                                        gameDate: new Date().toISOString().split('T')[0]
+                                                    });
+                                                }
+                                            }}
+                                            className={`transition-all px-6 py-2 rounded font-black text-xs uppercase tracking-widest flex items-center gap-2 ${isSelected
+                                                    ? 'bg-[#A3FF00] text-black shadow-[0_0_15px_rgba(34,197,94,0.4)] border border-[#A3FF00]'
+                                                    : 'bg-[#A3FF00]/20 text-[#A3FF00] border border-[#A3FF00]/50 hover:bg-[#A3FF00] hover:text-black hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]'
+                                                }`}
+                                        >
+                                            {isSelected ? (
+                                                <>Added to Slip <span className="material-symbols-outlined text-sm">check_circle</span></>
+                                            ) : (
+                                                <>Add to Slip <span className="material-symbols-outlined text-sm">add_circle</span></>
+                                            )}
+                                        </button>
+                                    );
+                                })()}
                             </div>
 
                         </div>

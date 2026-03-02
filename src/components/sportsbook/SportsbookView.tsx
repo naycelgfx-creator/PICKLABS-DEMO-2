@@ -7,6 +7,7 @@ import { useRookieMode } from '../../contexts/RookieModeContext';
 import { BetSlip } from '../live-board/BetSlip';
 import { LiveTicketPanel } from '../shared/LiveTicketPanel';
 import { useLiveOddsShift, applyOddsShift } from '../../hooks/useLiveOddsShift';
+import { getWBCSchedule } from '../../data/mlbStatsService';
 
 // Replace with real APIs eventually
 interface SportsbookViewProps {
@@ -25,7 +26,10 @@ const SPORTSBOOK_SPORTS = [
     { key: 'NHL', label: 'NHL', icon: 'sports_hockey', espn: 'NHL' as SportKey },
     { key: 'UFC', label: 'UFC', icon: 'sports_mma', espn: 'UFC' as SportKey },
     { key: 'NCAAB', label: 'NCAAB', icon: 'sports_basketball', espn: 'CBB' as SportKey },
+    { key: 'NCAAW', label: 'NCAAW', icon: 'sports_basketball', espn: 'NCAAW' as SportKey },
+    { key: 'CFB', label: 'CFB', icon: 'sports_football', espn: 'CFB' as SportKey },
     { key: 'Soccer', label: 'Soccer', icon: 'sports_soccer', espn: 'Soccer.EPL' as SportKey },
+    { key: 'WBC', label: 'WBC', icon: 'public', espn: 'MLB' as SportKey },
 ] as const;
 
 // ── Sport props config ────────────────────────────────────────────────────────
@@ -45,6 +49,13 @@ const SPORT_PROPS: Record<string, { label: string; baseMultiplier: number; odds:
         { label: 'Receptions', baseMultiplier: 0.40, odds: ['-115', '-105'] },
     ],
     MLB: [
+        { label: 'Hits', baseMultiplier: 0.8, odds: ['-115', '-105'] },
+        { label: 'RBIs', baseMultiplier: 0.5, odds: ['-110', '-110'] },
+        { label: 'Strikeouts', baseMultiplier: 0.6, odds: ['-115', '-105'] },
+        { label: 'Total Bases', baseMultiplier: 1.0, odds: ['-110', '-110'] },
+        { label: 'Home Runs', baseMultiplier: 0.1, odds: ['+120', '-140'] },
+    ],
+    WBC: [
         { label: 'Hits', baseMultiplier: 0.8, odds: ['-115', '-105'] },
         { label: 'RBIs', baseMultiplier: 0.5, odds: ['-110', '-110'] },
         { label: 'Strikeouts', baseMultiplier: 0.6, odds: ['-115', '-105'] },
@@ -71,6 +82,17 @@ const SPORT_PROPS: Record<string, { label: string; baseMultiplier: number; odds:
         { label: 'Points', baseMultiplier: 1, odds: ['-115', '-105'] },
         { label: 'Rebounds', baseMultiplier: 0.35, odds: ['-110', '-110'] },
         { label: 'Assists', baseMultiplier: 0.28, odds: ['-120', '+100'] },
+    ],
+    NCAAW: [
+        { label: 'Points', baseMultiplier: 1, odds: ['-115', '-105'] },
+        { label: 'Rebounds', baseMultiplier: 0.35, odds: ['-110', '-110'] },
+        { label: 'Assists', baseMultiplier: 0.28, odds: ['-120', '+100'] },
+    ],
+    CFB: [
+        { label: 'Pass Yards', baseMultiplier: 1, odds: ['-110', '-110'] },
+        { label: 'Rush Yards', baseMultiplier: 0.65, odds: ['-115', '-105'] },
+        { label: 'Receiving Yds', baseMultiplier: 0.55, odds: ['-110', '-110'] },
+        { label: 'TDs', baseMultiplier: 0.15, odds: ['+130', '-150'] },
     ],
 };
 
@@ -101,6 +123,8 @@ async function fetchESPNRoster(sport: string, teamId: string): Promise<ESPNRoste
         MLB: 'baseball/mlb',
         NHL: 'hockey/nhl',
         NCAAB: 'basketball/mens-college-basketball',
+        NCAAW: 'basketball/womens-college-basketball',
+        CFB: 'football/college-football',
         Soccer: 'soccer/eng.1',
     };
     const league = ESPN_LEAGUE[sport];
@@ -248,7 +272,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
 
     const addBet = (type: BetPick['type'], team: string, odds?: string) => {
         if (!odds || odds === 'N/A') return;
-        onAddBet({ gameId, type, team, odds, matchupStr, stake: 50 });
+        onAddBet({ gameId, type, team, odds, matchupStr, stake: 50, gameStatus: game.status, gameStatusName: game.statusName, gameDate: game.date });
     };
 
     // Apply shifting odds if the game is live
@@ -419,6 +443,20 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                     />
                 </div>
             </div>
+
+            {/* AI Best Pick Row (Always visible) */}
+            <div className="flex items-center justify-center px-4 py-2 border-t border-[#1c2037] bg-green-500/5">
+                <div className="flex items-center gap-2 text-[10px] font-black tracking-wider uppercase">
+                    <span className="material-symbols-outlined text-[13px] text-[#A3FF00]">psychology</span>
+                    <span className="text-[#A3FF00] opacity-80">PickLabs AI Best Pick:</span>
+                    <span className="text-white bg-black/30 border border-green-500/30 px-2 py-0.5 rounded shadow-[0_0_8px_rgba(163,255,0,0.15)]">
+                        {confidence > 60
+                            ? (pred.homeWinProb > pred.awayWinProb ? `${game.homeTeam.displayName} ML` : `${game.awayTeam.displayName} ML`)
+                            : `${pred.overUnderPick} ${applyOddsShift(pred.total, shifts.totalShift)}`}
+                        <span className="ml-1 text-[#A3FF00] text-[9px]">({confidence}%)</span>
+                    </span>
+                </div>
+            </div>
         </div>
     );
 };
@@ -428,6 +466,8 @@ interface PlayerPropCardProps {
     player: ESPNRosterPlayer;
     sport: string;
     gameId: string;
+    gameStatus: string;
+    gameDate: string;
     matchupStr: string;
     teamName: string;
     betSlip: BetPick[];
@@ -437,14 +477,21 @@ interface PlayerPropCardProps {
 }
 
 const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
-    player, sport, gameId, matchupStr, teamName, betSlip, onAddBet, aiMode, rookieMode
+    player, sport, gameId, gameStatus, gameDate, matchupStr, teamName, betSlip, onAddBet, aiMode, rookieMode
 }) => {
-    const props = SPORT_PROPS[sport] || SPORT_PROPS['NBA'];
+    const isPitcher = (sport === 'MLB' || sport === 'WBC') && ['P', 'SP', 'RP'].includes(player.position.toUpperCase());
+    const props = isPitcher ? [
+        { label: 'Strikeouts', baseMultiplier: 0.5, odds: ['-110', '-110'] as [string, string] },
+        { label: 'Walks', baseMultiplier: 0.15, odds: ['+110', '-130'] as [string, string] },
+        { label: 'Earned Runs', baseMultiplier: 0.2, odds: ['-115', '-105'] as [string, string] },
+        { label: 'Outs Recorded', baseMultiplier: 1.3, odds: ['-110', '-110'] as [string, string] }
+    ] : (SPORT_PROPS[sport] || SPORT_PROPS['NBA']);
+
     // Generate stat line baseline per prop
     const seed = player.displayName.charCodeAt(0) + player.displayName.charCodeAt(player.displayName.length - 1);
     const base = 12 + (seed % 20);
 
-    const propLines = props.slice(0, 3).map((p, i) => {
+    const propLines = props.slice(0, 4).map((p, i) => {
         const raw = base * p.baseMultiplier + (i * 1.5) + (seed % 5) * 0.5;
         const line = Math.max(0.5, Math.round(raw * 2) / 2).toFixed(1);
         // AI picks the 'Over' on the first prop for the position
@@ -521,7 +568,7 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
                                     isAI={aiMode && aiPick}
                                     rookieMode={rookieMode}
                                     rookieTip={`Over ${line} ${label} — you win if ${player.displayName.split(' ')[0]} gets MORE than ${line}.`}
-                                    onClick={() => onAddBet({ gameId, type: 'Prop', team: overKey, odds: odds[0], matchupStr, stake: 25 })}
+                                    onClick={() => onAddBet({ gameId, type: 'Prop', team: overKey, odds: odds[0], matchupStr, stake: 25, gameStatus, gameDate })}
                                 />
                                 <OddsBtn
                                     label="UNDER"
@@ -530,7 +577,7 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
                                     isAI={false}
                                     rookieMode={rookieMode}
                                     rookieTip={`Under ${line} ${label} — you win if ${player.displayName.split(' ')[0]} gets LESS than ${line}.`}
-                                    onClick={() => onAddBet({ gameId, type: 'Prop', team: underKey, odds: odds[1], matchupStr, stake: 25 })}
+                                    onClick={() => onAddBet({ gameId, type: 'Prop', team: underKey, odds: odds[1], matchupStr, stake: 25, gameStatus, gameDate })}
                                 />
                             </div>
                         </div>
@@ -638,6 +685,8 @@ const RosterPanel: React.FC<{
                             player={player}
                             sport={sport}
                             gameId={gameId}
+                            gameStatus={game.status}
+                            gameDate={game.date}
                             matchupStr={matchupStr}
                             teamName={teamName}
                             betSlip={betSlip}
@@ -671,7 +720,12 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
     const [showLiveTickets, setShowLiveTickets] = useState(true);
     const [showBetSlip, setShowBetSlip] = useState(true);
     const [activePanel, setActivePanel] = useState<'teams' | 'players'>('teams');
-    const [aiPredictions, setAiPredictions] = useState<Record<string, any>>({});
+    interface AIPredictionData {
+        ai_probability: number;
+        edge: number;
+        suggestions: { kelly: number; fixed: number; target: number; };
+    }
+    const [aiPredictions, setAiPredictions] = useState<Record<string, AIPredictionData>>({});
 
     const today = (() => {
         const d = new Date();
@@ -687,29 +741,56 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
         if (!sportEntry) return;
         setLoading(true);
         try {
-            const espnKey = APP_SPORT_TO_ESPN[sportEntry.key] as SportKey || sportEntry.espn;
+            if (sportEntry.key === 'WBC') {
+                const tomorrowD = new Date();
+                tomorrowD.setDate(tomorrowD.getDate() + 1);
+                const tmrwYear = tomorrowD.getFullYear();
+                const tmrwMonth = String(tomorrowD.getMonth() + 1).padStart(2, '0');
+                const tmrwDay = String(tomorrowD.getDate()).padStart(2, '0');
+                const tomorrow = `${tmrwYear}-${tmrwMonth}-${tmrwDay}`;
 
-            const tomorrowD = new Date();
-            tomorrowD.setDate(tomorrowD.getDate() + 1);
-            const tmrwYear = tomorrowD.getFullYear();
-            const tmrwMonth = String(tomorrowD.getMonth() + 1).padStart(2, '0');
-            const tmrwDay = String(tomorrowD.getDate()).padStart(2, '0');
-            const tomorrow = `${tmrwYear}-${tmrwMonth}-${tmrwDay}`;
+                const [todayData, tomorrowData] = await Promise.all([
+                    getWBCSchedule(today),
+                    getWBCSchedule(tomorrow)
+                ]);
 
-            const [todayData, tomorrowData] = await Promise.all([
-                fetchESPNScoreboardByDate(espnKey, today),
-                fetchESPNScoreboardByDate(espnKey, tomorrow)
-            ]);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                let combined: any[] = [...todayData, ...tomorrowData];
+                const seen = new Set();
+                combined = combined.filter(g => {
+                    if (seen.has(g.id)) return false;
+                    seen.add(g.id);
+                    return true;
+                });
 
-            let combined = [...todayData, ...tomorrowData];
-            const seen = new Set();
-            combined = combined.filter(g => {
-                if (seen.has(g.id)) return false;
-                seen.add(g.id);
-                return true;
-            });
+                // Hack to fix any errors without extensive refactoring mapping WBCGame.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                setGames(combined as any[]);
+            } else {
+                const espnKey = APP_SPORT_TO_ESPN[sportEntry.key] as SportKey || sportEntry.espn;
 
-            setGames(combined);
+                const tomorrowD = new Date();
+                tomorrowD.setDate(tomorrowD.getDate() + 1);
+                const tmrwYear = tomorrowD.getFullYear();
+                const tmrwMonth = String(tomorrowD.getMonth() + 1).padStart(2, '0');
+                const tmrwDay = String(tomorrowD.getDate()).padStart(2, '0');
+                const tomorrow = `${tmrwYear}-${tmrwMonth}-${tmrwDay}`;
+
+                const [todayData, tomorrowData] = await Promise.all([
+                    fetchESPNScoreboardByDate(espnKey, today),
+                    fetchESPNScoreboardByDate(espnKey, tomorrow)
+                ]);
+
+                let combined = [...todayData, ...tomorrowData];
+                const seen = new Set();
+                combined = combined.filter(g => {
+                    if (seen.has(g.id)) return false;
+                    seen.add(g.id);
+                    return true;
+                });
+
+                setGames(combined);
+            }
         } catch {
             setGames([]);
         } finally {

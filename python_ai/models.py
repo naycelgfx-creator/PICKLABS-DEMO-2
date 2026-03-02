@@ -16,7 +16,9 @@ saved_betlists = db.Table('saved_betlists',
 )
 
 # --- THE UPDATED USER TABLE ---
-class User(db.Model):
+from flask_login import UserMixin
+
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False) # e.g., @MarcusLocks

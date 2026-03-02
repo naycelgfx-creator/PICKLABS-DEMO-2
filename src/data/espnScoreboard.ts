@@ -14,7 +14,8 @@ export type SportKey =
     | 'Tennis.ATP'
     | 'Tennis.WTA'
     | 'Golf.PGA'
-    | 'WNBA';
+    | 'WNBA'
+    | 'NCAAW';
 
 export const ESPN_SCOREBOARD_URLS: Record<SportKey, string> = {
     NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
@@ -24,6 +25,7 @@ export const ESPN_SCOREBOARD_URLS: Record<SportKey, string> = {
     NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
     CFB: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard',
     CBB: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard',
+    NCAAW: 'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard',
     UFC: 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
     // ── Soccer leagues ──
     'Soccer.EPL': 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
@@ -105,6 +107,7 @@ export interface ESPNGame {
     date: string;           // ISO string
     status: 'pre' | 'in' | 'post';
     statusDetail: string;   // "Final" | "Q3 4:23" | "7:30 PM ET"
+    statusName: string;     // "STATUS_SCHEDULED", "STATUS_IN_PROGRESS", "STATUS_FINAL"
     statusClock?: string;
     period?: number;
     venue: string;
@@ -196,6 +199,7 @@ const parseCompetition = (event: RawObj, sport: SportKey): ESPNGame | null => {
             date: event.date as string,
             status,
             statusDetail: (statusType?.detail as string) ?? (statusType?.description as string) ?? '',
+            statusName: (statusType?.name as string) ?? 'STATUS_SCHEDULED',
             statusClock: (event.status as RawObj)?.displayClock as string | undefined,
             period: (event.status as RawObj)?.period as number | undefined,
             venue: (venue?.fullName as string) ?? '',
@@ -248,7 +252,7 @@ export const APP_SPORT_TO_ESPN: Record<string, SportKey | null> = {
     'MLB': 'MLB',
     'NHL': 'NHL',
     'NCAAB': 'CBB',
-    'NCAAW': null,
+    'NCAAW': 'NCAAW',
     'WNBA': 'WNBA',
     // Soccer: default to EPL; LiveBoard overrides with sub-league selection
     'Soccer': 'Soccer.EPL',

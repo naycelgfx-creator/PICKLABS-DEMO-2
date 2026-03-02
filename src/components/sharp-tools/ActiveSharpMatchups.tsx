@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Game, mockGamesBySport } from '../../data/mockGames';
 import { generateAIPrediction } from '../../data/espnTeams';
 
@@ -7,8 +7,16 @@ interface ActiveSharpMatchupsProps {
 }
 
 export const ActiveSharpMatchups: React.FC<ActiveSharpMatchupsProps> = ({ game }) => {
-    const activeGame = game || mockGamesBySport['NBA']![0];
-    const aiPred = activeGame ? generateAIPrediction(activeGame.homeTeam.record || '0-0', activeGame.awayTeam.record || '0-0', 'NBA', [], []) : null;
+    const [localGame, setLocalGame] = useState<Game | null>(game || mockGamesBySport['NBA']![0] || null);
+
+    useEffect(() => {
+        if (game) setLocalGame(game);
+    }, [game]);
+
+    const activeGame = localGame;
+    if (!activeGame) return null;
+
+    const aiPred = generateAIPrediction(activeGame.homeTeam.record || '0-0', activeGame.awayTeam.record || '0-0', 'NBA', [], []);
 
     return (
         <div className="col-span-12 lg:col-span-8">
@@ -82,21 +90,42 @@ export const ActiveSharpMatchups: React.FC<ActiveSharpMatchupsProps> = ({ game }
                     </div>
 
                     <div className="flex items-center gap-4 mt-4 overflow-x-auto custom-scrollbar pb-2">
-                        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-neutral-800/50 border border-border-muted rounded-lg opacity-60 hover:opacity-100 transition-opacity">
-                            <span className="text-[9px] font-black text-text-main">PHX @ GSW</span>
-                            <span className="material-symbols-outlined text-primary text-sm">trending_up</span>
-                            <span className="text-[10px] font-bold text-primary">Over 232</span>
-                        </div>
-                        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-neutral-800/50 border border-border-muted rounded-lg opacity-60 hover:opacity-100 transition-opacity">
-                            <span className="text-[9px] font-black text-text-main">NYK @ PHI</span>
-                            <span className="material-symbols-outlined text-accent-purple text-sm">trending_flat</span>
-                            <span className="text-[10px] font-bold text-accent-purple">NYK +3.5</span>
-                        </div>
-                        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-neutral-800/50 border border-border-muted rounded-lg opacity-60 hover:opacity-100 transition-opacity">
-                            <span className="text-[9px] font-black text-text-main">MIN @ LAC</span>
-                            <span className="material-symbols-outlined text-primary text-sm">trending_down</span>
-                            <span className="text-[10px] font-bold text-primary">LAC -1.5</span>
-                        </div>
+                        {mockGamesBySport['NBA']?.map(g => {
+                            const isSelected = activeGame.id === g.id;
+                            // Add some synthetic trend logic purely for display
+                            const trendScore = g.awayTeam.name.length;
+                            const isHot = trendScore % 2 === 0;
+                            const isTrendingDown = trendScore % 3 === 0;
+
+                            return (
+                                <button
+                                    key={g.id}
+                                    onClick={() => setLocalGame(g)}
+                                    className={`flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-lg transition-all border ${isSelected
+                                        ? 'bg-primary/20 border-primary shadow-[0_0_10px_rgba(13,242,13,0.15)] opacity-100'
+                                        : 'bg-neutral-800/50 border-border-muted opacity-60 hover:opacity-100 hover:border-border-muted'
+                                        }`}
+                                >
+                                    <span className="text-[9px] font-black text-text-main uppercase">{g.awayTeam.name.split(' ').pop()?.substring(0, 3)} @ {g.homeTeam.name.split(' ').pop()?.substring(0, 3)}</span>
+                                    {isHot ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-primary text-sm">trending_up</span>
+                                            <span className="text-[10px] font-bold text-primary">Hot Lean</span>
+                                        </>
+                                    ) : isTrendingDown ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-red-500 text-sm">trending_down</span>
+                                            <span className="text-[10px] font-bold text-red-500">Value Play</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-accent-purple text-sm">trending_flat</span>
+                                            <span className="text-[10px] font-bold text-accent-purple">Sharp Data</span>
+                                        </>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>

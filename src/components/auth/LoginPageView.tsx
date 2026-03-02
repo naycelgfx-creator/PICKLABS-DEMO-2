@@ -77,18 +77,9 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        const res = await login(email, password);
-
-        if (res.ok) {
-            setError('');
-            saveAuth();
-            onNavigate('live-board');
-        } else {
-            setError(res.message || 'Invalid email or password.');
-            setShaking(true);
-            setTimeout(() => setShaking(false), 600);
-        }
+        setError('');
+        saveAuth();
+        onNavigate('live-board');
     };
 
     return (
@@ -113,55 +104,13 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
                         <p className="text-sm font-bold text-text-muted">Enter your credentials to access the terminal.</p>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Email */}
-                        <div className="space-y-2">
-                            <input
-                                className="input-field"
-                                placeholder="name@company.com"
-                                type="email"
-                                value={email}
-                                onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                                required
-                            />
-                        </div>
-
-                        {/* Password */}
-                        <div className="space-y-2 relative">
-                            <input
-                                className="input-field pr-12"
-                                placeholder="Password"
-                                type={showPassword ? 'text' : 'password'}
-                                value={password}
-                                onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                                required
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(p => !p)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
-                                tabIndex={-1}
-                            >
-                                <span className="material-symbols-outlined text-[20px]">
-                                    {showPassword ? 'visibility_off' : 'visibility'}
-                                </span>
-                            </button>
-                        </div>
-
-                        {/* Error message */}
-                        {error && (
-                            <div className={`flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2.5 ${shaking ? 'animate-[shake_0.5s_ease-in-out]' : ''}`}>
-                                <span className="material-symbols-outlined text-red-400 text-[16px]">error</span>
-                                <span className="text-red-400 text-xs font-bold">{error}</span>
-                            </div>
-                        )}
-
                         <div className="space-y-3 pt-1">
                             <button
                                 type="submit"
                                 className="w-full py-4 bg-primary text-black font-black uppercase tracking-[0.2em] italic rounded-xl hover:scale-[1.01] transition-transform"
                                 style={{ boxShadow: '0 0 20px rgba(13,242,13,0.2)' }}
                             >
-                                Sign In
+                                ENTER
                             </button>
                             <div className="flex items-center gap-4 py-2">
                                 <div className="h-px flex-grow bg-border-muted"></div>

@@ -49,7 +49,7 @@ export const ArbitrageFinder: React.FC = () => {
                 </div>
             </div>
 
-            <button className="w-full py-3 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/10 transition-colors border-t border-border-muted">
+            <button className="w-full py-4 text-[#A3FF00] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#A3FF00]/5 transition-colors bg-black/20">
                 View 12 More Opportunities
             </button>
         </div>

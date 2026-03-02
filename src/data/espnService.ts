@@ -138,6 +138,9 @@ const parseAthleteFromRoster = (athlete: Record<string, any>, sport: string): ES
 
 // ─── Resolve team ID from team name ──────────────────────────────────────────
 const resolveTeamId = (teamName: string, sport: string): number | null => {
+    // If teamName is purely numeric (e.g. ESPN team ID passed directly), use it
+    if (/^\d+$/.test(teamName)) return parseInt(teamName, 10);
+
     const teamIds = SPORT_TEAM_IDS[sport];
     if (!teamIds) return null;
 
@@ -183,9 +186,98 @@ const fetchRosterViaSiteAPI = async (teamId: number, sport: string): Promise<ESP
     return allAthletes.map(a => parseAthleteFromRoster(a, sport));
 };
 
+// ─── Special Handlers (UFC & CFB) ────────────────────────────────────────────
+export const getUFCFighters = async (): Promise<ESPNRosterAthlete[]> => {
+    const url = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/rankings";
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        const data = await res.json();
+
+        const fighters: ESPNRosterAthlete[] = [];
+
+        for (const weight_class of (data.categories || [])) {
+            const weightName = weight_class.shortName;
+            for (const rank_data of (weight_class.ranks || [])) {
+                const athlete = rank_data.athlete;
+                const fighter_id = String(athlete.id);
+                const mugshot_url = `https://a.espncdn.com/i/headshots/mma/players/full/${fighter_id}.png`;
+
+                if (!fighters.some(f => f.id === fighter_id)) {
+                    fighters.push({
+                        id: fighter_id,
+                        fullName: athlete.displayName,
+                        shortName: athlete.displayName,
+                        firstName: athlete.firstName || athlete.displayName.split(' ')[0],
+                        lastName: athlete.lastName || athlete.displayName.split(' ').slice(1).join(' '),
+                        position: { abbreviation: weightName, displayName: weightName },
+                        headshot: { href: mugshot_url, alt: athlete.displayName },
+                        photoUrl: mugshot_url,
+                        salaryFormatted: 'N/A',
+                        collegeName: 'N/A',
+                        active: true,
+                        experience: undefined
+                    });
+                }
+            }
+        }
+        return fighters;
+    } catch (e) {
+        console.error("UFC fetch error", e);
+        return [];
+    }
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const getCFBRoster = async (teamId: string | number): Promise<ESPNRosterAthlete[]> => {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}?enable=roster`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        const data = await res.json();
+        const teamData = data.team || {};
+        const athletes = teamData.athletes || [];
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return athletes.map((player: any) => {
+            const id = String(player.id);
+            const headshot = `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png`;
+            return {
+                id,
+                fullName: player.fullName,
+                shortName: player.shortName || player.fullName,
+                firstName: player.firstName || player.fullName.split(' ')[0],
+                lastName: player.lastName || player.fullName.split(' ').slice(1).join(' '),
+                position: player.position ? { abbreviation: player.position.abbreviation, displayName: player.position.displayName } : undefined,
+                jersey: player.jersey,
+                age: player.age,
+                displayHeight: player.displayHeight,
+                displayWeight: player.displayWeight,
+                headshot: { href: headshot, alt: player.fullName },
+                photoUrl: headshot,
+                salaryFormatted: 'N/A',
+                collegeName: teamData.displayName || 'N/A',
+                active: player.active !== false,
+                experience: player.experience ? { years: Number(player.experience.years || 0) } : undefined
+            };
+        });
+    } catch (e) {
+        console.error(`CFB roster fetch error for ${teamId}`, e);
+        return [];
+    }
+};
+
 // ─── Generic multi-sport roster fetch ────────────────────────────────────────
 
 export const fetchESPNRosterBySport = async (teamName: string, sport: string): Promise<ESPNRosterAthlete[]> => {
+    if (sport === 'UFC') {
+        return getUFCFighters();
+    }
+
+    if (sport === 'CFB' || sport === 'NCAAF') {
+        return getCFBRoster(teamName);
+    }
+
     const teamId = resolveTeamId(teamName, sport);
     if (!teamId) {
         console.warn(`No team ID found for "${teamName}" in ${sport}`);

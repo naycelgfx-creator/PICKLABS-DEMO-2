@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchMultiSportNews, ESPNNewsItem, timeAgo, CATEGORY_CONFIG } from '../../data/espnNews';
 
-const SPORTS = ['NBA', 'NFL', 'MLB', 'NHL', 'Soccer'];
+const SPORTS = ['NBA', 'NFL', 'MLB', 'NHL', 'Soccer', 'CFB', 'NCAAW'];
 
 export const SharpIntelligenceFeed: React.FC = () => {
     const [news, setNews] = useState<ESPNNewsItem[]>([]);

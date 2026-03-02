@@ -74,6 +74,14 @@ export const AI_PROJECTIONS: Record<string, Record<string, number>> = {
         Astros: 0.57,
         Yankees: 0.54,
     },
+    WBC: {
+        Japan: 0.66,
+        USA: 0.63,
+        'Dominican Republic': 0.58,
+        Venezuela: 0.54,
+        Mexico: 0.51,
+        'Puerto Rico': 0.49,
+    },
 };
 
 // ─── PickLabsAI Engine (port of Python class) ─────────────────────────────────
@@ -147,4 +155,6 @@ export const SIMULATED_MARKET: MarketEntry[] = [
     { team: 'Chiefs', opponent: 'Eagles', sport: 'NFL', fdOdds: -140, game: 'Chiefs vs Eagles' },
     { team: 'Bruins', opponent: 'Rangers', sport: 'NHL', fdOdds: -120, game: 'Bruins vs Rangers' },
     { team: 'Dodgers', opponent: 'Braves', sport: 'MLB', fdOdds: -155, game: 'Dodgers vs Braves' },
+    { team: 'Japan', opponent: 'USA', sport: 'WBC', fdOdds: -110, game: 'Japan vs USA' },
+    { team: 'USA', opponent: 'Japan', sport: 'WBC', fdOdds: -110, game: 'Japan vs USA' },
 ];

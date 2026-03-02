@@ -49,12 +49,15 @@ export const SPORT_LOGOS: Record<string, string> = {
     NBA: 'https://cdn.nba.com/logos/nba/nba-logoman-word-white.svg',
     NFL: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png',
     MLB: 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png',
-    NHL: 'https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png',
-    Soccer: 'https://a.espncdn.com/i/teamlogos/soccer/500/default-team-logo-500.png',
+    CFB: '/NCAAF_logo.png',
+    Tennis: '/Wimbledon.svg.png',
+    Golf: '/pga_tour.png',
+    Soccer: '/FIFA-Logo.svg',
     UFC: 'https://upload.wikimedia.org/wikipedia/commons/9/92/UFC_Logo.svg',
-    NCAAB: 'https://ui-avatars.com/api/?name=NCAA&background=000&color=fff&rounded=true&bold=true',
+    NCAAB: '/NCAAB_logo.png',
     WNBA: 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png',
-    NCAAW: 'https://upload.wikimedia.org/wikipedia/commons/d/dd/NCAA_logo.svg'
+    NCAAW: '/NCAAW_logo.png',
+    WBC: '/wbc-logo.png'
 };
 
 export const REAL_TEAMS: Record<string, { name: string, abbr: string, type?: 'team' | 'player', url?: string, league?: string }[]> = {

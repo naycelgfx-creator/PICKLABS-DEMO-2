@@ -13,7 +13,6 @@ import { ESPNScoreboardPanel } from './ESPNScoreboardPanel';
 import { APP_SPORT_TO_ESPN, SOCCER_LEAGUES, fetchESPNScoreboardByDate, ESPNGame, SportKey } from '../../data/espnScoreboard';
 import { generateAIPrediction, fetchTeamLastFive } from '../../data/espnTeams';
 import { RookieGuideBanner } from '../shared/RookieGuideBanner';
-import { LiveTicketPanel } from '../shared/LiveTicketPanel';
 
 interface LiveBoardProps {
     setCurrentView: (view: 'live-board' | 'matchup-terminal') => void;
@@ -59,7 +58,10 @@ const espnGameToGame = (eg: ESPNGame, homeForm: ('W' | 'L' | 'D')[] = [], awayFo
     return {
         id: `espn-${eg.id}`,
         sport: eg.sport,
-        sportLogo: `https://a.espncdn.com/i/teamlogos/leagues/500/${eg.sport.toLowerCase()}.png`,
+        sportLogo: eg.sport === 'CBB' ? '/CBB_logo.png' :
+            eg.sport === 'NCAAW' ? '/NCAAW_logo.png' :
+                eg.sport === 'CFB' ? '/NCAAF_logo.png' :
+                    `https://a.espncdn.com/i/teamlogos/leagues/500/${eg.sport.toLowerCase()}.png`,
         status: isLive ? 'LIVE' : 'UPCOMING',
         timeLabel: statusLabel,
         matchupId: `#PL-${eg.id}`,
@@ -120,7 +122,6 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
     const [activeTab, setActiveTab] = useState<'espn' | 'simulated'>('espn');
     const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('grid');
     const [showPublicBets, setShowPublicBets] = useState<boolean>(true);
-    const [showLiveTickets, setShowLiveTickets] = useState<boolean>(true);
     const [showBetSlip, setShowBetSlip] = useState<boolean>(true);
     const today = (() => { const d = new Date(); const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${day}`; })();
     const [selectedDate, setSelectedDate] = useState<string>(today);
@@ -267,7 +268,6 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
             <main className="max-w-[1536px] mx-auto px-3 sm:px-6 py-2 grid grid-cols-12 gap-3 sm:gap-6 relative">
                 <div className="col-span-12 lg:col-span-9 space-y-6">
                     <RookieGuideBanner />
-                    {showLiveTickets && <LiveTicketPanel activeTickets={activeTickets} onRemoveTicket={(idx) => setActiveTickets(prev => prev.filter((_, i) => i !== idx))} />}
                     {/* Header */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -307,18 +307,6 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                             >
                                 <span className="material-symbols-outlined text-sm">group</span>
                                 <span className="hidden sm:inline">Public</span>
-                            </button>
-                            {/* Live Tickets toggle */}
-                            <button
-                                onClick={() => setShowLiveTickets(p => !p)}
-                                title={showLiveTickets ? 'Hide Tickets' : 'Show Tickets'}
-                                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-sm border text-[10px] font-black uppercase tracking-wider transition-all ${showLiveTickets
-                                    ? 'bg-[#A3FF00]/10 border-[#A3FF00]/40 text-[#A3FF00]'
-                                    : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
-                                    }`}
-                            >
-                                <span className="material-symbols-outlined text-sm">confirmation_number</span>
-                                <span className="hidden sm:inline">Tickets</span>
                             </button>
                             {/* Bet Slip toggle */}
                             <button
@@ -506,7 +494,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                         </div>
                     )}
                 </div>
-                {showBetSlip && <BetSlip betSlip={betSlip} setBetSlip={setBetSlip} activeTickets={activeTickets} setActiveTickets={setActiveTickets} />}
+                {showBetSlip && <BetSlip betSlip={betSlip} setBetSlip={setBetSlip} activeTickets={activeTickets} setActiveTickets={setActiveTickets} onClose={() => setShowBetSlip(false)} />}
             </main>
         </>
     );

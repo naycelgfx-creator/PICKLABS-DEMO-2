@@ -61,10 +61,10 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
         {
             name: '7-Day Free Trial',
             price: { monthly: '0', yearly: '0' },
-            description: 'Full access for 7 days · No commitment',
-            accentColor: 'default' as const,
             ctaLabel: 'Start Free Trial',
             onCta: () => onNavigate('login-page'),
+            secondaryCtaLabel: 'Enter',
+            onSecondaryCta: () => onNavigate('live-board'),
             icon: <Zap className="w-5 h-5" />,
             features: [
                 { name: 'Trending Insights', description: 'Today\'s top sharp public picks', included: true },
@@ -165,14 +165,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                 <div className="flex items-center gap-2">
                     <ThemeToggle className="hidden md:flex" />
                     <button
-                        onClick={() => onNavigate(isAuthValid() ? 'live-board' : 'login-page')}
+                        onClick={() => onNavigate('live-board')}
                         className="hidden md:block px-5 py-2 bg-neutral-800 border border-border-muted rounded-full text-[10px] font-black uppercase tracking-widest text-text-main hover:border-primary/50 transition-all">
-                        Live Board
+                        Enter
                     </button>
                     <button
                         onClick={() => onNavigate('login-page')}
                         className="px-6 py-2 bg-neutral-800 border border-border-muted rounded-full text-[10px] font-black uppercase tracking-widest text-text-main hover:border-primary/50 transition-all">
-                        Login
+                        Log In
                     </button>
                 </div>
             </header>
@@ -208,7 +208,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                                 Start 7-Day Free Trial
                             </ShimmerButton>
                             <ShimmerButton
-                                onClick={() => onNavigate('login-page')}
+                                onClick={() => onNavigate('live-board')}
                                 shimmerColor="#ffffff"
                                 shimmerDuration="2.5s"
                                 shimmerSize="0.08em"

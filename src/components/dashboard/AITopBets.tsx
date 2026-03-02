@@ -27,9 +27,7 @@ const buildAnalysis = (
     return fallback;
 };
 
-const SPORT_EMOJI: Record<string, string> = {
-    NBA: '🏀', NFL: '🏈', MLB: '⚾', NHL: '🏒', Soccer: '⚽', default: '🏆'
-};
+import { SPORT_LOGOS } from '../../data/mockGames';
 
 export const AITopBets: React.FC<AITopBetsProps> = ({ game, onAddBet }) => {
     const [espnNews, setEspnNews] = useState<ESPNNewsItem[]>([]);
@@ -38,7 +36,7 @@ export const AITopBets: React.FC<AITopBetsProps> = ({ game, onAddBet }) => {
 
     // Determine sport from game data
     const sport = game.sport || 'NBA';
-    const sportEmoji = SPORT_EMOJI[sport] ?? SPORT_EMOJI.default;
+    const sportLogo = SPORT_LOGOS[sport] || SPORT_LOGOS['NBA'];
 
     useEffect(() => {
         let cancelled = false;
@@ -118,8 +116,8 @@ export const AITopBets: React.FC<AITopBetsProps> = ({ game, onAddBet }) => {
             <div className="flex items-center gap-3 mb-4 relative z-10 border-b border-primary/20 pb-4">
                 <span className="material-symbols-outlined text-primary text-3xl">psychology</span>
                 <div className="flex-1">
-                    <h3 className="text-lg font-black text-text-main uppercase tracking-[0.2em] italic">
-                        {sportEmoji} AI Predictions
+                    <h3 className="text-lg font-black text-text-main uppercase tracking-[0.2em] italic flex items-center">
+                        <img src={sportLogo} alt={sport} className="h-6 w-auto inline-block mr-2 brightness-0 invert opacity-80" /> AI Predictions
                     </h3>
                     <p className="text-[10px] text-primary uppercase font-bold tracking-widest">
                         Based on PickLabs Live Data · 10,000 Simulations

@@ -6,7 +6,7 @@ const ai = new PickLabsAI();
 
 // ─── Custom market entry row ──────────────────────────────────────────────────
 
-const SPORTS = ['NBA', 'NFL', 'NHL', 'MLB', 'NCAAW'];
+const SPORTS = ['NBA', 'NFL', 'NHL', 'MLB', 'NCAAW', 'CFB', 'WBC'];
 const GRADE_CONFIG = {
     'A+': { color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', glow: 'shadow-[0_0_12px_rgba(16,185,129,0.3)]' },
     'A': { color: 'text-blue-400', bg: 'bg-blue-500/15', border: 'border-blue-500/30', glow: '' },
@@ -75,6 +75,7 @@ export const AIEdgeFinder: React.FC = () => {
                             type="range" min={4} max={20} step={1} value={minEdge}
                             onChange={e => setMinEdge(Number(e.target.value))}
                             className="w-20 accent-emerald-500"
+                            title="Minimum Edge Slider"
                         />
                         <span className="text-[10px] font-black text-emerald-400 w-6">{minEdge}%</span>
                     </div>
@@ -117,6 +118,7 @@ export const AIEdgeFinder: React.FC = () => {
                             key={placeholder}
                             type="text"
                             placeholder={placeholder}
+                            title={placeholder}
                             value={value}
                             onChange={e => set(e.target.value)}
                             className={`${w} rounded-lg border border-border bg-background px-3 py-1.5 text-[11px] text-white outline-none focus:border-primary/40 transition-colors`}
@@ -126,12 +128,14 @@ export const AIEdgeFinder: React.FC = () => {
                         value={newSport}
                         onChange={e => setNewSport(e.target.value)}
                         className="rounded-lg border border-border bg-background px-3 py-1.5 text-[11px] text-white outline-none focus:border-primary/40"
+                        title="Select Sport"
                     >
                         {SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                     <input
                         type="number"
                         placeholder="FD Odds (e.g. +110)"
+                        title="FanDuel Odds"
                         value={newOdds}
                         onChange={e => setNewOdds(e.target.value)}
                         className="w-32 rounded-lg border border-border bg-background px-3 py-1.5 text-[11px] text-white outline-none focus:border-primary/40 transition-colors"

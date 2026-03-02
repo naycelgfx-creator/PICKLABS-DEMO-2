@@ -73,7 +73,7 @@ const SPORT_CATEGORIES: Record<string, string[]> = {
     MLB: ['Hits', 'Home Runs', 'RBIs', 'Strikeouts', 'Earned Runs', 'Walks'],
     NHL: ['Goals', 'Assists', 'Points', 'Shots on Goal', 'Saves', 'Power Play Points'],
     WNBA: ['Points', 'Rebounds', 'Assists', '3PM', 'Steals', 'Blocks'],
-    'NCAAF': ['Pass Yds', 'Rush Yds', 'Rec Yds', 'Pass TDs', 'Rec TDs', 'Receptions'],
+    'CFB': ['Pass Yds', 'Rush Yds', 'Rec Yds', 'Pass TDs', 'Rec TDs', 'Receptions'],
     'NCAAB': ['Points', 'Rebounds', 'Assists', '3PM', 'Steals', 'Blocks'],
     'NCAAW': ['Points', 'Rebounds', 'Assists', '3PM', 'Steals', 'Blocks'],
 };

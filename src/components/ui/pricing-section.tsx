@@ -22,6 +22,8 @@ export interface PricingTier {
     ctaLabel?: string;
     icon: React.ReactNode;
     onCta?: () => void;
+    secondaryCtaLabel?: string;
+    onSecondaryCta?: () => void;
 }
 
 interface PricingSectionProps {
@@ -188,22 +190,36 @@ export function PricingSection({ tiers, className, title = 'Choose Your Edge', s
                                 </div>
 
                                 {/* CTA Button — always at the bottom */}
-                                <Button
-                                    onClick={tier.onCta}
-                                    className={cn(
-                                        'w-full h-12 text-xs font-black uppercase tracking-[0.2em] italic rounded-xl transition-all duration-300',
-                                        tier.highlight && tier.accentColor === 'purple'
-                                            ? 'bg-accent-purple text-white hover:bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02]'
-                                            : tier.highlight
-                                                ? 'bg-primary text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(13,242,13,0.3)] hover:shadow-[0_0_25px_rgba(13,242,13,0.5)]'
-                                                : 'border-2 border-border-muted bg-neutral-900/60 text-text-muted hover:border-primary/40 hover:text-text-main'
+                                <div className="space-y-3 mt-auto">
+                                    <Button
+                                        onClick={tier.onCta}
+                                        className={cn(
+                                            'w-full h-12 text-xs font-black uppercase tracking-[0.2em] italic rounded-xl transition-all duration-300',
+                                            tier.highlight && tier.accentColor === 'purple'
+                                                ? 'bg-accent-purple text-white hover:bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02]'
+                                                : tier.highlight
+                                                    ? 'bg-primary text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(13,242,13,0.3)] hover:shadow-[0_0_25px_rgba(13,242,13,0.5)]'
+                                                    : 'border-2 border-border-muted bg-neutral-900/60 text-text-muted hover:border-primary/40 hover:text-text-main'
+                                        )}
+                                    >
+                                        <span className="flex items-center justify-center gap-2">
+                                            {tier.ctaLabel ?? 'Get Started'}
+                                            <ArrowRightIcon className="w-4 h-4" />
+                                        </span>
+                                    </Button>
+
+                                    {tier.secondaryCtaLabel && (
+                                        <Button
+                                            onClick={tier.onSecondaryCta}
+                                            className="w-full h-12 text-xs font-black uppercase tracking-[0.2em] italic rounded-xl transition-all duration-300 bg-black text-white hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] border border-neutral-800"
+                                        >
+                                            <span className="flex items-center justify-center gap-2">
+                                                {tier.secondaryCtaLabel}
+                                                <ArrowRightIcon className="w-4 h-4" />
+                                            </span>
+                                        </Button>
                                     )}
-                                >
-                                    <span className="flex items-center justify-center gap-2">
-                                        {tier.ctaLabel ?? 'Get Started'}
-                                        <ArrowRightIcon className="w-4 h-4" />
-                                    </span>
-                                </Button>
+                                </div>
                             </div>
                         </div>
                     );

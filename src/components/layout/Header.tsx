@@ -194,7 +194,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                         </button>
 
                         {/* Settings Dropdown Panel */}
-                        {isSettingsOpen && user && (
+                        {isSettingsOpen && (
                             <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-white dark:bg-neutral-900 border border-border-muted rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden z-50 animate-in">
                                 {/* Header / User Info */}
                                 <div className="px-4 py-4 border-b border-border-muted bg-neutral-50 dark:bg-neutral-900/80 flex flex-col gap-1">
@@ -203,9 +203,9 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                             <span className="material-symbols-outlined text-white text-xl">person</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-black text-text-main truncate">{user.email}</p>
+                                            <p className="text-xs font-black text-text-main truncate">{user?.email || 'Guest Account'}</p>
                                             <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest">
-                                                {user.isPremium ? 'Premium Plan' : 'Free Tier'}
+                                                {user?.isPremium ? 'Premium Plan' : 'Free Tier'}
                                             </p>
                                         </div>
                                     </div>
@@ -213,9 +213,9 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                     <div className="flex justify-between items-center mt-2 bg-black/20 p-2 rounded-lg border border-white/5">
                                         <div className="flex flex-col">
                                             <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Billing Cycle</span>
-                                            <span className="text-[11px] font-black text-white">{user.isPremium ? 'Yearly ($199/yr)' : 'Monthly ($0/mo)'}</span>
+                                            <span className="text-[11px] font-black text-white">{user?.isPremium ? 'Yearly ($199/yr)' : 'Monthly ($0/mo)'}</span>
                                         </div>
-                                        {isAdminEmail(user.email) && (
+                                        {user?.email && isAdminEmail(user.email) && (
                                             <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
                                                 Admin
                                             </span>

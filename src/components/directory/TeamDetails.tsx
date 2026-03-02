@@ -7,6 +7,7 @@ import { DepthChart } from './DepthChart';
 import { TeamSchedule } from './TeamSchedule';
 
 interface Team {
+    id?: string;
     name: string;
     abbr: string;
     url?: string;
@@ -108,7 +109,7 @@ export const TeamDetails: React.FC<TeamDetailsProps> = ({ team, sport, onBack })
                         <TeamSchedule teamName={team.name} sport={sport} />
                     )}
                     {activeTab === 'roster' && (
-                        <RosterAndStats teamName={team.name} sport={sport} />
+                        <RosterAndStats teamName={team.id || team.name} sport={sport} />
                     )}
                     {activeTab === 'depth' && (
                         <DepthChart teamName={team.name} sport={sport} />

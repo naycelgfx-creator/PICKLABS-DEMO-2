@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SPORT_LOGOS } from '../../data/mockGames';
 import { TeamDetails } from './TeamDetails';
+import { getWBCTeams } from '../../data/mlbStatsService';
 
 // ── ESPN Teams API response types ─────────────────────────────────────────────
 interface EspnLogoEntry { href: string; width?: number; height?: number; }
@@ -220,13 +221,17 @@ const EXTRA_SPORT_LOGOS: Record<string, string> = {
     MLB: 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png',
     NHL: 'https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png',
     WNBA: 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png',
-    NCAAB: 'https://upload.wikimedia.org/wikipedia/commons/d/dd/NCAA_logo.svg',
-    NCAAW: 'https://upload.wikimedia.org/wikipedia/commons/d/dd/NCAA_logo.svg',
-    CFB: 'https://a.espncdn.com/i/teamlogos/leagues/500/college-football.png',
-    Soccer: 'https://sports.cbsimg.net/fly/images/icon-logos/soccer.svg',
+    NCAAB: '/basketball-men.svg',
+    NCAAW: '/basketball-women.svg',
+    CFB: '/football.svg',
+    Tennis: '/Wimbledon.svg.png',
+    Golf: '/pga_tour.png',
+    Soccer: '/FIFA-Logo.svg',
+    WBC: 'https://sports.cbsimg.net/fly/images/icon-logos/baseball.svg',
+    UFC: 'https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png',
 };
 
-const SPORTS_WITH_ESPN_API = [...Object.keys(ESPN_TEAM_ENDPOINTS), 'Soccer'];
+const SPORTS_WITH_ESPN_API = [...Object.keys(ESPN_TEAM_ENDPOINTS), 'Soccer', 'WBC', 'UFC'];
 
 // ── Team Card ─────────────────────────────────────────────────────────────
 interface TeamCardProps {
@@ -267,7 +272,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onClick }) => (
 
 // ── Soccer View (multi-league) ────────────────────────────────────────────
 interface SoccerViewProps {
-    onSelectTeam: (team: { name: string; abbr: string; url?: string }) => void;
+    onSelectTeam: (team: { id?: string; name: string; abbr: string; url?: string }) => void;
     searchQuery: string;
 }
 
@@ -384,7 +389,7 @@ const SoccerView: React.FC<SoccerViewProps> = ({ onSelectTeam, searchQuery }) =>
                         <TeamCard
                             key={team.id}
                             team={team}
-                            onClick={() => onSelectTeam({ name: team.displayName, abbr: team.abbreviation, url: team.logo })}
+                            onClick={() => onSelectTeam({ id: team.id, name: team.displayName, abbr: team.abbreviation, url: team.logo })}
                         />
                     ))}
                 </div>
@@ -402,26 +407,56 @@ const SoccerView: React.FC<SoccerViewProps> = ({ onSelectTeam, searchQuery }) =>
 // ── Main TeamsDirectory ───────────────────────────────────────────────────
 export const TeamsDirectory: React.FC = () => {
     const [selectedSport, setSelectedSport] = useState<string>(SPORTS_WITH_ESPN_API[0]);
-    const [selectedTeam, setSelectedTeam] = useState<{ name: string; abbr: string; url?: string } | null>(null);
+    const [selectedTeam, setSelectedTeam] = useState<{ id?: string; name: string; abbr: string; url?: string } | null>(null);
     const [teams, setTeams] = useState<ESPNTeam[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     const fetchTeams = useCallback(async (sport: string) => {
-        const url = ESPN_TEAM_ENDPOINTS[sport];
-        if (!url) return;
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`ESPN returned ${res.status}`);
-            const data = await res.json();
-            const parsed = parseESPNTeams(data);
-            parsed.sort((a, b) => a.displayName.localeCompare(b.displayName));
-            setTeams(parsed);
+            if (sport === 'WBC') {
+                const wbcTeams = await getWBCTeams();
+                // map WBC team structure to ESPNTeam structure
+                const mappedWbc = wbcTeams.map(t => ({
+                    id: String(t.id),
+                    name: t.name,
+                    abbreviation: t.abbreviation,
+                    displayName: t.name,
+                    shortDisplayName: t.name,
+                    logo: t.logo,
+                    color: t.color || '121a12',
+                    alternateColor: t.alternateColor || '0df20d',
+                    location: t.location || 'International'
+                }));
+                mappedWbc.sort((a, b) => a.displayName.localeCompare(b.displayName));
+                setTeams(mappedWbc);
+            } else if (sport === 'UFC') {
+                setTeams([{
+                    id: 'ufc',
+                    name: 'Ultimate Fighting Championship',
+                    abbreviation: 'UFC',
+                    displayName: 'UFC Ranked Fighters',
+                    shortDisplayName: 'UFC',
+                    logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png',
+                    color: 'd10214',
+                    alternateColor: '000000',
+                    location: 'International'
+                }]);
+            } else {
+                const url = ESPN_TEAM_ENDPOINTS[sport];
+                if (!url) return;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`ESPN returned ${res.status}`);
+                const data = await res.json();
+                const parsed = parseESPNTeams(data);
+                parsed.sort((a, b) => a.displayName.localeCompare(b.displayName));
+                setTeams(parsed);
+            }
         } catch {
-            setError(`Could not load ${sport} teams from ESPN.`);
+            setError(`Could not load ${sport} teams.`);
             setTeams([]);
         } finally {
             setLoading(false);

@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { fetchESPNRosterBySport, NBA_TEAM_IDS, NFL_TEAM_IDS, MLB_TEAM_IDS, NHL_TEAM_IDS, ESPNRosterAthlete } from '../../data/espnService';
+import { getWBCRoster } from '../../data/mlbStatsService';
+import { getApiSportsRoster, getApiSportsMMAFighters, SPORTS_WITH_API_SPORTS } from '../../data/apiSportsService';
+import { useTicketCart } from '../../contexts/TicketCartContext';
 
 interface LiveRosterProps {
     teamName: string;
@@ -29,9 +32,12 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
     const [error, setError] = useState<string | null>(null);
     const [lastFetched, setLastFetched] = useState<string | null>(null);
 
+    const { addToCart } = useTicketCart();
+
     // Check if we have a known team ID for this sport
     const sportMap = SPORT_TEAM_ID_MAPS[sport] ?? NBA_TEAM_IDS;
     const hasTeamId = (() => {
+        if (sport === 'WBC' || sport === 'UFC' || sport === 'CFB' || sport === 'NCAAF' || SPORTS_WITH_API_SPORTS.includes(sport)) return true;
         if (sportMap[teamName]) return true;
         const lower = teamName.toLowerCase();
         return Object.keys(sportMap).some(k =>
@@ -44,15 +50,51 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
         setLoading(true);
         setError(null);
         try {
-            const data = await fetchESPNRosterBySport(teamName, sport);
+            let data: ESPNRosterAthlete[] = [];
+
+            if (sport === 'WBC') {
+                const wbcData = await getWBCRoster(teamName);
+                // Map WBC player to ESPNRosterAthlete format used by components
+                data = wbcData.map(p => {
+                    const parts = p.displayName.split(' ');
+                    const firstName = parts[0] || '';
+                    const lastName = parts.slice(1).join(' ') || '';
+
+                    return {
+                        id: String(p.id),
+                        fullName: p.displayName,
+                        displayName: p.displayName,
+                        shortName: p.displayName,
+                        firstName,
+                        lastName,
+                        position: { abbreviation: p.position, displayName: p.position },
+                        jersey: p.jersey,
+                        headshot: p.headshot,
+                        photoUrl: p.headshot || '',
+                        status: p.status,
+                        collegeName: 'N/A', // Not supported in WBC
+                        age: undefined,
+                        displayHeight: undefined,
+                        displayWeight: undefined,
+                        experience: undefined,
+                    };
+                }) as unknown as ESPNRosterAthlete[]; // Type assertion for mapping ease
+            } else if (sport === 'UFC') {
+                data = await getApiSportsMMAFighters();
+            } else if (SPORTS_WITH_API_SPORTS.includes(sport)) {
+                data = await getApiSportsRoster(sport, teamName);
+            } else {
+                data = await fetchESPNRosterBySport(teamName, sport);
+            }
+
             if (data.length === 0) {
-                setError('No roster data returned from ESPN. The team page may not have live data right now.');
+                setError('No roster data returned. The team page may not have live data right now.');
             } else {
                 setPlayers(data);
                 setLastFetched(new Date().toLocaleTimeString());
             }
         } catch {
-            setError('Failed to load roster from ESPN API.');
+            setError('Failed to load roster from API.');
         } finally {
             setLoading(false);
         }
@@ -68,6 +110,95 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
                 <span className="material-symbols-outlined text-slate-600 text-4xl block mb-3">sports</span>
                 <p className="text-slate-500 font-medium">Live roster data is available for NBA, NFL, MLB, and NHL teams.</p>
                 <p className="text-slate-600 text-sm mt-1">"{teamName}" was not found in our team database for {sport}.</p>
+            </div>
+        );
+    }
+
+    if (sport === 'UFC') {
+        return (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden shadow-lg mt-6">
+                <div className="bg-neutral-800 px-6 py-4 border-b border-neutral-700 flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                    <h4 className="font-black text-white uppercase tracking-widest text-sm flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-[18px]">wifi</span>
+                        UFC Ranked Fighters — Live Data
+                    </h4>
+                    <div className="ml-auto flex items-center gap-3">
+                        {lastFetched && (
+                            <span className="text-[10px] text-slate-500 font-medium">Updated {lastFetched}</span>
+                        )}
+                        <button
+                            onClick={fetchRoster}
+                            disabled={loading}
+                            className="flex items-center gap-1.5 text-[10px] bg-neutral-700 hover:bg-neutral-600 text-white px-3 py-1.5 rounded font-bold uppercase tracking-widest transition-colors disabled:opacity-50"
+                        >
+                            <span className={`material-symbols-outlined text-[14px] ${loading ? 'animate-spin' : ''}`}>refresh</span>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="px-6 py-3 bg-red-500/10 border-b border-red-500/20 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-red-400 text-[16px]">error</span>
+                        <span className="text-red-400 text-xs font-medium">{error}</span>
+                        <button onClick={fetchRoster} className="ml-auto text-[10px] text-red-400 underline">Retry</button>
+                    </div>
+                )}
+
+                <div className="p-6">
+                    {loading && players.length === 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {Array.from({ length: 12 }).map((_, i) => (
+                                <div key={i} className="bg-neutral-800/50 rounded-xl h-[160px] animate-pulse"></div>
+                            ))}
+                        </div>
+                    ) : players.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {players.map((p) => (
+                                <div key={p.id} className="bet-card group transition-transform hover:-translate-y-1" style={{ background: 'linear-gradient(145deg, #151518, #222226)', position: 'relative', overflow: 'hidden', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+
+                                    <img
+                                        src={p.photoUrl}
+                                        alt={p.fullName}
+                                        className="transition-transform group-hover:scale-110 duration-500 origin-bottom"
+                                        style={{ height: '160px', position: 'absolute', right: '-10px', bottom: '0', opacity: 0.9, objectFit: 'contain', filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.5))' }}
+                                        onError={e => (e.currentTarget.style.display = 'none')}
+                                    />
+
+                                    <div style={{ position: 'relative', zIndex: 10, padding: '20px' }} className="flex flex-col h-full min-h-[160px] justify-between">
+                                        <div>
+                                            <span style={{ color: '#2EFA6B', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                {p.position?.displayName ?? 'Fighter'}
+                                            </span>
+                                            <h3 style={{ margin: '5px 0 0', fontSize: '20px', fontWeight: '900', color: 'white', lineHeight: '1.1', maxWidth: '65%' }}>
+                                                {p.fullName}
+                                            </h3>
+                                        </div>
+                                        <div className="z-10 relative px-4 pb-4">
+                                            <button
+                                                className="w-full bg-accent-green hover:bg-green-400 text-neutral-900 font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-[0_0_15px_rgba(46,250,107,0.3)] mt-2"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    addToCart({
+                                                        id: p.id,
+                                                        name: p.shortName || p.fullName,
+                                                        league: sport,
+                                                        logo: p.headshot || p.photoUrl || 'https://via.placeholder.com/150'
+                                                    });
+                                                }}
+                                            >
+                                                Add to Ticket
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : !error && (
+                        <div className="text-center text-slate-600 py-8">No fighters available.</div>
+                    )}
+                </div>
             </div>
         );
     }
@@ -149,6 +280,25 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
                                                 </span>
                                                 <span className="text-slate-600 text-[10px]">{p.position?.displayName ?? '—'}</span>
                                             </div>
+                                            <div className="flex justify-between items-center px-4 pb-4 mt-auto z-10 relative">
+                                                <div className="text-[10px] text-neutral-400 font-medium tracking-wide">
+                                                    {p.experience ? `EXP: ${p.experience.years} YRS` : 'ROOKIE'}
+                                                </div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        addToCart({
+                                                            id: p.id,
+                                                            name: p.shortName || p.fullName,
+                                                            league: sport,
+                                                            logo: p.headshot || p.photoUrl || 'https://via.placeholder.com/150'
+                                                        });
+                                                    }}
+                                                    className="bg-accent-blue/10 text-accent-blue text-[10px] font-bold px-3 py-1.5 rounded-full border border-accent-blue/30 hover:bg-accent-blue hover:text-white transition-colors"
+                                                >
+                                                    + TICKET
+                                                </button>
+                                            </div>
                                         </div>
                                     </td>
 
@@ -200,15 +350,17 @@ export const LiveRoster: React.FC<LiveRosterProps> = ({ teamName, sport }) => {
             {players.length > 0 && (
                 <div className="px-6 py-3 bg-black/20 border-t border-neutral-800/50 flex items-center justify-between">
                     <span className="text-[10px] text-slate-600 font-medium">{players.length} players · Source: ESPN</span>
-                    <a
-                        href={`https://www.espn.com/${sport.toLowerCase()}/team/roster/_/name/${teamName.toLowerCase().replace(/\s/g, '-')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-primary hover:text-white transition-colors font-bold uppercase tracking-wider flex items-center gap-1"
-                    >
-                        Full ESPN Roster
-                        <span className="material-symbols-outlined text-[12px]">open_in_new</span>
-                    </a>
+                    {sport !== 'CFB' && sport !== 'NCAAF' && (
+                        <a
+                            href={`https://www.espn.com/${sport.toLowerCase()}/team/roster/_/name/${teamName.toLowerCase().replace(/\s/g, '-')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-primary hover:text-white transition-colors font-bold uppercase tracking-wider flex items-center gap-1"
+                        >
+                            Full ESPN Roster
+                            <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                        </a>
+                    )}
                 </div>
             )}
         </div>

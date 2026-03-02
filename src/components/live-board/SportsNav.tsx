@@ -27,29 +27,33 @@ const SPORT_LOGOS: Record<string, { primary: string; fallback: string }> = {
         fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/basketball.svg',
     },
     CFB: {
-        primary: 'https://a.espncdn.com/i/teamlogos/leagues/500/college-football.png',
-        fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/football.svg',
+        primary: '/NCAAF_logo.png',
+        fallback: '/NCAAF_logo.png',
     },
     NCAAB: {
-        primary: 'https://sports.cbsimg.net/fly/images/icon-logos/basketball.svg',
-        fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/basketball.svg',
+        primary: '/NCAAB_logo.png',
+        fallback: '/NCAAB_logo.png',
     },
     NCAAW: {
-        primary: 'https://sports.cbsimg.net/fly/images/icon-logos/basketball.svg',
-        fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/basketball.svg',
+        primary: '/NCAAW_logo.png',
+        fallback: '/NCAAW_logo.png',
     },
     // Soccer/Tennis/Golf — CBS Sports SVGs confirmed working
     Soccer: {
-        primary: 'https://sports.cbsimg.net/fly/images/icon-logos/soccer.svg',
-        fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/soccer.svg',
+        primary: '/FIFA-Logo.svg',
+        fallback: '/FIFA-Logo.svg',
+    },
+    WBC: {
+        primary: '/wbc-logo.png',
+        fallback: '/wbc-logo.png',
     },
     Tennis: {
-        primary: 'https://sports.cbsimg.net/fly/images/icon-logos/tennis.svg',
-        fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/tennis.svg',
+        primary: '/Wimbledon.svg.png',
+        fallback: '/Wimbledon.svg.png',
     },
     Golf: {
-        primary: 'https://sports.cbsimg.net/fly/images/icon-logos/golf.svg',
-        fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/golf.svg',
+        primary: '/pga_tour.png',
+        fallback: '/pga_tour.png',
     },
     UFC: {
         primary: 'https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png',
@@ -86,8 +90,8 @@ interface SportsNavProps {
 export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport }) => {
     return (
         <div className="bg-white dark:bg-neutral-900/40 border-b border-border-muted z-40 w-full">
-            <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-4">
-                <div className="flex items-center justify-start xl:justify-center gap-3 xl:gap-8 overflow-x-auto custom-scrollbar pb-2 scrollbar-hide">
+            <div className="max-w-[1536px] mx-auto px-2 sm:px-6 py-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:flex lg:flex-wrap items-center justify-center gap-2 sm:gap-3 xl:gap-8 pb-2">
                     {SPORTS.map(sport => {
                         const entry = SPORT_LOGOS[sport];
                         const primarySrc = entry?.primary;
@@ -96,7 +100,7 @@ export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport
                         return (
                             <div
                                 key={sport}
-                                className={`sport-chip flex items-center gap-2 ${activeSport === sport ? 'active' : ''}`}
+                                className={`sport-chip flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-1 sm:gap-2 px-2 py-2 rounded-lg transition-all cursor-pointer ${activeSport === sport ? 'bg-primary/20 text-primary border border-primary/40' : 'text-slate-400 hover:text-white border border-transparent'}`}
                                 onClick={() => onSelectSport(sport)}
                             >
                                 <span className="relative flex items-center justify-center w-4 h-4 shrink-0">
@@ -118,15 +122,15 @@ export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport
                                         }}
                                     />
                                     <span
-                                        className="material-symbols-outlined text-[14px] text-text-muted"
+                                        className="material-symbols-outlined text-[20px] sm:text-[14px] text-text-muted"
                                         style={{ display: 'none' }}
                                     >
                                         {materialIcon}
                                     </span>
                                 </span>
-                                {sport === 'NCAAW' ? "Women's College Basketball" :
-                                    sport === 'NCAAB' ? "College Basketball" :
-                                        sport === 'CFB' ? "College Football" : sport}
+                                <span className="text-[10px] sm:text-xs font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full">
+                                    {sport === 'CFB' ? "NCAAF" : sport}
+                                </span>
                             </div>
                         );
                     })}
