@@ -130,16 +130,23 @@ export const BetSlip: React.FC<BetSlipProps & { onClose?: () => void }> = ({ bet
                         </button>
                         <button
                             onClick={() => setMode('parlay')}
-                            className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all relative ${mode === 'parlay'
+                            className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all relative flex items-center justify-center gap-1 ${mode === 'parlay'
                                 ? 'text-primary border-b-2 border-primary bg-primary/5'
                                 : 'text-text-muted hover:text-text-main'
                                 }`}
                         >
                             Parlay
                             {betSlip.length >= 2 && (
-                                <span className="ml-1.5 text-[8px] px-1.5 py-0.5 rounded font-black bg-primary/20 text-primary border border-primary/30">
-                                    {betSlip.length}-Leg
-                                </span>
+                                <div className="flex items-center gap-1">
+                                    <span className="text-[8px] px-1.5 py-0.5 rounded font-black bg-primary/20 text-primary border border-primary/30">
+                                        {betSlip.length}-Leg
+                                    </span>
+                                    {new Set(betSlip.filter(b => b.gameId).map(b => b.gameId)).size < betSlip.filter(b => b.gameId).length && (
+                                        <span className="text-[8px] px-1.5 py-0.5 rounded font-black bg-primary/20 text-primary border border-primary/30">
+                                            SGP
+                                        </span>
+                                    )}
+                                </div>
                             )}
                         </button>
                     </div>

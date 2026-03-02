@@ -57,6 +57,12 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
         const d = new Date();
         return `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
     }, []);
+    const hasSGP = React.useMemo(() => {
+        if (!ticket || ticket.length < 2) return false;
+        const gameIds = ticket.filter(b => b.gameId).map(b => b.gameId);
+        const uniqueGameIds = new Set(gameIds);
+        return uniqueGameIds.size < gameIds.length;
+    }, [ticket]);
 
     if (!ticket || ticket.length === 0) return null;
 
@@ -140,8 +146,15 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                 <div className="flex items-center gap-1">
                     <span className="text-[#A3FF00] font-black tracking-tighter italic text-xl leading-none">PICKLABS</span>
                 </div>
-                <div className="text-[10px] font-black text-white tracking-widest uppercase mt-1">
-                    SPORTSBOOK
+                <div className="flex items-center gap-2 mt-1">
+                    {hasSGP && (
+                        <span className="text-[8px] font-black bg-primary/20 text-primary border border-primary/30 px-1.5 py-0.5 rounded tracking-widest uppercase">
+                            SGP
+                        </span>
+                    )}
+                    <div className="text-[10px] font-black text-white tracking-widest uppercase">
+                        SPORTSBOOK
+                    </div>
                 </div>
             </div>
 
