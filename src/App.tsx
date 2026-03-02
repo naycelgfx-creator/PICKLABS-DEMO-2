@@ -16,15 +16,11 @@ import { LandingPageView } from './components/landing/LandingPageView';
 import { LoginPageView } from './components/auth/LoginPageView';
 import { SportsbookView } from './components/sportsbook/SportsbookView';
 import { HolographicBoardView } from './components/holographic-board/HolographicBoardView';
-import { RookieModeProvider } from './contexts/RookieModeContext';
-import { SportsbookProvider } from './contexts/SportsbookContext';
-import { LiveBetsProvider } from './contexts/LiveBetsContext';
 import { RookieTour } from './components/ui/RookieTour';
 import { APP_SPORT_TO_ESPN, fetchESPNScoreboardByDate, ESPNGame, SportKey } from './data/espnScoreboard';
 import { generateAIPrediction } from './data/espnTeams';
 import { getCurrentUser, isAdminEmail } from './data/PickLabsAuthDB';
 import { useRookieMode } from './contexts/RookieModeContext';
-import { TicketCartProvider } from './contexts/TicketCartContext';
 
 export interface BetPick {
   id: string;
@@ -328,145 +324,139 @@ function App() {
   const isMarketingView = currentView === 'landing-page' || currentView === 'login-page';
 
   return (
-    <SportsbookProvider>
-      <LiveBetsProvider>
-        <RookieModeProvider>
-          <TicketCartProvider>
-            <RookieTour />
-            <div className={`flex flex-col min-h-screen overflow-x-hidden w-full ${!isMarketingView ? 'pb-10' : ''}`}>
-              {!isMarketingView && (
-                <Header
-                  currentView={currentView}
-                  setCurrentView={setCurrentView}
-                  onAIPick={handleAIPicks}
-                  isAIPickLoading={isAIPickLoading}
-                />
-              )}
+    <>
+      <RookieTour />
+      <div className={`flex flex-col min-h-screen overflow-x-hidden w-full ${!isMarketingView ? 'pb-10' : ''}`}>
+        {!isMarketingView && (
+          <Header
+            currentView={currentView}
+            setCurrentView={setCurrentView}
+            onAIPick={handleAIPicks}
+            isAIPickLoading={isAIPickLoading}
+          />
+        )}
 
-              <main className={`flex-1 ${!isMarketingView ? 'pt-[80px]' : ''}`}>
-                {currentView === 'landing-page' && (
-                  <LandingPageView onNavigate={(view) => setCurrentView(view as ViewType)} />
-                )}
+        <main className={`flex-1 ${!isMarketingView ? 'pt-[80px]' : ''}`}>
+          {currentView === 'landing-page' && (
+            <LandingPageView onNavigate={(view) => setCurrentView(view as ViewType)} />
+          )}
 
-                {currentView === 'login-page' && (
-                  <LoginPageView onNavigate={(view) => setCurrentView(view as ViewType)} />
-                )}
+          {currentView === 'login-page' && (
+            <LoginPageView onNavigate={(view) => setCurrentView(view as ViewType)} />
+          )}
 
-                {currentView === 'live-board' && (
-                  <LiveBoard
-                    setCurrentView={setCurrentView}
-                    onSelectGame={setSelectedGame}
-                    betSlip={betSlip}
-                    setBetSlip={setBetSlip}
-                    activeTickets={activeTickets}
-                    setActiveTickets={setActiveTickets}
-                    onAddBet={handeAddBet}
-                    onPlaceTicket={handlePlaceTicket}
-                    onResolveTicket={handleResolveTicket}
-                  />
-                )}
+          {currentView === 'live-board' && (
+            <LiveBoard
+              setCurrentView={setCurrentView}
+              onSelectGame={setSelectedGame}
+              betSlip={betSlip}
+              setBetSlip={setBetSlip}
+              activeTickets={activeTickets}
+              setActiveTickets={setActiveTickets}
+              onAddBet={handeAddBet}
+              onPlaceTicket={handlePlaceTicket}
+              onResolveTicket={handleResolveTicket}
+            />
+          )}
 
-                {currentView === 'matchup-terminal' && !selectedGame && (
-                  <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">
-                    <div className="w-20 h-20 rounded-full bg-accent-purple/10 border border-accent-purple/30 flex items-center justify-center mb-6">
-                      <span className="material-symbols-outlined text-4xl text-accent-purple">model_training</span>
-                    </div>
-                    <h2 className="text-2xl font-black italic uppercase text-text-main mb-3 tracking-tight">
-                      No Matchup Selected
-                    </h2>
-                    <p className="text-sm text-text-muted max-w-md mb-8 leading-relaxed">
-                      Head to the <span className="text-primary font-bold">Live Board</span>, click on any game card, and hit <span className="text-primary font-bold">Open Matchup Terminal</span> to run AI simulations and deep analysis.
-                    </p>
-                    <button
-                      onClick={() => setCurrentView('live-board')}
-                      className="px-8 py-4 bg-accent-purple text-white font-black uppercase tracking-[0.2em] italic rounded-xl hover:bg-purple-500 hover:scale-105 transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] flex items-center gap-3"
-                    >
-                      <span className="material-symbols-outlined">sports_score</span>
-                      Browse Live Games
-                    </button>
-                  </div>
-                )}
-
-                {currentView === 'matchup-terminal' && selectedGame && (
-                  <MatchupTerminalView
-                    game={selectedGame}
-                    onAddBet={handeAddBet}
-                    hasSimulated={hasSimulated}
-                    onRunSimulation={handleRunSimulation}
-                    betSlip={betSlip}
-                    setBetSlip={setBetSlip}
-                  />
-                )}
-
-                {currentView === 'teams-directory' && (
-                  <TeamsDirectory />
-                )}
-
-                {currentView === 'sharp-tools' && (
-                  getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
-                    ? <SharpToolsView selectedGame={selectedGame} />
-                    : <PremiumLockView featureName="Sharp Tools" onNavigate={(view) => setCurrentView(view)} />
-                )}
-
-                {currentView === 'bankroll' && (
-                  getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
-                    ? <BankrollView bankroll={bankroll} ticketHistory={ticketHistory} />
-                    : <PremiumLockView featureName="Bankroll Tracking" onNavigate={(view) => setCurrentView(view)} />
-                )}
-
-                {currentView === 'popular-bets' && (
-                  getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
-                    ? <PopularBetsView onAddBet={handeAddBet} />
-                    : <PremiumLockView featureName="Popular Bets" onNavigate={(view) => setCurrentView(view)} />
-                )}
-
-                {currentView === 'saved-picks' && (
-                  <SavedPicksView ticketHistory={ticketHistory} />
-                )}
-
-                {currentView === 'social-dashboard' && (
-                  getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
-                    ? <SocialDashboardView />
-                    : <PremiumLockView featureName="Social Dashboard" onNavigate={(view) => setCurrentView(view)} />
-                )}
-
-                {currentView === 'value-finder' && (
-                  getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
-                    ? <ValueFinderView betSlip={betSlip} onAddBet={handeAddBet} />
-                    : <PremiumLockView featureName="Value Finder" onNavigate={(view) => setCurrentView(view)} />
-                )}
-
-                {currentView === '3d-board' && (
-                  <HolographicBoardView betSlip={betSlip} activeTickets={activeTickets} />
-                )}
-
-                {currentView === 'sportsbook' && (
-                  <SportsbookView
-                    betSlip={betSlip}
-                    setBetSlip={setBetSlip}
-                    activeTickets={activeTickets}
-                    setActiveTickets={setActiveTickets}
-                    onAddBet={handeAddBet}
-                    onPlaceTicket={handlePlaceTicket}
-                    onResolveTicket={handleResolveTicket}
-                  />
-                )}
-              </main>
-
-              {!isMarketingView && (
-                <Footer />
-              )}
-
-              <SimulationOverlay
-                isOpen={isSimulating}
-                onCancel={handleSimulationCancel}
-                onComplete={handleSimulationComplete}
-              />
+          {currentView === 'matchup-terminal' && !selectedGame && (
+            <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">
+              <div className="w-20 h-20 rounded-full bg-accent-purple/10 border border-accent-purple/30 flex items-center justify-center mb-6">
+                <span className="material-symbols-outlined text-4xl text-accent-purple">model_training</span>
+              </div>
+              <h2 className="text-2xl font-black italic uppercase text-text-main mb-3 tracking-tight">
+                No Matchup Selected
+              </h2>
+              <p className="text-sm text-text-muted max-w-md mb-8 leading-relaxed">
+                Head to the <span className="text-primary font-bold">Live Board</span>, click on any game card, and hit <span className="text-primary font-bold">Open Matchup Terminal</span> to run AI simulations and deep analysis.
+              </p>
+              <button
+                onClick={() => setCurrentView('live-board')}
+                className="px-8 py-4 bg-accent-purple text-white font-black uppercase tracking-[0.2em] italic rounded-xl hover:bg-purple-500 hover:scale-105 transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] flex items-center gap-3"
+              >
+                <span className="material-symbols-outlined">sports_score</span>
+                Browse Live Games
+              </button>
             </div>
-          </TicketCartProvider>
-        </RookieModeProvider>
-      </LiveBetsProvider>
-    </SportsbookProvider>
+          )}
+
+          {currentView === 'matchup-terminal' && selectedGame && (
+            <MatchupTerminalView
+              game={selectedGame}
+              onAddBet={handeAddBet}
+              hasSimulated={hasSimulated}
+              onRunSimulation={handleRunSimulation}
+              betSlip={betSlip}
+              setBetSlip={setBetSlip}
+            />
+          )}
+
+          {currentView === 'teams-directory' && (
+            <TeamsDirectory />
+          )}
+
+          {currentView === 'sharp-tools' && (
+            getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
+              ? <SharpToolsView selectedGame={selectedGame} />
+              : <PremiumLockView featureName="Sharp Tools" onNavigate={(view) => setCurrentView(view)} />
+          )}
+
+          {currentView === 'bankroll' && (
+            getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
+              ? <BankrollView bankroll={bankroll} ticketHistory={ticketHistory} />
+              : <PremiumLockView featureName="Bankroll Tracking" onNavigate={(view) => setCurrentView(view)} />
+          )}
+
+          {currentView === 'popular-bets' && (
+            getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
+              ? <PopularBetsView onAddBet={handeAddBet} />
+              : <PremiumLockView featureName="Popular Bets" onNavigate={(view) => setCurrentView(view)} />
+          )}
+
+          {currentView === 'saved-picks' && (
+            <SavedPicksView ticketHistory={ticketHistory} />
+          )}
+
+          {currentView === 'social-dashboard' && (
+            getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
+              ? <SocialDashboardView />
+              : <PremiumLockView featureName="Social Dashboard" onNavigate={(view) => setCurrentView(view)} />
+          )}
+
+          {currentView === 'value-finder' && (
+            getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
+              ? <ValueFinderView betSlip={betSlip} onAddBet={handeAddBet} />
+              : <PremiumLockView featureName="Value Finder" onNavigate={(view) => setCurrentView(view)} />
+          )}
+
+          {currentView === '3d-board' && (
+            <HolographicBoardView betSlip={betSlip} activeTickets={activeTickets} />
+          )}
+
+          {currentView === 'sportsbook' && (
+            <SportsbookView
+              betSlip={betSlip}
+              setBetSlip={setBetSlip}
+              activeTickets={activeTickets}
+              setActiveTickets={setActiveTickets}
+              onAddBet={handeAddBet}
+              onPlaceTicket={handlePlaceTicket}
+              onResolveTicket={handleResolveTicket}
+            />
+          )}
+        </main>
+
+        {!isMarketingView && (
+          <Footer />
+        )}
+
+        <SimulationOverlay
+          isOpen={isSimulating}
+          onCancel={handleSimulationCancel}
+          onComplete={handleSimulationComplete}
+        />
+      </div>
+    </>
   );
 }
 
