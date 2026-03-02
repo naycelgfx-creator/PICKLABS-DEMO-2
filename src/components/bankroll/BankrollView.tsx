@@ -6,8 +6,14 @@ import { TransactionHistory } from './TransactionHistory';
 import { DailyExposureMeter } from './DailyExposureMeter';
 import { PerformanceWidget } from './PerformanceWidget';
 import { AIRoiAnalyser } from './AIRoiAnalyser';
+import { ResolvedTicket } from '../../App';
 
-export const BankrollView: React.FC = () => {
+export interface BankrollViewProps {
+    bankroll: number;
+    ticketHistory: ResolvedTicket[];
+}
+
+export const BankrollView: React.FC<BankrollViewProps> = ({ bankroll, ticketHistory }) => {
     return (
         <main className="max-w-[1440px] mx-auto p-6 space-y-6">
             <div className="flex items-center justify-between mb-4 mt-2 px-2">
@@ -22,7 +28,7 @@ export const BankrollView: React.FC = () => {
                 </button>
             </div>
 
-            <BankrollMetrics />
+            <BankrollMetrics bankroll={bankroll} ticketHistory={ticketHistory} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 flex flex-col gap-6">

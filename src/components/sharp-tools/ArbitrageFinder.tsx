@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
+import { Game } from '../../data/mockGames';
 
-export const ArbitrageFinder: React.FC = () => {
+interface ArbitrageFinderProps {
+    game?: Game | null;
+}
+
+export const ArbitrageFinder: React.FC<ArbitrageFinderProps> = ({ game }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [statusText, setStatusText] = useState("View 12 More Opportunities");
 
@@ -28,16 +33,16 @@ export const ArbitrageFinder: React.FC = () => {
                 {/* Arb Row 1 */}
                 <div className="bg-white dark:bg-neutral-900/40 border border-border-muted rounded-lg p-3 hover:border-primary/40 transition-all group">
                     <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase">LAL Lakers ML</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase">{game ? `${game.awayTeam.name.split(' ').pop()} ML` : 'LAL Lakers ML'}</span>
                         <span className="text-xs font-black text-primary italic">+4.82% Profit</span>
                     </div>
                     <div className="flex justify-between gap-4">
                         <div className="flex-1 bg-neutral-800/50 p-2 rounded border border-border-muted">
-                            <p className="text-[8px] text-slate-500 uppercase font-black">Book A</p>
+                            <p className="text-[8px] text-slate-500 uppercase font-black">DraftKings</p>
                             <p className="text-sm font-bold text-text-main">+115</p>
                         </div>
                         <div className="flex-1 bg-neutral-800/50 p-2 rounded border border-border-muted">
-                            <p className="text-[8px] text-slate-500 uppercase font-black">Book B</p>
+                            <p className="text-[8px] text-slate-500 uppercase font-black">FanDuel</p>
                             <p className="text-sm font-bold text-text-main">-105</p>
                         </div>
                     </div>
@@ -46,16 +51,16 @@ export const ArbitrageFinder: React.FC = () => {
                 {/* Arb Row 2 */}
                 <div className="bg-white dark:bg-neutral-900/40 border border-border-muted rounded-lg p-3 hover:border-primary/40 transition-all">
                     <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase">BOS/NYK Over 228.5</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase">{game ? `${game.awayTeam.name.substring(0, 3).toUpperCase()}/${game.homeTeam.name.substring(0, 3).toUpperCase()} Over 228.5` : 'BOS/NYK Over 228.5'}</span>
                         <span className="text-xs font-black text-primary italic">+2.15% Profit</span>
                     </div>
                     <div className="flex justify-between gap-4">
                         <div className="flex-1 bg-neutral-800/50 p-2 rounded border border-border-muted">
-                            <p className="text-[8px] text-slate-500 uppercase font-black">Book C</p>
+                            <p className="text-[8px] text-slate-500 uppercase font-black">BetMGM</p>
                             <p className="text-sm font-bold text-text-main">+102</p>
                         </div>
                         <div className="flex-1 bg-neutral-800/50 p-2 rounded border border-border-muted">
-                            <p className="text-[8px] text-slate-500 uppercase font-black">Book D</p>
+                            <p className="text-[8px] text-slate-500 uppercase font-black">Caesars</p>
                             <p className="text-sm font-bold text-text-main">-101</p>
                         </div>
                     </div>

@@ -4,14 +4,20 @@ import { generateAIPrediction } from '../../data/espnTeams';
 
 interface ActiveSharpMatchupsProps {
     game?: Game | null;
+    onGameSelect?: (game: Game) => void;
 }
 
-export const ActiveSharpMatchups: React.FC<ActiveSharpMatchupsProps> = ({ game }) => {
+export const ActiveSharpMatchups: React.FC<ActiveSharpMatchupsProps> = ({ game, onGameSelect }) => {
     const [localGame, setLocalGame] = useState<Game | null>(game || mockGamesBySport['NBA']![0] || null);
 
     useEffect(() => {
         if (game) setLocalGame(game);
     }, [game]);
+
+    const handleSelect = (g: Game) => {
+        setLocalGame(g);
+        if (onGameSelect) onGameSelect(g);
+    };
 
     const activeGame = localGame;
     if (!activeGame) return null;
@@ -100,7 +106,7 @@ export const ActiveSharpMatchups: React.FC<ActiveSharpMatchupsProps> = ({ game }
                             return (
                                 <button
                                     key={g.id}
-                                    onClick={() => setLocalGame(g)}
+                                    onClick={() => handleSelect(g)}
                                     className={`flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-lg transition-all border ${isSelected
                                         ? 'bg-primary/20 border-primary shadow-[0_0_10px_rgba(13,242,13,0.15)] opacity-100'
                                         : 'bg-neutral-800/50 border-border-muted opacity-60 hover:opacity-100 hover:border-border-muted'

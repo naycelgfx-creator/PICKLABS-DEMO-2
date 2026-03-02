@@ -16,6 +16,8 @@ interface SportsbookViewProps {
     activeTickets: BetPick[][];
     setActiveTickets: React.Dispatch<React.SetStateAction<BetPick[][]>>;
     onAddBet: (bet: Omit<BetPick, 'id'>) => void;
+    onPlaceTicket?: (ticket: BetPick[], stake: number) => void;
+    onResolveTicket?: (ticketIndex: number, status: 'WON' | 'LOST', stake: number, payout: number) => void;
 }
 
 // ── Sport list ──────────────────────────────────────────────────────────────
@@ -708,7 +710,7 @@ const RosterPanel: React.FC<{
 
 
 // ── Main SportsbookView ────────────────────────────────────────────────────────
-export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetSlip, activeTickets, setActiveTickets, onAddBet }) => {
+export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetSlip, activeTickets, setActiveTickets, onAddBet, onPlaceTicket, onResolveTicket }) => {
     const { isRookieModeActive, toggleRookieMode } = useRookieMode();
 
     const [activeSport, setActiveSport] = useState<string>('NBA');
@@ -953,7 +955,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                     {/* ── Left: Content ── */}
                     <div className="flex-1 min-w-0 space-y-4">
                         <RookieGuideBanner />
-                        {showLiveTickets && <LiveTicketPanel activeTickets={activeTickets} onRemoveTicket={(idx) => setActiveTickets?.(prev => prev.filter((_, i) => i !== idx))} />}
+                        {showLiveTickets && <LiveTicketPanel activeTickets={activeTickets} onRemoveTicket={(idx) => setActiveTickets?.(prev => prev.filter((_, i) => i !== idx))} onResolveTicket={onResolveTicket} />}
 
                         {/* Search + Panel tabs */}
                         <div className="flex items-center gap-3">
@@ -1108,7 +1110,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                     {/* ── Right: Bet Slip ── */}
                     {showBetSlip && (
                         <div className="w-80 xl:w-96 shrink-0 sticky top-[144px]">
-                            <BetSlip betSlip={betSlip} setBetSlip={setBetSlip} activeTickets={activeTickets} setActiveTickets={setActiveTickets} />
+                            <BetSlip betSlip={betSlip} setBetSlip={setBetSlip} activeTickets={activeTickets} setActiveTickets={setActiveTickets} onPlaceTicket={onPlaceTicket} />
                         </div>
                     )}
                 </div>

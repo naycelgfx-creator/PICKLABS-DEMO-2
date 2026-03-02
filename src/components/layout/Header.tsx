@@ -132,6 +132,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                         <a className={navLinkClass('teams-directory')} onClick={(e) => { e.preventDefault(); setCurrentView('teams-directory'); }}>Teams</a>
                         <a className={navLinkClass('sharp-tools')} onClick={(e) => { e.preventDefault(); setCurrentView('sharp-tools'); }}>Sharp Tools</a>
                         <a className={navLinkClass('bankroll')} onClick={(e) => { e.preventDefault(); setCurrentView('bankroll'); }}>Bankroll</a>
+                        <a className={navLinkClass('social-dashboard')} onClick={(e) => { e.preventDefault(); setCurrentView('social-dashboard'); }}>Dashboard</a>
 
                         <div className="h-4 w-px bg-border-muted mx-1" />
 
@@ -478,6 +479,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                             <span className="material-symbols-outlined text-sm">casino</span> Sportsbook
                         </a>
                         <a className={`text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'bankroll' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('bankroll'); }}>Bankroll</a>
+                        <a className={`text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'social-dashboard' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('social-dashboard'); }}>Dashboard</a>
                         <div className="h-px bg-border-muted my-2" />
                         <a className={`flex items-center gap-2 text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'popular-bets' ? 'text-orange-500' : 'text-orange-500/70 hover:text-orange-400'}`} onClick={(e) => { e.preventDefault(); setCurrentView('popular-bets'); }}>
                             <span className="material-symbols-outlined text-sm">local_fire_department</span> Popular

@@ -22,6 +22,8 @@ interface LiveBoardProps {
     activeTickets: BetPick[][];
     setActiveTickets: React.Dispatch<React.SetStateAction<BetPick[][]>>;
     onAddBet: (bet: Omit<BetPick, 'id'>) => void;
+    onPlaceTicket?: (ticket: BetPick[], stake: number) => void;
+    onResolveTicket?: (ticketIndex: number, status: 'WON' | 'LOST', stake: number, payout: number) => void;
 }
 
 // Convert an ESPN game into the app's Game shape — uses real AI prediction engine
@@ -117,7 +119,7 @@ const enrichWithLastFive = async (games: ESPNGame[], sport: string): Promise<Gam
     );
 };
 
-export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGame, betSlip, setBetSlip, activeTickets, setActiveTickets, onAddBet }) => {
+export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGame, betSlip, setBetSlip, activeTickets, setActiveTickets, onAddBet, onPlaceTicket, onResolveTicket }) => {
     const [activeSport, setActiveSport] = useState<string>(SPORTS[0]);
     const [activeTab, setActiveTab] = useState<'espn' | 'simulated'>('espn');
     const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('grid');
@@ -494,7 +496,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                         </div>
                     )}
                 </div>
-                {showBetSlip && <BetSlip betSlip={betSlip} setBetSlip={setBetSlip} activeTickets={activeTickets} setActiveTickets={setActiveTickets} onClose={() => setShowBetSlip(false)} />}
+                {showBetSlip && <BetSlip betSlip={betSlip} setBetSlip={setBetSlip} activeTickets={activeTickets} setActiveTickets={setActiveTickets} onPlaceTicket={onPlaceTicket} onClose={() => setShowBetSlip(false)} />}
             </main>
         </>
     );

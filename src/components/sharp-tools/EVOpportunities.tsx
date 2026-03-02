@@ -1,32 +1,37 @@
 import React, { useState } from 'react';
 
+const EV_POOL = [
+    { player: 'Anthony Davis', prop: 'Over 12.5 Rebounds', market: '-110' },
+    { player: 'Jayson Tatum', prop: 'Under 28.5 Points', market: '+105' },
+    { player: 'LeBron James', prop: 'Over 7.5 Assists', market: '+120' },
+    { player: 'Stephen Curry', prop: 'Over 4.5 Threes', market: '-115' },
+    { player: 'Nikola Jokic', prop: 'Triple Double', market: '+150' },
+    { player: 'Luka Doncic', prop: 'Over 32.5 Points', market: '-105' },
+    { player: 'Giannis Antetokounmpo', prop: 'Under 11.5 Rebounds', market: '-120' },
+    { player: 'Kevin Durant', prop: 'Over 2.5 Assists', market: '+135' },
+    { player: 'Shai Gilgeous-Alexander', prop: 'Over 1.5 Steals', market: '-130' },
+    { player: 'Joel Embiid', prop: 'Over 3.5 Blocks/Steals', market: '+110' }
+];
+
 export const EVOpportunities: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [opportunities, setOpportunities] = useState([
-        {
-            player: 'Anthony Davis',
-            prop: 'Over 12.5 Rebounds',
-            ev: 18.4,
-            market: '-110',
-            trueProb: 62.1
-        },
-        {
-            player: 'Jayson Tatum',
-            prop: 'Under 28.5 Points',
-            ev: 12.2,
-            market: '+105',
-            trueProb: 54.7
-        }
-    ]);
+
+    // Generate 2 random EV picks
+    const getRandomOpps = () => {
+        const shuffled = [...EV_POOL].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, 2).map(opp => ({
+            ...opp,
+            ev: Number((Math.random() * 15 + 5).toFixed(1)), // random EV between 5% and 20%
+            trueProb: Number((Math.random() * 20 + 50).toFixed(1)) // probability between 50% and 70%
+        }));
+    };
+
+    const [opportunities, setOpportunities] = useState(getRandomOpps());
 
     const handleRefresh = () => {
         setIsRefreshing(true);
         setTimeout(() => {
-            setOpportunities(prev => prev.map(opp => ({
-                ...opp,
-                ev: Number((opp.ev + (Math.random() * 4 - 2)).toFixed(1)),
-                trueProb: Number((opp.trueProb + (Math.random() * 4 - 2)).toFixed(1)),
-            })));
+            setOpportunities(getRandomOpps());
             setIsRefreshing(false);
         }, 1500);
     };

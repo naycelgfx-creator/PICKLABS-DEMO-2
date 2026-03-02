@@ -7,6 +7,7 @@ import { Game } from './data/mockGames';
 import { SharpToolsView } from './components/sharp-tools/SharpToolsView';
 import { BankrollView } from './components/bankroll/BankrollView';
 import { MatchupTerminalView } from './components/dashboard/MatchupTerminalView';
+import { SocialDashboardView } from './components/dashboard/SocialDashboardView';
 import { TeamsDirectory } from './components/directory/TeamsDirectory';
 import { PopularBetsView } from './components/popular/PopularBetsView';
 import { SavedPicksView } from './components/saved/SavedPicksView';
@@ -37,7 +38,16 @@ export interface BetPick {
   gameDate?: string;
 }
 
-export type ViewType = 'live-board' | 'matchup-terminal' | 'sharp-tools' | 'bankroll' | 'teams-directory' | 'popular-bets' | 'saved-picks' | 'value-finder' | 'landing-page' | 'login-page' | 'sportsbook' | 'ai-dashboard' | 'player-props' | 'trends' | 'live-odds' | 'leaderboard' | 'referrals' | 'account' | 'settings' | '3d-board';
+export interface ResolvedTicket {
+  id: string;
+  picks: BetPick[];
+  status: 'WON' | 'LOST';
+  stake: number;
+  payout: number;
+  dateStr: string;
+}
+
+export type ViewType = 'live-board' | 'matchup-terminal' | 'sharp-tools' | 'bankroll' | 'teams-directory' | 'popular-bets' | 'saved-picks' | 'value-finder' | 'landing-page' | 'login-page' | 'sportsbook' | 'ai-dashboard' | 'social-dashboard' | 'player-props' | 'trends' | 'live-odds' | 'leaderboard' | 'referrals' | 'account' | 'settings' | '3d-board';
 
 // ─── Premium Lock Helper View ─────────────────────────────────────────────────
 const PremiumLockView: React.FC<{ featureName: string; onNavigate: (v: ViewType) => void }> = ({ featureName, onNavigate }) => {
@@ -68,10 +78,39 @@ function App() {
   const [currentView, setCurrentView] = useState<ViewType>('landing-page');
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [betSlip, setBetSlip] = useState<BetPick[]>([]);
+  const [bankroll, setBankroll] = useState<number>(1000);
+  const [ticketHistory, setTicketHistory] = useState<ResolvedTicket[]>([]);
   const [activeTickets, setActiveTickets] = useState<BetPick[][]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
   const [hasSimulated, setHasSimulated] = useState(false);
   const [isAIPickLoading, setIsAIPickLoading] = useState(false);
+
+  // Bankroll Handlers
+  const handlePlaceTicket = (ticket: BetPick[], totalStake: number) => {
+    setBankroll(prev => prev - totalStake);
+    setActiveTickets(prev => [ticket, ...prev]);
+  };
+
+  const handleResolveTicket = (ticketIndex: number, status: 'WON' | 'LOST', stake: number, payout: number) => {
+    const ticket = activeTickets[ticketIndex];
+    if (!ticket) return;
+
+    if (status === 'WON') {
+      setBankroll(prev => prev + payout);
+    }
+
+    const historyItem: ResolvedTicket = {
+      id: crypto.randomUUID(),
+      picks: ticket,
+      status,
+      stake,
+      payout,
+      dateStr: new Date().toISOString()
+    };
+
+    setTicketHistory(prev => [historyItem, ...prev]);
+    setActiveTickets(prev => prev.filter((_, i) => i !== ticketIndex));
+  };
 
   const handleRunSimulation = () => {
     setIsSimulating(true);
@@ -318,6 +357,8 @@ function App() {
                     activeTickets={activeTickets}
                     setActiveTickets={setActiveTickets}
                     onAddBet={handeAddBet}
+                    onPlaceTicket={handlePlaceTicket}
+                    onResolveTicket={handleResolveTicket}
                   />
                 )}
 
@@ -364,7 +405,7 @@ function App() {
                 )}
 
                 {currentView === 'bankroll' && (
-                  <BankrollView />
+                  <BankrollView bankroll={bankroll} ticketHistory={ticketHistory} />
                 )}
 
                 {currentView === 'popular-bets' && (
@@ -372,7 +413,11 @@ function App() {
                 )}
 
                 {currentView === 'saved-picks' && (
-                  <SavedPicksView />
+                  <SavedPicksView ticketHistory={ticketHistory} />
+                )}
+
+                {currentView === 'social-dashboard' && (
+                  <SocialDashboardView />
                 )}
 
                 {currentView === 'value-finder' && (
@@ -392,6 +437,8 @@ function App() {
                     activeTickets={activeTickets}
                     setActiveTickets={setActiveTickets}
                     onAddBet={handeAddBet}
+                    onPlaceTicket={handlePlaceTicket}
+                    onResolveTicket={handleResolveTicket}
                   />
                 )}
               </main>

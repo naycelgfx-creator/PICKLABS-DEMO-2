@@ -115,6 +115,7 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
     const [bets, setBets] = useState<SGPBet[]>([]);
     const [loading, setLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState('');
+    const [addedBets, setAddedBets] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const load = async () => {
@@ -165,6 +166,8 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
                 gameStatusName: betMatch.isLive ? 'In Progress' : 'Scheduled',
             });
         });
+
+        setAddedBets(prev => new Set(prev).add(betMatch.id));
     };
 
     return (
@@ -289,10 +292,16 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
                                         {bet.placedCount} <span className="text-[9px] font-bold opacity-80">Placed</span>
                                     </div>
                                     <button
+                                        disabled={addedBets.has(bet.id)}
                                         onClick={() => handleAddSGP(bet)}
-                                        className="bg-primary/20 text-primary border border-primary/50 hover:bg-primary hover:text-black transition-colors px-4 py-2 rounded font-black text-xs uppercase tracking-widest filter active:brightness-75"
+                                        className={`transition-colors px-4 py-2 rounded font-black text-xs uppercase tracking-widest filter active:brightness-75 ${addedBets.has(bet.id)
+                                                ? 'bg-green-500/20 text-green-400 border border-green-500/50 cursor-not-allowed'
+                                                : 'bg-primary/20 text-primary border border-primary/50 hover:bg-primary hover:text-black'
+                                            }`}
                                     >
-                                        Add to Slip
+                                        {addedBets.has(bet.id) ? (
+                                            <div className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">check</span> Added</div>
+                                        ) : 'Add to Slip'}
                                     </button>
                                 </div>
                             </div>
@@ -301,6 +310,6 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
                 )}
 
             </div>
-        </div>
+        </div >
     );
 };

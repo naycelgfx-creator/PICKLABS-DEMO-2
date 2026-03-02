@@ -9,6 +9,7 @@ export interface BetSlipProps {
     setBetSlip: React.Dispatch<React.SetStateAction<BetPick[]>>;
     activeTickets?: BetPick[][];
     setActiveTickets?: React.Dispatch<React.SetStateAction<BetPick[][]>>;
+    onPlaceTicket?: (ticket: BetPick[], totalStake: number) => void;
 }
 
 type SlipMode = 'singles' | 'parlay';
@@ -40,7 +41,7 @@ const toWin = (stake: number, oddsStr: string): number => {
     return odds > 0 ? stake * (odds / 100) : stake / (Math.abs(odds) / 100);
 };
 
-export const BetSlip: React.FC<BetSlipProps & { onClose?: () => void }> = ({ betSlip, setBetSlip, activeTickets, setActiveTickets, onClose }) => {
+export const BetSlip: React.FC<BetSlipProps & { onClose?: () => void }> = ({ betSlip, setBetSlip, activeTickets, setActiveTickets, onPlaceTicket, onClose }) => {
     const { isBookEnabled } = useSportsbooks();
     const { isRookieModeActive } = useRookieMode();
     const [mode, setMode] = useState<SlipMode>('singles');
@@ -348,8 +349,13 @@ export const BetSlip: React.FC<BetSlipProps & { onClose?: () => void }> = ({ bet
                     <div className="pt-2 pb-1">
                         <button
                             onClick={() => {
-                                if (setActiveTickets && activeTickets && betSlip.length > 0) {
-                                    setActiveTickets([[...betSlip], ...activeTickets]);
+                                if (betSlip.length > 0) {
+                                    const stakeToDeduct = mode === 'parlay' && betSlip.length >= 2 ? parlayStake : totalStake;
+                                    if (onPlaceTicket) {
+                                        onPlaceTicket([...betSlip], stakeToDeduct);
+                                    } else if (setActiveTickets && activeTickets) {
+                                        setActiveTickets([[...betSlip], ...activeTickets]);
+                                    }
                                     setBetSlip([]);
                                 }
                             }}

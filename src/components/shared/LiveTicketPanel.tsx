@@ -6,6 +6,7 @@ import { useLiveBets } from '../../contexts/LiveBetsContext';
 interface LiveTicketPanelProps {
     activeTickets?: BetPick[][];
     onRemoveTicket?: (index: number) => void;
+    onResolveTicket?: (ticketIndex: number, status: 'WON' | 'LOST', stake: number, payout: number) => void;
 }
 
 const americanToDecimal = (oddsStr: string): number => {
@@ -51,7 +52,7 @@ const getLogoForPick = (bet: BetPick) => {
     return `https://a.espncdn.com/i/teamlogos/nba/500/${abbr}.png`;
 };
 
-const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ticket, onRemove }) => {
+const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void; onResolve?: (status: 'WON' | 'LOST', stake: number, payout: number) => void }> = ({ ticket, onRemove, onResolve }) => {
     const ticketId = React.useMemo(() => Math.floor(1000000000 + Math.random() * 9000000000).toString(), []);
     const ticketDate = React.useMemo(() => {
         const d = new Date();
@@ -131,14 +132,21 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
                     </div>
                 </div>
             )}
+            {/* Resolve Buttons */}
+            {ticketStatus === 'PENDING' && onResolve && (
+                <div className="absolute top-2 right-12 flex gap-1.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => onResolve('WON', riskAmount, payoutAmount)} className="px-2 py-1 text-[9px] font-black uppercase tracking-widest bg-[#A3FF00] text-black rounded shadow-[0_0_10px_rgba(163,255,0,0.4)] hover:scale-105 transition-transform">Win</button>
+                    <button onClick={() => onResolve('LOST', riskAmount, payoutAmount)} className="px-2 py-1 text-[9px] font-black uppercase tracking-widest bg-red-500 text-white rounded shadow-[0_0_10px_rgba(239,68,68,0.4)] hover:scale-105 transition-transform">Lose</button>
+                </div>
+            )}
             {/* Remove Button */}
             {onRemove && (
                 <button
                     onClick={onRemove}
-                    className="absolute top-2 right-2 p-1.5 bg-black/40 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-full transition-colors z-10 opacity-0 group-hover:opacity-100"
-                    title="Remove Ticket"
+                    className="absolute top-2 right-2 p-1.5 bg-black/40 hover:bg-neutral-800 text-slate-400 hover:text-white rounded-full transition-colors z-10 opacity-0 group-hover:opacity-100"
+                    title="Hide Ticket"
                 >
-                    <span className="material-symbols-outlined text-[14px]">close</span>
+                    <span className="material-symbols-outlined text-[14px]">visibility_off</span>
                 </button>
             )}
             {/* PickLabs Logo Header */}
@@ -403,7 +411,7 @@ const TicketCard: React.FC<{ ticket: BetPick[]; onRemove?: () => void }> = ({ ti
     );
 };
 
-export const LiveTicketPanel: React.FC<LiveTicketPanelProps> = ({ activeTickets, onRemoveTicket }) => {
+export const LiveTicketPanel: React.FC<LiveTicketPanelProps> = ({ activeTickets, onRemoveTicket, onResolveTicket }) => {
     const { isLiveBetsActive } = useLiveBets();
     const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -432,6 +440,9 @@ export const LiveTicketPanel: React.FC<LiveTicketPanelProps> = ({ activeTickets,
                     <TicketCard ticket={ticket} onRemove={() => {
                         if (onRemoveTicket) onRemoveTicket(activeIdx);
                         setCurrentIndex(0);
+                    }} onResolve={(status, stake, payout) => {
+                        if (onResolveTicket) onResolveTicket(activeIdx, status, stake, payout);
+                        setCurrentIndex(0);
                     }} />
                 </div>
             </div>
@@ -443,7 +454,7 @@ export const LiveTicketPanel: React.FC<LiveTicketPanelProps> = ({ activeTickets,
         <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-neutral-800/80 [&::-webkit-scrollbar-track]:bg-transparent snap-x snap-mandatory flex gap-4 pb-4 px-1">
             {activeTickets.map((ticket, idx) => (
                 <div key={idx} className="snap-center shrink-0 w-[90%] sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)] min-w-[280px]">
-                    <TicketCard ticket={ticket} onRemove={onRemoveTicket ? () => onRemoveTicket(idx) : undefined} />
+                    <TicketCard ticket={ticket} onRemove={onRemoveTicket ? () => onRemoveTicket(idx) : undefined} onResolve={onResolveTicket ? (status, stake, payout) => onResolveTicket(idx, status, stake, payout) : undefined} />
                 </div>
             ))}
         </div>
