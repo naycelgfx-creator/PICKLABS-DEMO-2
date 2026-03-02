@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { getCurrentUser, isAdminEmail } from '../../data/PickLabsAuthDB';
+import { PremiumLockView } from '../shared/PremiumLockView';
 import { SPORT_LOGOS } from '../../data/mockGames';
 import { PlayerPropsModule } from '../props/PlayerPropsModule';
 import { RosterAndStats } from './RosterAndStats';
@@ -115,7 +117,9 @@ export const TeamDetails: React.FC<TeamDetailsProps> = ({ team, sport, onBack })
                         <DepthChart teamName={team.name} sport={sport} />
                     )}
                     {activeTab === 'props' && (
-                        <PlayerPropsModule sport={sport} team={team} />
+                        getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
+                            ? <PlayerPropsModule sport={sport} team={team} />
+                            : <div className="mt-8"><PremiumLockView featureName="Player Props" onNavigate={() => { }} /></div>
                     )}
                 </div>
 

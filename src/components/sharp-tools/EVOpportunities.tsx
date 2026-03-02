@@ -1,37 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Game } from '../../data/mockGames';
 
-const EV_POOL = [
-    { player: 'Anthony Davis', prop: 'Over 12.5 Rebounds', market: '-110' },
-    { player: 'Jayson Tatum', prop: 'Under 28.5 Points', market: '+105' },
-    { player: 'LeBron James', prop: 'Over 7.5 Assists', market: '+120' },
-    { player: 'Stephen Curry', prop: 'Over 4.5 Threes', market: '-115' },
-    { player: 'Nikola Jokic', prop: 'Triple Double', market: '+150' },
-    { player: 'Luka Doncic', prop: 'Over 32.5 Points', market: '-105' },
-    { player: 'Giannis Antetokounmpo', prop: 'Under 11.5 Rebounds', market: '-120' },
-    { player: 'Kevin Durant', prop: 'Over 2.5 Assists', market: '+135' },
-    { player: 'Shai Gilgeous-Alexander', prop: 'Over 1.5 Steals', market: '-130' },
-    { player: 'Joel Embiid', prop: 'Over 3.5 Blocks/Steals', market: '+110' }
-];
+interface EVOpportunitiesProps {
+    game?: Game | null;
+}
 
-export const EVOpportunities: React.FC = () => {
+export const EVOpportunities: React.FC<EVOpportunitiesProps> = ({ game }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
+    const [opportunities, setOpportunities] = useState<{ player: string; prop: string; market: string; ev: number; trueProb: number }[]>([]);
 
-    // Generate 2 random EV picks
-    const getRandomOpps = () => {
-        const shuffled = [...EV_POOL].sort(() => 0.5 - Math.random());
+    // Generate 2 random EV picks based on the active game
+    const generateOpps = useCallback(() => {
+        let pool = [];
+
+        if (game) {
+            // Build dynamic pool from game details
+            const props = ['Over Points', 'Under Assists', 'Over Rebounds', 'Over Threes', 'Under Total Stats', 'Over Goals', 'Under Shots', 'Over Yards'];
+            const names = [game.awayTeam.name, game.homeTeam.name];
+
+            for (let i = 0; i < 4; i++) {
+                const teamName = names[Math.floor(Math.random() * names.length)];
+                const propStr = props[Math.floor(Math.random() * props.length)];
+                pool.push({
+                    player: `${teamName.split(' ')[0]} Player ${i + 1}`,
+                    prop: `${propStr.split(' ')[0]} ${Math.floor(Math.random() * 20)}.5 ${propStr.split(' ')[1]}`,
+                    market: Math.random() > 0.5 ? `-${Math.floor(Math.random() * 50) + 110}` : `+${Math.floor(Math.random() * 50) + 105}`
+                });
+            }
+        } else {
+            // Fallback generic pool
+            pool = [
+                { player: 'Generic Player', prop: 'Over 12.5 Stats', market: '-110' },
+                { player: 'Test Athlete', prop: 'Under 28.5 Points', market: '+105' },
+                { player: 'Sample Guard', prop: 'Over 7.5 Assists', market: '+120' },
+            ];
+        }
+
+        const shuffled = [...pool].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, 2).map(opp => ({
             ...opp,
             ev: Number((Math.random() * 15 + 5).toFixed(1)), // random EV between 5% and 20%
             trueProb: Number((Math.random() * 20 + 50).toFixed(1)) // probability between 50% and 70%
         }));
-    };
+    }, [game]);
 
-    const [opportunities, setOpportunities] = useState(getRandomOpps());
+    useEffect(() => {
+        setIsScanning(true);
+        const t = setTimeout(() => {
+            setOpportunities(generateOpps());
+            setIsScanning(false);
+        }, 1500);
+        return () => clearTimeout(t);
+    }, [game, generateOpps]);
 
     const handleRefresh = () => {
         setIsRefreshing(true);
         setTimeout(() => {
-            setOpportunities(getRandomOpps());
+            setOpportunities(generateOpps());
             setIsRefreshing(false);
         }, 1500);
     };
@@ -46,7 +72,13 @@ export const EVOpportunities: React.FC = () => {
                 <span className="text-[9px] px-2 py-0.5 bg-accent-purple/10 text-accent-purple border border-accent-purple/30 rounded font-black uppercase">Calculated</span>
             </div>
 
-            <div className="p-4 space-y-4 flex-1">
+            <div className="p-4 space-y-4 flex-1 relative">
+                {isScanning && (
+                    <div className="absolute inset-0 bg-neutral-900/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center rounded-b-lg">
+                        <span className="material-symbols-outlined text-4xl text-accent-purple animate-spin mb-2">calculate</span>
+                        <p className="text-xs font-black text-accent-purple uppercase tracking-widest animate-pulse">Running Monte Carlo...</p>
+                    </div>
+                )}
                 {opportunities.map((opp, i) => (
                     <div key={i} className="bg-white dark:bg-neutral-900/40 border border-border-muted rounded-lg p-4 transition-all duration-300">
                         <div className="flex justify-between items-center mb-4">

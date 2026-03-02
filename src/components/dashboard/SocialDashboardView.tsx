@@ -54,7 +54,7 @@ const generateMockUsers = (count: number): UserProfile[] => {
     });
 };
 
-const allMockUsers = generateMockUsers(60);
+const allMockUsers = generateMockUsers(50);
 
 export const SocialDashboardView: React.FC = () => {
     const [users, setUsers] = useState<UserProfile[]>(allMockUsers);
@@ -79,12 +79,12 @@ export const SocialDashboardView: React.FC = () => {
         setUsers(users.map(u => u.id === id ? { ...u, isFollowing: !u.isFollowing } : u));
     };
 
-    const copyParlay = (parlay: string[], e?: React.MouseEvent) => {
+    const copyParlay = (parlay: string[], e?: React.MouseEvent | React.MouseEvent<HTMLTableRowElement>) => {
         if (e) e.stopPropagation();
         alert(`Copied ${parlay.length}-Leg Parlay to clipboard! (Feature Simulation)`);
     };
 
-    const addToFeatured = (userId: string, e?: React.MouseEvent) => {
+    const addToFeatured = (userId: string, e?: React.MouseEvent | React.MouseEvent<HTMLButtonElement>) => {
         if (e) e.stopPropagation();
         if (featuredIds.includes(userId)) return; // Already featured
 
@@ -100,7 +100,7 @@ export const SocialDashboardView: React.FC = () => {
             <div className="max-w-[1536px] w-full flex flex-col gap-10 animate-fade-in pb-12">
 
                 {/* Header */}
-                <div className="flex flex-col md:flex-row items-end justify-between gap-4 border-b border-[#333] pb-6">
+                <div className="flex flex-col md:flex-row items-end justify-between gap-4 border-b border-border-muted pb-6">
                     <div className="flex items-center gap-5">
                         <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(163,255,0,0.15)]">
                             <span className="material-symbols-outlined text-primary text-4xl">travel_explore</span>
@@ -132,7 +132,7 @@ export const SocialDashboardView: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {featuredUsers.map(user => (
-                            <div key={user.id} className="relative bg-black border border-neutral-800 rounded-none hover:border-primary/50 transition-colors shadow-2xl group flex flex-col">
+                            <div key={user.id} className="terminal-panel border-primary/20 hover:shadow-[0_0_15px_rgba(13,242,13,0.1)] transition-shadow overflow-hidden group flex flex-col">
 
                                 {/* Card Edge Glow */}
                                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -142,8 +142,8 @@ export const SocialDashboardView: React.FC = () => {
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="relative">
-                                                <img src={user.avatar} alt={user.nickname} className="w-12 h-12 rounded bg-neutral-900 border border-neutral-700 object-cover" />
-                                                <div className="absolute -bottom-1 -right-1 bg-black border border-neutral-700 text-[8px] font-black px-1 rounded uppercase tracking-widest">{user.stateLocation}</div>
+                                                <img src={user.avatar} alt={user.nickname} className="w-12 h-12 rounded border border-border-muted object-cover" />
+                                                <div className="absolute -bottom-1 -right-1 bg-white dark:bg-neutral-900/40 border border-border-muted text-slate-500 text-[8px] font-black px-1 rounded uppercase tracking-widest">{user.stateLocation}</div>
                                             </div>
                                             <div className="flex flex-col min-w-0">
                                                 <span className="font-bold text-base text-white truncate max-w-[120px]">{user.nickname}</span>
@@ -192,14 +192,14 @@ export const SocialDashboardView: React.FC = () => {
                                 <div className="flex w-full mt-auto">
                                     <button
                                         onClick={(e) => copyParlay(user.recentParlay, e)}
-                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#0a0a0c] hover:bg-neutral-900 text-white text-[10px] font-black uppercase tracking-widest transition-colors border-t border-r border-neutral-800"
+                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-white dark:bg-neutral-900/40 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-main text-[10px] font-black uppercase tracking-widest transition-colors border-t border-r border-border-muted"
                                     >
                                         <span className="material-symbols-outlined text-[14px]">content_copy</span>
                                         Tail Picks
                                     </button>
                                     <button
                                         onClick={(e) => toggleFollow(user.id, e)}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${user.isFollowing ? 'bg-primary/10 text-primary border-t border-primary/20 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20' : 'bg-primary text-black hover:bg-[#8aea00]'}`}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${user.isFollowing ? 'bg-primary/10 text-primary border-t border-border-muted' : 'bg-primary text-black hover:bg-[#8aea00]'}`}
                                     >
                                         {user.isFollowing ? 'Following' : 'Follow'}
                                     </button>
@@ -219,10 +219,10 @@ export const SocialDashboardView: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="w-full bg-black border border-neutral-800 overflow-x-auto rounded-none">
+                    <div className="w-full terminal-panel overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[800px]">
                             <thead>
-                                <tr className="border-b border-neutral-800 bg-[#0a0a0c] text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
+                                <tr className="border-b border-border-muted bg-white dark:bg-neutral-900/40 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                                     <th className="p-4 w-16 text-center">Rank</th>
                                     <th className="p-4">Bettor</th>
                                     <th className="p-4">Location</th>
@@ -231,24 +231,24 @@ export const SocialDashboardView: React.FC = () => {
                                     <th className="p-4 text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-border-muted">
                                 {sortedLeaderboard.map((user, idx) => {
                                     const isFeatured = featuredIds.includes(user.id);
                                     const isHot = user.winPercent >= 55;
                                     const isCold = user.winPercent <= 45;
 
                                     return (
-                                        <tr key={user.id} className="border-b border-neutral-800/50 hover:bg-white/[0.02] transition-colors group">
+                                        <tr key={user.id} onClick={(e) => copyParlay(user.recentParlay, e)} className="cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-colors group">
                                             <td className="p-4 text-center">
-                                                <span className={`text-sm font-bold font-mono ${idx < 3 ? 'text-primary' : 'text-white/40'}`}>
+                                                <span className={`text-sm font-bold font-mono ${idx < 4 ? 'text-primary' : 'text-slate-400'}`}>
                                                     #{idx + 1}
                                                 </span>
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center gap-3">
-                                                    <img src={user.avatar} className="w-8 h-8 rounded shrink-0 bg-neutral-900 border border-neutral-800" alt="" />
+                                                    <img src={user.avatar} className="w-8 h-8 rounded shrink-0 border border-border-muted" alt="" />
                                                     <div className="flex items-center gap-2">
-                                                        <span className="font-bold text-white text-sm">{user.nickname}</span>
+                                                        <span className="font-bold text-text-main text-sm">{user.nickname}</span>
                                                         {isHot && <span className="text-orange-500 text-xs" title="Hot Streak">🔥</span>}
                                                         {isCold && <span className="text-blue-400 text-xs" title="Ice Cold">❄️</span>}
                                                         {isFeatured && <span className="material-symbols-outlined text-primary text-[14px]" title="Currently Featured">star</span>}
@@ -256,7 +256,7 @@ export const SocialDashboardView: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="p-4">
-                                                <span className="px-2 py-1 bg-neutral-900 border border-neutral-800 rounded text-[10px] font-bold text-white/70 uppercase">
+                                                <span className="px-2 py-1 bg-white dark:bg-neutral-900/40 border border-border-muted rounded text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                                                     {user.stateLocation}
                                                 </span>
                                             </td>
@@ -279,15 +279,15 @@ export const SocialDashboardView: React.FC = () => {
                                             <td className="p-4 text-center">
                                                 <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button
-                                                        onClick={() => copyParlay(user.recentParlay)}
-                                                        className="text-white/50 hover:text-white p-1"
+                                                        onClick={(e) => copyParlay(user.recentParlay, e)}
+                                                        className="text-slate-400 hover:text-text-main p-1 transition-colors"
                                                         title="Tail Parlay"
                                                     >
                                                         <span className="material-symbols-outlined text-[18px]">content_copy</span>
                                                     </button>
                                                     <button
-                                                        onClick={() => addToFeatured(user.id)}
-                                                        className={`${isFeatured ? 'text-primary' : 'text-white/50 hover:text-primary'} p-1 disabled:opacity-50`}
+                                                        onClick={(e) => addToFeatured(user.id, e)}
+                                                        className={`${isFeatured ? 'text-primary' : 'text-slate-400 hover:text-primary'} p-1 disabled:opacity-50 transition-colors`}
                                                         title={isFeatured ? "Already Featured" : "Pin to Featured"}
                                                         disabled={isFeatured}
                                                     >

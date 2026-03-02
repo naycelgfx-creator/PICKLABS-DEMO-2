@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Player, PlayerLog, PlayerProp } from '../../data/mockPlayers';
+import { getCurrentUser, isAdminEmail } from '../../data/PickLabsAuthDB';
 
 interface BoxPopData {
     log: PlayerLog;
@@ -29,6 +30,7 @@ function parseMinutes(minStr: string): number {
 }
 
 export const PlayerDashboard: React.FC<PlayerDashboardProps> = ({ player, prop, sport }) => {
+    const isPremiumUser = getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '');
     const [hoveredBar, setHoveredBar] = useState<BoxPopData | null>(null);
     const chartRef = useRef<HTMLDivElement>(null);
 
@@ -345,8 +347,10 @@ export const PlayerDashboard: React.FC<PlayerDashboardProps> = ({ player, prop, 
                     {/* Over % */}
                     <div className="mb-5">
                         <div className="flex justify-between mb-1.5">
-                            <span className="text-[9px] font-black text-primary uppercase tracking-widest">Over {line}</span>
-                            <span className="text-[10px] font-black text-primary">{overPct}%</span>
+                            <span className="text-[9px] font-black text-primary uppercase tracking-widest flex items-center gap-1">
+                                {!isPremiumUser && <span className="material-symbols-outlined text-[10px]">lock</span>} Over {line}
+                            </span>
+                            <span className={`text-[10px] font-black text-primary ${!isPremiumUser ? 'blur-sm select-none pointer-events-none' : ''}`}>{isPremiumUser ? `${overPct}%` : '88%'}</span>
                         </div>
                         <div className="bg-neutral-800 rounded-full h-3 overflow-hidden">
                             <div
@@ -360,8 +364,10 @@ export const PlayerDashboard: React.FC<PlayerDashboardProps> = ({ player, prop, 
                     {/* Under % */}
                     <div className="mb-5">
                         <div className="flex justify-between mb-1.5">
-                            <span className="text-[9px] font-black text-red-400 uppercase tracking-widest">Under {line}</span>
-                            <span className="text-[10px] font-black text-red-400">{underPct}%</span>
+                            <span className="text-[9px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1">
+                                {!isPremiumUser && <span className="material-symbols-outlined text-[10px]">lock</span>} Under {line}
+                            </span>
+                            <span className={`text-[10px] font-black text-red-400 ${!isPremiumUser ? 'blur-sm select-none pointer-events-none' : ''}`}>{isPremiumUser ? `${underPct}%` : '88%'}</span>
                         </div>
                         <div className="bg-neutral-800 rounded-full h-3 overflow-hidden">
                             <div

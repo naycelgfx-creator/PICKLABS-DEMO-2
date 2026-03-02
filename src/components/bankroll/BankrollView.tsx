@@ -36,16 +36,16 @@ export const BankrollView: React.FC<BankrollViewProps> = ({ bankroll, ticketHist
                         <DailyExposureMeter />
                         <PerformanceWidget />
                     </div>
-                    <BankrollChart />
+                    <BankrollChart ticketHistory={ticketHistory} />
                 </div>
 
                 <div className="flex flex-col gap-6">
                     <AIRoiAnalyser />
-                    <AllocationCharts />
+                    <AllocationCharts ticketHistory={ticketHistory} />
                 </div>
             </div>
 
-            <TransactionHistory />
+            <TransactionHistory ticketHistory={ticketHistory} />
         </main>
     );
 };

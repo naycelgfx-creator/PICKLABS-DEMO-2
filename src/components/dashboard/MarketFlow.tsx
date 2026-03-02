@@ -54,8 +54,8 @@ export const MarketFlow: React.FC<MarketFlowProps> = ({ game }) => {
                         <span className="material-symbols-outlined text-primary text-sm">psychology</span>
                         <h3 className="text-xs font-black text-text-main uppercase tracking-widest">AI Reasoning</h3>
                     </div>
-                    <p className="text-[11px] text-text-muted leading-relaxed italic bg-white/5 p-4 rounded-lg border border-border-muted/50">
-                        "Significant professional money entering on {favoredTeam} Spread. 14% handle gap suggests institutional confidence despite heavy public volume."
+                    <p className={`text-[11px] text-text-muted leading-relaxed italic bg-white/5 p-4 rounded-lg border border-border-muted/50`}>
+                        {`"Significant professional money entering on ${favoredTeam} Spread. 14% handle gap suggests institutional confidence despite heavy public volume."`}
                     </p>
                 </div>
             </div>

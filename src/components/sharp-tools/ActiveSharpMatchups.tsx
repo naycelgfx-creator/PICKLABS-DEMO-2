@@ -4,11 +4,12 @@ import { generateAIPrediction } from '../../data/espnTeams';
 
 interface ActiveSharpMatchupsProps {
     game?: Game | null;
+    games?: Game[];
     onGameSelect?: (game: Game) => void;
 }
 
-export const ActiveSharpMatchups: React.FC<ActiveSharpMatchupsProps> = ({ game, onGameSelect }) => {
-    const [localGame, setLocalGame] = useState<Game | null>(game || mockGamesBySport['NBA']![0] || null);
+export const ActiveSharpMatchups: React.FC<ActiveSharpMatchupsProps> = ({ game, games, onGameSelect }) => {
+    const [localGame, setLocalGame] = useState<Game | null>(game || (games && games.length > 0 ? games[0] : null) || mockGamesBySport['NBA']![0] || null);
 
     useEffect(() => {
         if (game) setLocalGame(game);
@@ -96,7 +97,7 @@ export const ActiveSharpMatchups: React.FC<ActiveSharpMatchupsProps> = ({ game, 
                     </div>
 
                     <div className="flex items-center gap-4 mt-4 overflow-x-auto custom-scrollbar pb-2">
-                        {mockGamesBySport['NBA']?.map(g => {
+                        {(games || mockGamesBySport[activeGame.sport])?.map(g => {
                             const isSelected = activeGame.id === g.id;
                             // Add some synthetic trend logic purely for display
                             const trendScore = g.awayTeam.name.length;

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { ResolvedTicket } from '../../App';
 import { TicketCard } from '../shared/LiveTicketPanel';
+import { IconBrandInstagram, IconBrandFacebook, IconBrandDiscord, IconBrandWhatsapp, IconBrandTelegram, IconShare } from '@tabler/icons-react';
 
 export interface SavedPicksViewProps {
     ticketHistory: ResolvedTicket[];
@@ -57,13 +58,42 @@ export const SavedPicksView: React.FC<SavedPicksViewProps> = ({ ticketHistory })
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
                                     {ticketsForDate.map((ticket, idx) => {
                                         const timeString = new Date(ticket.dateStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
                                         return (
-                                            <div key={idx} className="flex flex-col relative w-full items-start justify-start">
-                                                <TicketCard
-                                                    ticket={ticket.picks}
-                                                    forceStatus={ticket.status}
-                                                    dateOverride={`${dateLabel} • ${timeString}`}
-                                                />
+                                            <div key={idx} className="flex flex-col relative w-full items-start justify-start group">
+                                                <div className="w-full relative z-10">
+                                                    <TicketCard
+                                                        ticket={ticket.picks}
+                                                        forceStatus={ticket.status}
+                                                        dateOverride={`${dateLabel} • ${timeString}`}
+                                                    />
+                                                </div>
+
+                                                {/* Share Overlay Tray */}
+                                                <div className="absolute -bottom-4 left-0 right-0 h-16 bg-[#1a1a1a] rounded-b-xl border border-white/10 opacity-0 group-hover:opacity-100 group-hover:translate-y-4 transition-all duration-300 z-0 flex items-center justify-center gap-4 px-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+                                                    <div className="flex items-center gap-1.5 absolute left-4 text-white/50 text-[10px] font-black uppercase tracking-widest hidden sm:flex">
+                                                        <IconShare size={14} className="text-white/80" />
+                                                        Share
+                                                    </div>
+
+                                                    <div className="flex items-center gap-3">
+                                                        <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#E1306C] hover:text-white text-white/60 transition-colors shadow-sm cursor-pointer" title="Share to Instagram">
+                                                            <IconBrandInstagram size={16} stroke={2} />
+                                                        </button>
+                                                        <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#1877F2] hover:text-white text-white/60 transition-colors shadow-sm cursor-pointer" title="Share to Facebook">
+                                                            <IconBrandFacebook size={16} stroke={2} />
+                                                        </button>
+                                                        <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#5865F2] hover:text-white text-white/60 transition-colors shadow-sm cursor-pointer" title="Share to Discord">
+                                                            <IconBrandDiscord size={16} stroke={2} />
+                                                        </button>
+                                                        <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#25D366] hover:text-white text-white/60 transition-colors shadow-sm cursor-pointer" title="Share to WhatsApp">
+                                                            <IconBrandWhatsapp size={16} stroke={2} />
+                                                        </button>
+                                                        <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#0088cc] hover:text-white text-white/60 transition-colors shadow-sm cursor-pointer" title="Share to Telegram">
+                                                            <IconBrandTelegram size={16} stroke={2} />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         );
                                     })}

@@ -204,9 +204,9 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                             <span className="material-symbols-outlined text-white text-xl">person</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-black text-text-main truncate">{user?.email || 'Guest Account'}</p>
+                                            <p className="text-xs font-black text-text-main truncate">{user?.email || 'Free Account'}</p>
                                             <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest">
-                                                {user?.isPremium ? 'Premium Plan' : 'Free Tier'}
+                                                {user?.isPremium ? 'Premium Plan' : 'Free Account'}
                                             </p>
                                         </div>
                                     </div>
@@ -507,7 +507,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-xs font-black text-text-main">{user?.email}</span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{user?.isPremium ? 'Premium · Yearly' : 'Free Tier'}</span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{user?.isPremium ? 'Premium · Yearly' : 'Free Account'}</span>
                                 </div>
                             </div>
                             <button onClick={() => { toggleRookieMode(); if (isRookieModeActive) setIsGlossaryOpen(false); }} className="w-full flex items-center justify-between px-4 py-3 border-b border-border-muted active:bg-white/5">

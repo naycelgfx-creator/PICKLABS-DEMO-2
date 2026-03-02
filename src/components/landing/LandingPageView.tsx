@@ -63,8 +63,6 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
             price: { monthly: '0', yearly: '0' },
             ctaLabel: 'Start Free Trial',
             onCta: () => onNavigate('login-page'),
-            secondaryCtaLabel: 'Enter',
-            onSecondaryCta: () => onNavigate('live-board'),
             icon: <Zap className="w-5 h-5" />,
             features: [
                 { name: 'Trending Insights', description: 'Today\'s top sharp public picks', included: true },
@@ -206,17 +204,6 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                                 className="w-full md:w-auto px-10 py-5 font-black uppercase tracking-[0.2em] italic text-black text-sm hover:scale-105 transition-transform"
                             >
                                 Start 7-Day Free Trial
-                            </ShimmerButton>
-                            <ShimmerButton
-                                onClick={() => onNavigate('live-board')}
-                                shimmerColor="#ffffff"
-                                shimmerDuration="2.5s"
-                                shimmerSize="0.08em"
-                                borderRadius="12px"
-                                background="#000000"
-                                className="w-full md:w-auto px-10 py-5 font-black uppercase tracking-[0.2em] italic text-white text-sm hover:scale-105 transition-transform border border-border-muted"
-                            >
-                                Enter
                             </ShimmerButton>
                         </div>
                     </div>

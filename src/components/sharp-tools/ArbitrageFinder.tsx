@@ -7,7 +7,19 @@ interface ArbitrageFinderProps {
 
 export const ArbitrageFinder: React.FC<ArbitrageFinderProps> = ({ game }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
     const [statusText, setStatusText] = useState("View 12 More Opportunities");
+
+    React.useEffect(() => {
+        if (!game) return;
+        setIsScanning(true);
+        setStatusText("Scanning incoming lines...");
+        const t = setTimeout(() => {
+            setIsScanning(false);
+            setStatusText("View 12 More Opportunities");
+        }, 1500);
+        return () => clearTimeout(t);
+    }, [game]);
 
     const handleLoadMore = () => {
         setIsLoading(true);
@@ -29,12 +41,19 @@ export const ArbitrageFinder: React.FC<ArbitrageFinderProps> = ({ game }) => {
                 <span className="text-[9px] px-2 py-0.5 bg-primary/10 text-primary border border-primary/30 rounded font-black uppercase">Live</span>
             </div>
 
-            <div className="p-4 space-y-4 flex-1">
+            <div className="p-4 space-y-4 flex-1 relative">
+                {isScanning && (
+                    <div className="absolute inset-0 bg-neutral-900/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center rounded-b-lg">
+                        <span className="material-symbols-outlined text-4xl text-primary animate-spin mb-2">radar</span>
+                        <p className="text-xs font-black text-primary uppercase tracking-widest animate-pulse">Scanning Books...</p>
+                    </div>
+                )}
+
                 {/* Arb Row 1 */}
                 <div className="bg-white dark:bg-neutral-900/40 border border-border-muted rounded-lg p-3 hover:border-primary/40 transition-all group">
                     <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase">{game ? `${game.awayTeam.name.split(' ').pop()} ML` : 'LAL Lakers ML'}</span>
-                        <span className="text-xs font-black text-primary italic">+4.82% Profit</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase">{game ? `${game.awayTeam.name.split(' ').pop()} ML` : 'Away Team ML'}</span>
+                        <span className="text-xs font-black text-primary italic">+{((Math.random() * 2) + 2).toFixed(2)}% Profit</span>
                     </div>
                     <div className="flex justify-between gap-4">
                         <div className="flex-1 bg-neutral-800/50 p-2 rounded border border-border-muted">
@@ -51,8 +70,8 @@ export const ArbitrageFinder: React.FC<ArbitrageFinderProps> = ({ game }) => {
                 {/* Arb Row 2 */}
                 <div className="bg-white dark:bg-neutral-900/40 border border-border-muted rounded-lg p-3 hover:border-primary/40 transition-all">
                     <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase">{game ? `${game.awayTeam.name.substring(0, 3).toUpperCase()}/${game.homeTeam.name.substring(0, 3).toUpperCase()} Over 228.5` : 'BOS/NYK Over 228.5'}</span>
-                        <span className="text-xs font-black text-primary italic">+2.15% Profit</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase">{game ? `${game.awayTeam.name.substring(0, 3).toUpperCase()}/${game.homeTeam.name.substring(0, 3).toUpperCase()} Over 228.5` : 'Over 228.5'}</span>
+                        <span className="text-xs font-black text-primary italic">+{((Math.random() * 2) + 1).toFixed(2)}% Profit</span>
                     </div>
                     <div className="flex justify-between gap-4">
                         <div className="flex-1 bg-neutral-800/50 p-2 rounded border border-border-muted">

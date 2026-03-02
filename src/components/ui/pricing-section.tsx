@@ -22,8 +22,6 @@ export interface PricingTier {
     ctaLabel?: string;
     icon: React.ReactNode;
     onCta?: () => void;
-    secondaryCtaLabel?: string;
-    onSecondaryCta?: () => void;
 }
 
 interface PricingSectionProps {
@@ -207,18 +205,6 @@ export function PricingSection({ tiers, className, title = 'Choose Your Edge', s
                                             <ArrowRightIcon className="w-4 h-4" />
                                         </span>
                                     </Button>
-
-                                    {tier.secondaryCtaLabel && (
-                                        <Button
-                                            onClick={tier.onSecondaryCta}
-                                            className="w-full h-12 text-xs font-black uppercase tracking-[0.2em] italic rounded-xl transition-all duration-300 bg-black text-white hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] border border-neutral-800"
-                                        >
-                                            <span className="flex items-center justify-center gap-2">
-                                                {tier.secondaryCtaLabel}
-                                                <ArrowRightIcon className="w-4 h-4" />
-                                            </span>
-                                        </Button>
-                                    )}
                                 </div>
                             </div>
                         </div>

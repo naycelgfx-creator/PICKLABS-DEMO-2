@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Game } from '../../data/mockGames';
 import { BetPick } from '../../App';
 import { fetchESPNNews, ESPNNewsItem } from '../../data/espnNews';
+import { getCurrentUser, isAdminEmail } from '../../data/PickLabsAuthDB';
+import { PremiumLockView } from '../shared/PremiumLockView';
+import { useRookieMode } from '../../contexts/RookieModeContext';
 
 interface AITopBetsProps {
     game: Game;
@@ -33,6 +36,9 @@ export const AITopBets: React.FC<AITopBetsProps> = ({ game, onAddBet }) => {
     const [espnNews, setEspnNews] = useState<ESPNNewsItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [lastUpdate, setLastUpdate] = useState<string>('');
+    const { hasExceededQuota } = useRookieMode(); // Moved this line up
+    const user = getCurrentUser();
+    const isPremiumUser = user?.isPremium || isAdminEmail(user?.email || '');
 
     // Determine sport from game data
     const sport = game.sport || 'NBA';
@@ -100,11 +106,13 @@ export const AITopBets: React.FC<AITopBetsProps> = ({ game, onAddBet }) => {
             stake: 100,
             analysis: loading
                 ? 'Loading live news context...'
-                : (
-                    espnNews.find(n => n.category === 'injury')?.headline
-                        ? `📋 Injury Alert: ${espnNews.find(n => n.category === 'injury')!.headline}. Win probability adjusted: ${homeName} 57%.`
-                        : `Win probability: 57% for ${homeName} at current odds. Edge confirmed via PickLabs analysis.`
-                ),
+                : !isPremiumUser
+                    ? `🔒 Win probability analysis and live edges are locked for Free Accounts. Upgrade to Premium to see this exclusive AI data.`
+                    : (
+                        espnNews.find(n => n.category === 'injury')?.headline
+                            ? `📋 Injury Alert: ${espnNews.find(n => n.category === 'injury')!.headline}. Win probability adjusted: ${homeName} 57%.`
+                            : `Win probability: 57% for ${homeName} at current odds. Edge confirmed via PickLabs analysis.`
+                    ),
         },
     ];
 
@@ -134,46 +142,54 @@ export const AITopBets: React.FC<AITopBetsProps> = ({ game, onAddBet }) => {
                 </div>
             </div>
 
-            {/* PickLabs news context bar */}
-            {!loading && espnNews.length > 0 && (
-                <div className="mb-4 p-2 bg-neutral-800/40 border border-neutral-700/50 rounded-lg flex items-start gap-2 relative z-10">
-                    <span className="material-symbols-outlined text-primary text-[14px] shrink-0 mt-0.5">info</span>
-                    <p className="text-[10px] text-slate-400 leading-snug line-clamp-2">
-                        <span className="text-primary font-bold">PickLabs Context: </span>
-                        {espnNews[0]?.headline}
-                    </p>
+            {(!isPremiumUser && hasExceededQuota) ? (
+                <div className="flex justify-center py-12">
+                    <PremiumLockView featureName="AI Predictions" onNavigate={() => { }} />
                 </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-                {topBets.map((bet, idx) => (
-                    <div
-                        key={idx}
-                        className="bg-neutral-900/60 border border-border-muted rounded-lg p-5 flex flex-col justify-between group hover:border-primary/50 transition-colors"
-                    >
-                        <div>
-                            <div className="flex justify-between items-start mb-3">
-                                <span className="text-[9px] font-black uppercase text-accent-purple bg-accent-purple/10 px-2 py-1 rounded border border-accent-purple/20">
-                                    {bet.title}
-                                </span>
-                                <span className="text-text-main font-black text-xs">{bet.odds}</span>
-                            </div>
-                            <h4 className="text-sm font-bold text-text-main mb-2">{bet.team}</h4>
-                            <p className={`text-[10px] italic mb-4 leading-relaxed ${loading ? 'text-slate-600 animate-pulse' : 'text-text-muted'}`}>
-                                {bet.analysis}
+            ) : (
+                <>
+                    {/* PickLabs news context bar */}
+                    {!loading && espnNews.length > 0 && (
+                        <div className="mb-4 p-2 bg-neutral-800/40 border border-neutral-700/50 rounded-lg flex items-start gap-2 relative z-10">
+                            <span className="material-symbols-outlined text-primary text-[14px] shrink-0 mt-0.5">info</span>
+                            <p className="text-[10px] text-slate-400 leading-snug line-clamp-2">
+                                <span className="text-primary font-bold">PickLabs Context: </span>
+                                {espnNews[0]?.headline}
                             </p>
                         </div>
-                        <button
-                            onClick={() => onAddBet(bet)}
-                            disabled={loading}
-                            className="w-full py-2.5 mt-auto bg-primary/20 text-primary hover:bg-primary hover:text-black border border-primary/30 rounded font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                        >
-                            <span className="material-symbols-outlined text-sm">add_circle</span>
-                            Add to Slip
-                        </button>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+                        {topBets.map((bet, idx) => (
+                            <div
+                                key={idx}
+                                className="bg-neutral-900/60 border border-border-muted rounded-lg p-5 flex flex-col justify-between group hover:border-primary/50 transition-colors"
+                            >
+                                <div>
+                                    <div className="flex justify-between items-start mb-3">
+                                        <span className="text-[9px] font-black uppercase text-accent-purple bg-accent-purple/10 px-2 py-1 rounded border border-accent-purple/20">
+                                            {bet.title}
+                                        </span>
+                                        <span className="text-text-main font-black text-xs">{bet.odds}</span>
+                                    </div>
+                                    <h4 className="text-sm font-bold text-text-main mb-2">{bet.team}</h4>
+                                    <p className={`text-[10px] italic mb-4 leading-relaxed ${loading ? 'text-slate-600 animate-pulse' : 'text-text-muted'}`}>
+                                        {bet.analysis}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => onAddBet(bet)}
+                                    disabled={loading}
+                                    className="w-full py-2.5 mt-auto bg-primary/20 text-primary hover:bg-primary hover:text-black border border-primary/30 rounded font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                                >
+                                    <span className="material-symbols-outlined text-sm">add_circle</span>
+                                    Add to Slip
+                                </button>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+                </>
+            )}
         </div>
     );
 };

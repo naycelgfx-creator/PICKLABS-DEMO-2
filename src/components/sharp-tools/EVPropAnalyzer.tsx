@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { dfsEvEngine, PROP_PRESETS, PropPreset, DFSAnalysis } from '../../data/PickLabsEVEngine';
 import { PickLabsAlertEngine } from '../../data/PickLabsAlertEngine';
-import { getAllUsers } from '../../data/PickLabsAuthDB';
+import { getAllUsers, getCurrentUser, isAdminEmail } from '../../data/PickLabsAuthDB';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,6 +17,7 @@ const EV_CONFIG = {
 // ─── Single Pick Result Card ───────────────────────────────────────────────────
 
 const PropCard: React.FC<{ analysis: DFSAnalysis }> = ({ analysis }) => {
+    const isPremiumUser = getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '');
     const cfg = analysis.isProfitable ? EV_CONFIG.high : EV_CONFIG.low;
 
     return (
@@ -49,8 +50,10 @@ const PropCard: React.FC<{ analysis: DFSAnalysis }> = ({ analysis }) => {
 
             {/* True Win Probability */}
             <div className="flex justify-between items-center text-[11px] font-black pt-1">
-                <span className="text-text-muted uppercase tracking-wide">True Win Prob</span>
-                <span className="text-white">{analysis.true_win_probability}</span>
+                <span className="text-text-muted uppercase tracking-wide flex items-center gap-1">
+                    {!isPremiumUser && <span className="material-symbols-outlined text-[10px]">lock</span>} True Win Prob
+                </span>
+                <span className={`text-white ${!isPremiumUser ? 'blur-sm select-none pointer-events-none' : ''}`}>{isPremiumUser ? analysis.true_win_probability : '88.8%'}</span>
             </div>
 
             <div className="relative w-full h-1.5 rounded-full bg-white/8 overflow-hidden">
@@ -75,6 +78,7 @@ const PropCard: React.FC<{ analysis: DFSAnalysis }> = ({ analysis }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const EVPropAnalyzer: React.FC = () => {
+    const isPremiumUser = getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '');
     // Custom form state
     const [player, setPlayer] = useState('Luka Dončić');
     const [stat, setStat] = useState('Assists');
@@ -289,7 +293,9 @@ export const EVPropAnalyzer: React.FC = () => {
                                         <p className={`text-xl font-black ${customResult.suggested_play === 'OVER' ? 'text-emerald-400' : 'text-red-400'}`}>
                                             {customResult.suggested_play}
                                         </p>
-                                        <p className="text-[9px] text-text-muted font-black mt-1">WIN PROB: <span className="text-white">{customResult.true_win_probability}</span></p>
+                                        <p className="text-[9px] text-text-muted font-black mt-1 flex items-center gap-0.5">
+                                            {!isPremiumUser && <span className="material-symbols-outlined text-[8px]">lock</span>} WIN PROB: <span className={`text-white ${!isPremiumUser ? 'blur-sm select-none pointer-events-none' : ''}`}>{isPremiumUser ? customResult.true_win_probability : '88.8%'}</span>
+                                        </p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[9px] text-text-muted font-black uppercase tracking-wide">DFS Edge</p>

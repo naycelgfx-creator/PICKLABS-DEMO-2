@@ -23,6 +23,7 @@ import { RookieTour } from './components/ui/RookieTour';
 import { APP_SPORT_TO_ESPN, fetchESPNScoreboardByDate, ESPNGame, SportKey } from './data/espnScoreboard';
 import { generateAIPrediction } from './data/espnTeams';
 import { getCurrentUser, isAdminEmail } from './data/PickLabsAuthDB';
+import { useRookieMode } from './contexts/RookieModeContext';
 import { TicketCartProvider } from './contexts/TicketCartContext';
 
 export interface BetPick {
@@ -47,31 +48,11 @@ export interface ResolvedTicket {
   dateStr: string;
 }
 
-export type ViewType = 'live-board' | 'matchup-terminal' | 'sharp-tools' | 'bankroll' | 'teams-directory' | 'popular-bets' | 'saved-picks' | 'value-finder' | 'landing-page' | 'login-page' | 'sportsbook' | 'ai-dashboard' | 'social-dashboard' | 'player-props' | 'trends' | 'live-odds' | 'leaderboard' | 'referrals' | 'account' | 'settings' | '3d-board';
+import { PremiumLockView, ViewType } from './components/shared/PremiumLockView';
 
 // ─── Premium Lock Helper View ─────────────────────────────────────────────────
-const PremiumLockView: React.FC<{ featureName: string; onNavigate: (v: ViewType) => void }> = ({ featureName, onNavigate }) => {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">
-      <div className="w-20 h-20 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-        <span className="material-symbols-outlined text-4xl text-amber-500">lock</span>
-      </div>
-      <h2 className="text-3xl font-black italic uppercase text-text-main mb-3 tracking-tight">
-        Premium Feature
-      </h2>
-      <p className="text-sm text-text-muted max-w-md mb-8 leading-relaxed">
-        <span className="text-amber-500 font-bold">{featureName}</span> is exclusive to PickLabs Premium members. Upgrade your account to unlock advanced analytics and AI-driven insights.
-      </p>
-      <button
-        onClick={() => onNavigate('landing-page')}
-        className="px-8 py-4 bg-amber-500 text-neutral-900 font-black uppercase tracking-[0.2em] italic rounded-xl hover:bg-amber-400 hover:scale-105 transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] flex items-center gap-2"
-      >
-        <span className="material-symbols-outlined">workspace_premium</span>
-        Upgrade to Premium
-      </button>
-    </div>
-  );
-};
+// Extracted to src/components/shared/PremiumLockView.tsx
+// ──────────────────────────────────────────────────────────────────────────────
 // ──────────────────────────────────────────────────────────────────────────────
 
 function App() {
@@ -84,6 +65,9 @@ function App() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [hasSimulated, setHasSimulated] = useState(false);
   const [isAIPickLoading, setIsAIPickLoading] = useState(false);
+
+  // Free Tier Quota
+  const { incrementQuota } = useRookieMode();
 
   // Bankroll Handlers
   const handlePlaceTicket = (ticket: BetPick[], totalStake: number) => {
@@ -155,9 +139,13 @@ function App() {
 
     // Feature gating for AI Picks
     const user = getCurrentUser();
-    if (!user || (!user.isPremium && !isAdminEmail(user.email))) {
-      alert("AI Pick My Bets is a Premium feature. Please upgrade your account to access AI predictions.");
-      return;
+    const isPremiumUser = user?.isPremium || isAdminEmail(user?.email || '');
+
+    if (!isPremiumUser) {
+      if (!incrementQuota()) {
+        alert("Free Trial Quota Exceeded. AI Pick My Bets is limited to 20 uses per week for Free Accounts. Please upgrade your account to unlock unlimited access.");
+        return;
+      }
     }
 
     setIsAIPickLoading(true);
@@ -319,7 +307,7 @@ function App() {
     }
 
     setIsAIPickLoading(false);
-  }, [isAIPickLoading]);
+  }, [isAIPickLoading, incrementQuota]);
 
   const isMarketingView = currentView === 'landing-page' || currentView === 'login-page';
 
@@ -405,11 +393,15 @@ function App() {
                 )}
 
                 {currentView === 'bankroll' && (
-                  <BankrollView bankroll={bankroll} ticketHistory={ticketHistory} />
+                  getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
+                    ? <BankrollView bankroll={bankroll} ticketHistory={ticketHistory} />
+                    : <PremiumLockView featureName="Bankroll Tracking" onNavigate={(view) => setCurrentView(view)} />
                 )}
 
                 {currentView === 'popular-bets' && (
-                  <PopularBetsView onAddBet={handeAddBet} />
+                  getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
+                    ? <PopularBetsView onAddBet={handeAddBet} />
+                    : <PremiumLockView featureName="Popular Bets" onNavigate={(view) => setCurrentView(view)} />
                 )}
 
                 {currentView === 'saved-picks' && (
@@ -417,7 +409,9 @@ function App() {
                 )}
 
                 {currentView === 'social-dashboard' && (
-                  <SocialDashboardView />
+                  getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')
+                    ? <SocialDashboardView />
+                    : <PremiumLockView featureName="Social Dashboard" onNavigate={(view) => setCurrentView(view)} />
                 )}
 
                 {currentView === 'value-finder' && (

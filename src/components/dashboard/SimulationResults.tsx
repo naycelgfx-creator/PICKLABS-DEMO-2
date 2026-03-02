@@ -44,7 +44,9 @@ export const SimulationResults: React.FC<SimulationResultsProps> = ({ game }) =>
                                 <circle className="text-neutral-800" cx="48" cy="48" fill="transparent" r="44" stroke="currentColor" strokeWidth="6"></circle>
                                 <circle className="text-primary" cx="48" cy="48" fill="transparent" r="44" stroke="currentColor" strokeDasharray="276" strokeDashoffset={awayDashoffset} strokeWidth="6"></circle>
                             </svg>
-                            <span className="absolute text-xl font-black text-text-main italic">{awayPercent}%</span>
+                            <span className="absolute text-xl font-black italic text-text-main">
+                                {`${awayPercent}%`}
+                            </span>
                         </div>
                         <p className="text-[10px] font-bold text-text-muted uppercase">{awayAbbr} Win %</p>
                     </div>
@@ -54,7 +56,9 @@ export const SimulationResults: React.FC<SimulationResultsProps> = ({ game }) =>
                                 <circle className="text-neutral-800" cx="48" cy="48" fill="transparent" r="44" stroke="currentColor" strokeWidth="6"></circle>
                                 <circle className="text-accent-purple" cx="48" cy="48" fill="transparent" r="44" stroke="currentColor" strokeDasharray="276" strokeDashoffset={homeDashoffset} strokeWidth="6"></circle>
                             </svg>
-                            <span className="absolute text-xl font-black text-text-main italic">{homePercent}%</span>
+                            <span className="absolute text-xl font-black italic text-text-main">
+                                {`${homePercent}%`}
+                            </span>
                         </div>
                         <p className="text-[10px] font-bold text-text-muted uppercase">{homeAbbr} Win %</p>
                     </div>

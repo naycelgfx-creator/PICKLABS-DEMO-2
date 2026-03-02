@@ -27,7 +27,7 @@ interface LiveBoardProps {
 }
 
 // Convert an ESPN game into the app's Game shape — uses real AI prediction engine
-const espnGameToGame = (eg: ESPNGame, homeForm: ('W' | 'L' | 'D')[] = [], awayForm: ('W' | 'L' | 'D')[] = []): Game => {
+export const espnGameToGame = (eg: ESPNGame, homeForm: ('W' | 'L' | 'D')[] = [], awayForm: ('W' | 'L' | 'D')[] = []): Game => {
     const isLive = eg.status === 'in';
     const isFinal = eg.status === 'post';
 
@@ -104,7 +104,7 @@ const espnGameToGame = (eg: ESPNGame, homeForm: ('W' | 'L' | 'D')[] = [], awayFo
 };
 
 // Enrich a list of raw ESPN games with real last-5 form data (async)
-const enrichWithLastFive = async (games: ESPNGame[], sport: string): Promise<Game[]> => {
+export const enrichWithLastFive = async (games: ESPNGame[], sport: string): Promise<Game[]> => {
     const results = await Promise.allSettled(
         games.map(async eg => {
             const [homeForm, awayForm] = await Promise.all([
