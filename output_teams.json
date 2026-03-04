@@ -1,0 +1,610 @@
+{
+    "NBA": [
+        {
+            "name": "Lakers",
+            "abbr": "lal",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/lal.png"
+        },
+        {
+            "name": "Celtics",
+            "abbr": "bos",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
+        },
+        {
+            "name": "Suns",
+            "abbr": "phx",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/phx.png"
+        },
+        {
+            "name": "Nuggets",
+            "abbr": "den",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/den.png"
+        },
+        {
+            "name": "Warriors",
+            "abbr": "gsw",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/gsw.png"
+        },
+        {
+            "name": "Bucks",
+            "abbr": "mil",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/mil.png"
+        },
+        {
+            "name": "76ers",
+            "abbr": "phi",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/phi.png"
+        },
+        {
+            "name": "Mavericks",
+            "abbr": "dal",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/dal.png"
+        },
+        {
+            "name": "Clippers",
+            "abbr": "lac",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/lac.png"
+        },
+        {
+            "name": "Knicks",
+            "abbr": "nyk",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/nyk.png"
+        },
+        {
+            "name": "Heat",
+            "abbr": "mia",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/mia.png"
+        },
+        {
+            "name": "Cavaliers",
+            "abbr": "cle",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/cle.png"
+        },
+        {
+            "name": "Kings",
+            "abbr": "sac",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/sac.png"
+        },
+        {
+            "name": "Pacers",
+            "abbr": "ind",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png"
+        },
+        {
+            "name": "Timberwolves",
+            "abbr": "min",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/min.png"
+        },
+        {
+            "name": "Hawks",
+            "abbr": "atl",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png"
+        },
+        {
+            "name": "Nets",
+            "abbr": "bkn",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png"
+        },
+        {
+            "name": "Bulls",
+            "abbr": "chi",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/chi.png"
+        },
+        {
+            "name": "Raptors",
+            "abbr": "tor",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/tor.png"
+        },
+        {
+            "name": "Pelicans",
+            "abbr": "no",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/no.png"
+        },
+        {
+            "name": "Sixers",
+            "abbr": "phi",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/phi.png"
+        },
+        {
+            "name": "Suns",
+            "abbr": "phx",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/phx.png"
+        },
+        {
+            "name": "Thunder",
+            "abbr": "okc",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/okc.png"
+        },
+        {
+            "name": "Magic",
+            "abbr": "orl",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/orl.png"
+        },
+        {
+            "name": "Grizzlies",
+            "abbr": "mem",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/mem.png"
+        },
+        {
+            "name": "Wizards",
+            "abbr": "was",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/was.png"
+        },
+        {
+            "name": "Hornets",
+            "abbr": "cha",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/cha.png"
+        },
+        {
+            "name": "Pistons",
+            "abbr": "det",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/det.png"
+        },
+        {
+            "name": "Spurs",
+            "abbr": "sas",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/sas.png"
+        },
+        {
+            "name": "Rockets",
+            "abbr": "hou",
+            "url": "https://a.espncdn.com/i/teamlogos/nba/500/hou.png"
+        }
+    ],
+    "NFL": [
+        {
+            "name": "Chiefs",
+            "abbr": "kc",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png"
+        },
+        {
+            "name": "49ers",
+            "abbr": "sf",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png"
+        },
+        {
+            "name": "Ravens",
+            "abbr": "bal",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png"
+        },
+        {
+            "name": "Bills",
+            "abbr": "buf",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png"
+        },
+        {
+            "name": "Eagles",
+            "abbr": "phi",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png"
+        },
+        {
+            "name": "Cowboys",
+            "abbr": "dal",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/dal.png"
+        },
+        {
+            "name": "Lions",
+            "abbr": "det",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/det.png"
+        },
+        {
+            "name": "Texans",
+            "abbr": "hou",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png"
+        },
+        {
+            "name": "Jaguars",
+            "abbr": "jax",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png"
+        },
+        {
+            "name": "Dolphins",
+            "abbr": "mia",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/mia.png"
+        },
+        {
+            "name": "Browns",
+            "abbr": "cle",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/cle.png"
+        },
+        {
+            "name": "Rams",
+            "abbr": "lar",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png"
+        },
+        {
+            "name": "Colts",
+            "abbr": "ind",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/ind.png"
+        },
+        {
+            "name": "Buccaneers",
+            "abbr": "tb",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/tb.png"
+        },
+        {
+            "name": "Packers",
+            "abbr": "gb",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png"
+        },
+        {
+            "name": "Seahawks",
+            "abbr": "sea",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png"
+        },
+        {
+            "name": "Steelers",
+            "abbr": "pit",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/pit.png"
+        },
+        {
+            "name": "Bengals",
+            "abbr": "cin",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png"
+        },
+        {
+            "name": "Texans",
+            "abbr": "hou",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png"
+        },
+        {
+            "name": "Broncos",
+            "abbr": "den",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/den.png"
+        },
+        {
+            "name": "Jets",
+            "abbr": "nyj",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png"
+        },
+        {
+            "name": "Saints",
+            "abbr": "no",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/no.png"
+        },
+        {
+            "name": "Vikings",
+            "abbr": "min",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/min.png"
+        },
+        {
+            "name": "Raiders",
+            "abbr": "lv",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/lv.png"
+        },
+        {
+            "name": "Falcons",
+            "abbr": "atl",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png"
+        },
+        {
+            "name": "Giants",
+            "abbr": "nyg",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png"
+        },
+        {
+            "name": "Bears",
+            "abbr": "chi",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png"
+        },
+        {
+            "name": "Cardinals",
+            "abbr": "ari",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png"
+        },
+        {
+            "name": "Commanders",
+            "abbr": "was",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/was.png"
+        },
+        {
+            "name": "Patriots",
+            "abbr": "ne",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png"
+        },
+        {
+            "name": "Panthers",
+            "abbr": "car",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/car.png"
+        },
+        {
+            "name": "Titans",
+            "abbr": "ten",
+            "url": "https://a.espncdn.com/i/teamlogos/nfl/500/ten.png"
+        }
+    ],
+    "MLB": [
+        {
+            "name": "Dodgers",
+            "abbr": "la",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/la.png"
+        },
+        {
+            "name": "Yankees",
+            "abbr": "nyy",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png"
+        },
+        {
+            "name": "Braves",
+            "abbr": "atl",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png"
+        },
+        {
+            "name": "Orioles",
+            "abbr": "bal",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/bal.png"
+        },
+        {
+            "name": "Astros",
+            "abbr": "hou",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/hou.png"
+        },
+        {
+            "name": "Rangers",
+            "abbr": "tex",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/tex.png"
+        },
+        {
+            "name": "Brewers",
+            "abbr": "mil",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/mil.png"
+        },
+        {
+            "name": "Phillies",
+            "abbr": "phi",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/phi.png"
+        },
+        {
+            "name": "Mariners",
+            "abbr": "sea",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/sea.png"
+        },
+        {
+            "name": "Cubs",
+            "abbr": "chc",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/chc.png"
+        },
+        {
+            "name": "Red Sox",
+            "abbr": "bos",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/bos.png"
+        },
+        {
+            "name": "Diamondbacks",
+            "abbr": "ari",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/ari.png"
+        },
+        {
+            "name": "Blue Jays",
+            "abbr": "tor",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/tor.png"
+        },
+        {
+            "name": "Rays",
+            "abbr": "tb",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/tb.png"
+        },
+        {
+            "name": "Twins",
+            "abbr": "min",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/min.png"
+        },
+        {
+            "name": "Giants",
+            "abbr": "sf",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/sf.png"
+        },
+        {
+            "name": "Cardinals",
+            "abbr": "stl",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/stl.png"
+        },
+        {
+            "name": "Padres",
+            "abbr": "sd",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/sd.png"
+        },
+        {
+            "name": "Guardians",
+            "abbr": "cle",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/cle.png"
+        },
+        {
+            "name": "Mets",
+            "abbr": "nym",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/nym.png"
+        },
+        {
+            "name": "Angels",
+            "abbr": "laa",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/laa.png"
+        },
+        {
+            "name": "Red Sox",
+            "abbr": "bos",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/bos.png"
+        },
+        {
+            "name": "White Sox",
+            "abbr": "cws",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/cws.png"
+        },
+        {
+            "name": "Rockies",
+            "abbr": "col",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/col.png"
+        },
+        {
+            "name": "Tigers",
+            "abbr": "det",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/det.png"
+        },
+        {
+            "name": "Pirates",
+            "abbr": "pit",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/pit.png"
+        },
+        {
+            "name": "Royals",
+            "abbr": "kc",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/kc.png"
+        },
+        {
+            "name": "Athletics",
+            "abbr": "oak",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/oak.png"
+        },
+        {
+            "name": "Reds",
+            "abbr": "cin",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/cin.png"
+        },
+        {
+            "name": "Marlins",
+            "abbr": "mia",
+            "url": "https://a.espncdn.com/i/teamlogos/mlb/500/mia.png"
+        }
+    ],
+    "NHL": [
+        {
+            "name": "Avalanche",
+            "abbr": "col",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/col.png"
+        },
+        {
+            "name": "Panthers",
+            "abbr": "fla",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/fla.png"
+        },
+        {
+            "name": "Oilers",
+            "abbr": "edm",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/edm.png"
+        },
+        {
+            "name": "Stars",
+            "abbr": "dal",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/dal.png"
+        },
+        {
+            "name": "Canucks",
+            "abbr": "van",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/van.png"
+        },
+        {
+            "name": "Bruins",
+            "abbr": "bos",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/bos.png"
+        },
+        {
+            "name": "Rangers",
+            "abbr": "nyr",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/nyr.png"
+        },
+        {
+            "name": "Maple Leafs",
+            "abbr": "tor",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/tor.png"
+        },
+        {
+            "name": "Jets",
+            "abbr": "wpg",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/wpg.png"
+        },
+        {
+            "name": "Predators",
+            "abbr": "nsh",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/nsh.png"
+        },
+        {
+            "name": "Hurricanes",
+            "abbr": "car",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/car.png"
+        },
+        {
+            "name": "Golden Knights",
+            "abbr": "vgk",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/vgk.png"
+        },
+        {
+            "name": "Lightning",
+            "abbr": "tb",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/tb.png"
+        },
+        {
+            "name": "Kings",
+            "abbr": "la",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/la.png"
+        },
+        {
+            "name": "Islanders",
+            "abbr": "nyi",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/nyi.png"
+        },
+        {
+            "name": "Capitals",
+            "abbr": "wsh",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/wsh.png"
+        },
+        {
+            "name": "Flames",
+            "abbr": "cgy",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/cgy.png"
+        },
+        {
+            "name": "Blues",
+            "abbr": "stl",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/stl.png"
+        },
+        {
+            "name": "Devils",
+            "abbr": "nj",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/nj.png"
+        },
+        {
+            "name": "Kraken",
+            "abbr": "sea",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/sea.png"
+        },
+        {
+            "name": "Wild",
+            "abbr": "min",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/min.png"
+        },
+        {
+            "name": "Red Wings",
+            "abbr": "det",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/det.png"
+        },
+        {
+            "name": "Penguins",
+            "abbr": "pit",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/pit.png"
+        },
+        {
+            "name": "Sabres",
+            "abbr": "buf",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/buf.png"
+        },
+        {
+            "name": "Senators",
+            "abbr": "ott",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/ott.png"
+        },
+        {
+            "name": "Coyotes",
+            "abbr": "ari",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/ari.png"
+        },
+        {
+            "name": "Sharks",
+            "abbr": "sj",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/sj.png"
+        },
+        {
+            "name": "Blue Jackets",
+            "abbr": "cbj",
+            "url": "https://a.espncdn.com/i/teamlogos/nhl/500/cbj.png"
+        }
+    ]
+}

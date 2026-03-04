@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickLabs | My Vault</title>
+    <style>
+        body {
+            background: #151518;
+            color: #FFFFFF;
+            font-family: -apple-system, sans-serif;
+            padding: 40px;
+            margin: 0;
+        }
+
+        /* Header Section */
+        .library-header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+        }
+
+        .library-header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+
+        .library-header p {
+            color: #A0A0A5;
+            margin: 5px 0 0 0;
+            font-size: 16px;
+        }
+
+        /* The Grid Layout */
+        .betlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        /* The Mini-Card Design */
+        .library-card {
+            background: #222226;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #333;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+
+        .library-card:hover {
+            transform: translateY(-5px);
+            border-color: #2EFA6B;
+            box-shadow: 0 10px 20px rgba(46, 250, 107, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .creator {
+            font-size: 12px;
+            color: #A0A0A5;
+            margin-top: 4px;
+        }
+
+        .pill {
+            background: rgba(46, 250, 107, 0.1);
+            color: #2EFA6B;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: #222226;
+            border-radius: 16px;
+            border: 1px dashed #444;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .explore-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #2EFA6B;
+            color: #000;
+            text-decoration: none;
+            font-weight: 900;
+            border-radius: 8px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="library-header">
+        <h1>My Vault 🏦</h1>
+        <p>Welcome back, {{ user.username }}. Here are your saved strategies.</p>
+    </div>
+
+    {% if betlists %}
+    <div class="betlist-grid">
+
+        {% for betlist in betlists %}
+        <div class="library-card" onclick="window.location.href='/betlist/{{ betlist.id }}'">
+            <div class="card-header">
+                <div>
+                    <h3 class="title">{{ betlist.title }}</h3>
+                    <div class="creator">Created by @{{ betlist.creator.username }}</div>
+                </div>
+                <div class="pill">{{ betlist.picks.count() }} Plays</div>
+            </div>
+            <p style="color: #A0A0A5; font-size: 13px; line-height: 1.4; margin: 0;">
+                {{ betlist.description | truncate(60) }}
+            </p>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h2>Your vault is empty.</h2>
+        <p style="color: #A0A0A5; max-width: 400px; margin: 0 auto;">
+            You haven't saved any Betlists yet. Head over to the Social Feed to find mathematically profitable plays
+            from verified creators.
+        </p>
+        <a href="/social-feed" class="explore-btn">Explore the Feed</a>
+    </div>
+    {% endif %}
+
+</body>
+
+</html>

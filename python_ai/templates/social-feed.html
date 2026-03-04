@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickLabs | Social Feed</title>
+    <style>
+        body {
+            background: #151518;
+            color: #FFFFFF;
+            font-family: -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        /* The Main "Album Cover" Card */
+        .betlist-card {
+            background: #222226;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+        }
+
+        /* Creator Header */
+        .creator-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .creator-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #333;
+            border: 2px solid #2EFA6B;
+            object-fit: cover;
+        }
+
+        .username {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .verified-badge {
+            color: #1DA1F2;
+            font-size: 14px;
+        }
+
+        /* Twitter blue verified check */
+        .time-posted {
+            color: #A0A0A5;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        /* The ROI Trust Badge */
+        .roi-badge {
+            background: rgba(46, 250, 107, 0.1);
+            color: #2EFA6B;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-weight: 900;
+            font-size: 14px;
+        }
+
+        /* Playlist Title */
+        .betlist-title {
+            font-size: 24px;
+            font-weight: 900;
+            margin: 0 0 5px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .betlist-desc {
+            color: #A0A0A5;
+            font-size: 14px;
+            margin: 0 0 20px 0;
+            line-height: 1.4;
+        }
+
+        /* The "Tracks" (Individual Bets) */
+        .track-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .track-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #151518;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .track-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .track-name {
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .track-prop {
+            color: #A0A0A5;
+            font-size: 13px;
+        }
+
+        .track-odds {
+            font-weight: 900;
+            color: #fff;
+            font-size: 15px;
+            text-align: right;
+        }
+
+        .book-tag {
+            font-size: 11px;
+            color: #FF5E00;
+            background: rgba(255, 94, 0, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Action Buttons */
+        .action-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* The Big "Play" Button */
+        .tail-btn {
+            flex: 3;
+            background: #2EFA6B;
+            color: #000;
+            font-size: 16px;
+            font-weight: 900;
+            padding: 16px;
+            border: none;
+            border-radius: 30px;
+            /* Pill shape like Spotify */
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(46, 250, 107, 0.3);
+            transition: transform 0.1s;
+        }
+
+        .tail-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Save & Share Buttons */
+        .icon-btn {
+            flex: 1;
+            background: #151518;
+            color: #fff;
+            font-size: 18px;
+            border: 1px solid #333;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="betlist-card">
+
+        <div class="creator-row">
+            <div class="creator-info">
+                <div class="avatar" style="background-image: url('https://via.placeholder.com/40');"></div>
+                <div>
+                    <p class="username">@MarcusLocks <span class="verified-badge">✔</span></p>
+                    <p class="time-posted">Posted 2 hrs ago</p>
+                </div>
+            </div>
+            <div class="roi-badge">🔥 +12.5% ROI</div>
+        </div>
+
+        <h2 class="betlist-title">Sunday NFL Sweeper 🧹</h2>
+        <p class="betlist-desc">Heavy volume on the early slate. Running the PickLabs Kelly model on these three props.
+        </p>
+
+        <div class="track-list">
+
+            <div class="track-item">
+                <div class="track-left">
+                    <span class="track-name">Patrick Mahomes</span>
+                    <span class="track-prop">Over 2.5 Passing TDs</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <span class="track-odds">+120</span>
+                    <span class="book-tag">DraftKings</span>
+                </div>
+            </div>
+
+            <div class="track-item">
+                <div class="track-left">
+                    <span class="track-name">Lamar Jackson</span>
+                    <span class="track-prop">Over 55.5 Rush Yds</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <span class="track-odds">-110</span>
+                    <span class="book-tag">FanDuel</span>
+                </div>
+            </div>
+
+            <div class="track-item">
+                <div class="track-left">
+                    <span class="track-name">Ravens vs. Chiefs</span>
+                    <span class="track-prop">Under 49.5 Total Pts</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <span class="track-odds">-115</span>
+                    <span class="book-tag">BetMGM</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="action-row">
+            <button class="tail-btn" onclick="alert('Opening DraftKings with all 3 bets pre-loaded...')">Tail Betlist
+                📲</button>
+            <button class="icon-btn save-btn" id="save-btn-101" onclick="saveToLibrary(101)"
+                title="Save to Library"><span class="save-icon">🤍</span></button>
+            <button class="icon-btn" title="Share with friends">📤</button>
+        </div>
+
+    </div>
+
+    <script>
+        function saveToLibrary(betlistId) {
+            const saveBtn = document.getElementById(`save-btn-${betlistId}`);
+            const saveIcon = saveBtn.querySelector('.save-icon');
+
+            // 1. Send the silent request to your Python backend
+            fetch(`/save_betlist/${betlistId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+
+                        // 2. Make the button instantly react to the save
+                        if (data.action === 'saved') {
+                            // Turn it glowing green when saved!
+                            saveBtn.style.background = 'rgba(46, 250, 107, 0.2)';
+                            saveBtn.style.borderColor = '#2EFA6B';
+                            saveIcon.innerHTML = '💚';
+                        } else {
+                            // Revert back to normal if unsaved
+                            saveBtn.style.background = '#151518';
+                            saveBtn.style.borderColor = '#333';
+                            saveIcon.innerHTML = '🤍';
+                        }
+
+                        // Optional: Pop up a little notification "Saved to Library"
+                        console.log(data.message);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+
+</html>

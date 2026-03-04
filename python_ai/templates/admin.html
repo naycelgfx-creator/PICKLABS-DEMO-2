@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickLabs | CEO Dashboard</title>
+    <style>
+        body {
+            background: #0a0a0c;
+            color: #fff;
+            font-family: sans-serif;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #2EFA6B;
+            margin-bottom: 5px;
+        }
+
+        /* The Top Stats Row */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: #151518;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .stat-card h3 {
+            margin: 0;
+            color: #A0A0A5;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 900;
+            margin-top: 10px;
+        }
+
+        .value.green {
+            color: #2EFA6B;
+        }
+
+        /* The Override Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #151518;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background: #222226;
+            color: #A0A0A5;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-win {
+            background: rgba(46, 250, 107, 0.2);
+            color: #2EFA6B;
+            border: 1px solid #2EFA6B;
+        }
+
+        .btn-loss {
+            background: rgba(255, 59, 48, 0.2);
+            color: #FF3B30;
+            border: 1px solid #FF3B30;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>naycelgfx LLC Command Center</h1>
+    <p style="color: #A0A0A5; margin-bottom: 30px;">PickLabs System Status: Online 🟢</p>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Users</h3>
+            <div class="value">{{ users }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Active Pro Subs</h3>
+            <div class="value">{{ subs }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Est. MRR (Monthly Rev)</h3>
+            <div class="value green">${{ mrr | round(2) }}</div>
+        </div>
+    </div>
+
+    <h2>Pending Tickets (Manual Override)</h2>
+    <p style="color: #A0A0A5; font-size: 14px;">Use this if the ESPN API fails to grade a stat correction.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Ticket ID</th>
+                <th>Player & Prop</th>
+                <th>User</th>
+                <th>Force Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td>#{{ ticket.id }}</td>
+                <td><strong>{{ ticket.player_name }}</strong> <br> <span style="font-size: 12px; color: #A0A0A5;">{{
+                        ticket.league | upper }}</span></td>
+                <td>@{{ ticket.betlist.creator.username }}</td>
+                <td>
+                    <button class="action-btn btn-win" onclick="forceGrade({{ ticket.id }}, 'Won')">Force WIN</button>
+                    <button class="action-btn btn-loss" onclick="forceGrade({{ ticket.id }}, 'Lost')">Force
+                        LOSS</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        function forceGrade(ticketId, result) {
+            if (confirm(`Are you sure you want to force this ticket as a ${result}?`)) {
+                // Send the command to the Python backend
+                fetch(`/admin/force_grade/${ticketId}/${result}`, { method: 'POST' })
+                    .then(response => window.location.reload());
+            }
+        }
+    </script>
+</body>
+
+</html>
