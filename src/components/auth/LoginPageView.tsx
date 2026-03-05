@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { saveAuth } from '../../utils/auth';
 import { login } from '../../data/PickLabsAuthDB';
 
+// Cloudflare API Configuration
+export const CLOUDFLARE_ZONE_ID = '2fd6ec5105d12895c7c2fba08bfe6420';
+export const CLOUDFLARE_ACCOUNT_ID = '9a7cbfd23d48e2d279724c5d1197a80d';
+
 
 type ViewType = 'live-board' | 'matchup-terminal' | 'sharp-tools' | 'bankroll' | 'teams-directory' | 'popular-bets' | 'saved-picks' | 'value-finder' | 'landing-page' | 'login-page';
 
