@@ -259,13 +259,13 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                 {/* Header / User Info */}
                                 <div className="px-4 py-4 border-b border-border-muted bg-neutral-50 dark:bg-neutral-900/80 flex flex-col gap-1">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <div className="h-10 w-10 rounded-full flex items-center justify-center shadow-inner overflow-hidden">
+                                        <div className="h-10 w-10 flex items-center justify-center p-0.5">
                                             {user?.email && isAdminEmail(user.email) ? (
-                                                <img src="/src/assets/avatars/admin_avatar.png" alt="Admin Avatar" className="w-full h-full object-cover" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
+                                                <img src="/src/assets/avatars/admin_avatar.png" alt="Admin Avatar" className="w-full h-full object-contain" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
                                             ) : user?.isPremium ? (
-                                                <img src="/src/assets/avatars/premium_plus_avatar.png" alt="Premium Avatar" className="w-full h-full object-cover" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
+                                                <img src="/src/assets/avatars/premium_plus_avatar.png" alt="Premium Avatar" className="w-full h-full object-contain" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
                                             ) : (
-                                                <img src="/src/assets/avatars/free_avatar.png" alt="Free Avatar" className="w-full h-full object-cover" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
+                                                <img src="/src/assets/avatars/free_avatar.png" alt="Free Avatar" className="w-full h-full object-contain" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -633,13 +633,13 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                         {/* Mobile Settings Section */}
                         <div className="bg-neutral-900 border border-border-muted rounded-xl overflow-hidden mt-2">
                             <div className="px-4 py-3 border-b border-border-muted flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden">
+                                <div className="h-8 w-8 flex items-center justify-center p-0.5">
                                     {user?.email && isAdminEmail(user.email) ? (
-                                        <img src="/src/assets/avatars/admin_avatar.png" alt="Admin Avatar" className="w-full h-full object-cover" />
+                                        <img src="/src/assets/avatars/admin_avatar.png" alt="Admin Avatar" className="w-full h-full object-contain" />
                                     ) : user?.isPremium ? (
-                                        <img src="/src/assets/avatars/premium_plus_avatar.png" alt="Premium Avatar" className="w-full h-full object-cover" />
+                                        <img src="/src/assets/avatars/premium_plus_avatar.png" alt="Premium Avatar" className="w-full h-full object-contain" />
                                     ) : (
-                                        <img src="/src/assets/avatars/free_avatar.png" alt="Free Avatar" className="w-full h-full object-cover" />
+                                        <img src="/src/assets/avatars/free_avatar.png" alt="Free Avatar" className="w-full h-full object-contain" />
                                     )}
                                 </div>
                                 <div className="flex flex-col">
