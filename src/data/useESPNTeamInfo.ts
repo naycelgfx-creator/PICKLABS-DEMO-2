@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { fetchESPNTeamInfo, ESPNTeamInfo } from './espnTeams';
 
-export const useESPNTeamInfo = (teamName: string, sport: string) => {
+export const useESPNTeamInfo = (teamName: string, sport: string, teamId?: string) => {
     const [info, setInfo] = useState<ESPNTeamInfo | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -10,7 +10,7 @@ export const useESPNTeamInfo = (teamName: string, sport: string) => {
         setLoading(true);
         setError(null);
         try {
-            const data = await fetchESPNTeamInfo(teamName, sport);
+            const data = await fetchESPNTeamInfo(teamName, sport, teamId);
             setInfo(data);
             if (!data) setError('No team info found');
         } catch {
@@ -18,7 +18,7 @@ export const useESPNTeamInfo = (teamName: string, sport: string) => {
         } finally {
             setLoading(false);
         }
-    }, [teamName, sport]);
+    }, [teamName, sport, teamId]);
 
     useEffect(() => { load(); }, [load]);
 

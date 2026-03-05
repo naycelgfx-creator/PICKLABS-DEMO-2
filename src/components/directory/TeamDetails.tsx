@@ -105,7 +105,7 @@ export const TeamDetails: React.FC<TeamDetailsProps> = ({ team, sport, onBack })
                 {/* ── Content Area ── */}
                 <div className="animate-fade-in py-1">
                     {activeTab === 'overview' && (
-                        <TeamOverview teamName={team.name} abbr={team.abbr} sport={sport} />
+                        <TeamOverview teamId={team.id} teamName={team.name} abbr={team.abbr} sport={sport} />
                     )}
                     {activeTab === 'schedule' && (
                         <TeamSchedule teamName={team.name} sport={sport} />
@@ -114,7 +114,7 @@ export const TeamDetails: React.FC<TeamDetailsProps> = ({ team, sport, onBack })
                         <RosterAndStats teamName={team.id || team.name} sport={sport} />
                     )}
                     {activeTab === 'depth' && (
-                        <DepthChart teamName={team.name} sport={sport} />
+                        <DepthChart teamName={team.id || team.name} sport={sport} />
                     )}
                     {activeTab === 'props' && (
                         getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '')

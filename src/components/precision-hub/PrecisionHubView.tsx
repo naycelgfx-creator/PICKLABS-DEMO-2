@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchESPNScoreboardByDate, ESPNGame, SportKey, fetchESPNRoster, ESPNRosterPlayer } from '../../data/espnScoreboard';
+import { fetchESPNScoreboardByDate, ESPNGame, ESPNTeamInfo, SportKey } from '../../data/espnScoreboard';
 import { generateAIPrediction } from '../../data/espnTeams';
 
 // ── Sport configs ─────────────────────────────────────────────────────────────
@@ -74,21 +74,7 @@ const getColsForSport = (s: string): StatCol[] => {
     return BBALL_COLS;
 };
 
-// ── Random name pools per sport for filling roster to 8 ─────────────────────
-const NBA_NAMES = ['J. Hart', 'A. Nembhard', 'M. Bogdanovic', 'D. Gafford', 'J. Green', 'B. Duren', 'T. Burke', 'C. Temple', 'J. Butler', 'M. Carter', 'A. Holiday', 'D. Bane', 'J. Clarke', 'S. Adams', 'T. Jones'];
-const MLB_NAMES = ['C. Carroll', 'J. Walker', 'K. Marte', 'G. Moreno', 'J. Pham', 'C. Kelly', 'Z. Gallen', 'M. Bumgarner', 'M. Lowe', 'S. Seager', 'J. Duran', 'T. Story', 'N. Pivetta', 'K. Crawford', 'X. Bogaerts'];
-const NFL_NAMES = ['T. Pollard', 'R. Moore', 'J. Addison', 'D. Jefferson', 'B. Hall', 'C. Lamb', 'C. Diggs', 'T. McLaurin', 'M. Andrews', 'Z. Ertz', 'G. Pickens', 'N. Harris', 'D. London', 'T. Higgins', 'K. Drake'];
-const NHL_NAMES = ['K. Kaprizov', 'M. Couture', 'T. Hertl', 'L. Draisaitl', 'N. MacKinnon', 'J. Huberdeau', 'D. Orlov', 'B. Burns', 'A. Fox', 'J. Slavin', 'M. Rielly', 'C. Jost', 'T. Weber', 'O. Maata', 'R. OReilly'];
-const SOCCER_NAMES = ["M. Salah", "K. De Bruyne", "B. Saka", "R. Sterling", "J. Maddison", "E. Haaland", "H. Kane", "T. Diallo", "O. Watkins", "L. Dunk", "A. Becker", "P. Doherty"];
-
-const getNamesForSport = (sport: string): string[] => {
-    if (['NBA', 'NCAAM', 'WNBA'].includes(sport)) return NBA_NAMES;
-    if (['MLB', 'NCAAB'].includes(sport)) return MLB_NAMES;
-    if (['NFL', 'NCAAF'].includes(sport)) return NFL_NAMES;
-    if (['NHL'].includes(sport)) return NHL_NAMES;
-    return SOCCER_NAMES;
-};
-
+// Random name pools per sport for filling roster to 8 removed in favor of strict ESPN data
 // ── Seeded random ─────────────────────────────────────────────────────────────
 const seededRng = (seed: string) => {
     let h = 2166136261;
@@ -132,7 +118,7 @@ const buildLastGame = (sport: string, rng: () => number, today: string): Record<
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface TeamRow { gameId: string; sport: string; sportLabel: string; homeTeam: { name: string; abbr: string; logo: string; record: string; color: string }; awayTeam: { name: string; abbr: string; logo: string; record: string; color: string }; homePoints: number; awayPoints: number; homeSpread: string; awaySpread: string; homeEdge: number; awayEdge: number; total: string; homeWinProb: number; awayWinProb: number; kellyHome: number; kellyAway: number; aiMLHome: string; aiMLAway: string; vegasMLHome: string; vegasMLAway: string; status: string; rec: 'HOME' | 'AWAY' | 'PUSH'; conf: number }
 
-interface PlayerRow { id: string; gameId: string; sport: string; sportLabel: string; team: string; teamLogo: string; name: string; shortName: string; headshot: string; stats: Record<StatKey, number>; lastGame: Record<StatKey, number>; confidence: number }
+interface PlayerRow { id: string; gameId: string; sport: string; sportLabel: string; team: string; teamLogo: string; teamAltColor?: string; name: string; shortName: string; headshot: string; stats: Record<StatKey, number>; lastGame: Record<StatKey, number>; confidence: number }
 
 // ── Interfaces / sub-components ───────────────────────────────────────────────
 const WinGauge: React.FC<{ prob: number; abbr: string }> = ({ prob, abbr }) => {
@@ -230,7 +216,7 @@ const LastGamePopup: React.FC<{ player: PlayerRow; anchorRect: DOMRect; onClose:
         >
             {/* Popup header */}
             <div className="px-4 py-3 border-b border-border-muted flex items-center gap-3 bg-neutral-900/90">
-                <div className="h-9 w-9 rounded-full overflow-hidden bg-neutral-800 border border-border-muted shrink-0">
+                <div className="h-9 w-9 rounded-full overflow-hidden bg-neutral-800 shrink-0">
                     {player.headshot
                         ? <img src={player.headshot} alt={player.shortName} className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} />
                         : <span className="material-symbols-outlined text-neutral-600 text-base flex items-center justify-center h-full w-full">person</span>
@@ -239,7 +225,7 @@ const LastGamePopup: React.FC<{ player: PlayerRow; anchorRect: DOMRect; onClose:
                 <div className="flex-1 min-w-0">
                     <p className="text-xs font-black text-text-main truncate">{player.name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                        <img src={player.teamLogo} alt={player.team} className="h-3.5 w-3.5 object-contain" onError={e => { e.currentTarget.style.opacity = '0' }} />
+                        <img src={player.teamLogo} alt={player.team} className="h-4 w-4 object-contain bg-neutral-900 rounded-full border border-neutral-800" onError={e => { e.currentTarget.style.opacity = '0' }} />
                         <span className="text-[9px] text-text-muted font-bold uppercase tracking-widest">{player.team} · {player.sportLabel}</span>
                     </div>
                 </div>
@@ -324,13 +310,13 @@ export const PrecisionHubView: React.FC = () => {
 
     const load = useCallback(async () => {
         setLoading(true);
-        const allGames: { game: ESPNGame; sportLabel: string }[] = [];
+        const allGames: { game: ESPNGame; sportLabel: string; sportKey: string }[] = [];
 
         await Promise.allSettled(
             PRECISION_SPORTS.map(async ({ key, label }) => {
                 try {
                     const games = await fetchESPNScoreboardByDate(key, todayISO);
-                    games.forEach(g => allGames.push({ game: g, sportLabel: label }));
+                    games.forEach(g => allGames.push({ game: g, sportLabel: label, sportKey: key }));
                 } catch { /* skip */ }
             })
         );
@@ -365,99 +351,39 @@ export const PrecisionHubView: React.FC = () => {
             };
         });
 
-        // ── Player Rows: 8 per team ──
+        // ── Player Rows: ESPN game leaders only (correct names + headshots guaranteed) ──
         const pRows: PlayerRow[] = [];
-        const extraNames = getNamesForSport;
 
-        // Fetch rosters for all teams in parallel to avoid waterfalls
-        const rosterPromises: Promise<{ teamId: string; roster: ESPNRosterPlayer[] }>[] = [];
-        for (const { game, sportLabel } of allGames) {
-            rosterPromises.push(
-                fetchESPNRoster(sportLabel, game.homeTeam.id).then(roster => ({ teamId: game.homeTeam.id, roster })),
-                fetchESPNRoster(sportLabel, game.awayTeam.id).then(roster => ({ teamId: game.awayTeam.id, roster }))
-            );
-        }
-
-        const rosterResults = await Promise.allSettled(rosterPromises);
-        const rosters: Record<string, ESPNRosterPlayer[]> = {};
-        for (const r of rosterResults) {
-            if (r.status === 'fulfilled') {
-                rosters[r.value.teamId] = r.value.roster;
-            }
-        }
+        // De-duplicate leaders by name so we don't show the same player twice
+        // (ESPN sometimes lists the same player under multiple stat categories)
+        const seenPlayerKey = new Set<string>();
 
         for (const { game, sportLabel } of allGames) {
-            const teams = [game.homeTeam, game.awayTeam];
-            for (const t of teams) {
-                const teamLeaderNames = new Set(
-                    game.leaders.filter(l => l.teamId === t.id).map(l => l.name)
-                );
+            const teamMap: Record<string, ESPNTeamInfo> = {
+                [game.homeTeam.id]: game.homeTeam,
+                [game.awayTeam.id]: game.awayTeam,
+            };
 
-                // Add real leaders first
-                let count = 0;
-                for (const leader of game.leaders.filter(l => l.teamId === t.id)) {
-                    if (!leader.name || count >= 8) continue;
-                    const rng = seededRng(`${leader.name}-${todayISO}-${sportLabel}`);
-                    pRows.push({
-                        id: `${game.id}-${t.id}-${leader.name}`,
-                        gameId: game.id, sport: game.sport, sportLabel,
-                        team: t.abbreviation, teamLogo: t.logo,
-                        name: leader.name, shortName: leader.shortName || leader.name,
-                        headshot: leader.headshot || '',
-                        stats: buildStats(sportLabel, rng),
-                        lastGame: buildLastGame(sportLabel, rng, todayISO),
-                        confidence: Math.round(55 + rng() * 35),
-                    });
-                    count++;
-                }
+            for (const leader of game.leaders) {
+                if (!leader.name || !leader.teamId) continue;
+                const dedupKey = `${game.id}-${leader.teamId}-${leader.name}`;
+                if (seenPlayerKey.has(dedupKey)) continue;
+                seenPlayerKey.add(dedupKey);
 
-                // Fill remaining slots up to 8 with actual roster to get mugshots
-                const teamRoster = rosters[t.id] || [];
-                const usedNames = new Set([...teamLeaderNames].map(n => n.split(' ').pop()));
+                const t = teamMap[leader.teamId];
+                if (!t) continue;
 
-                for (const player of teamRoster) {
-                    if (count >= 8) break;
-                    const shortLast = player.displayName.split(' ').pop() || player.displayName;
-                    if (usedNames.has(shortLast)) continue;
-                    usedNames.add(shortLast);
-
-                    const rng = seededRng(`${player.displayName}-${t.id}-${todayISO}-${sportLabel}`);
-                    pRows.push({
-                        id: `${game.id}-${t.id}-${player.id}`,
-                        gameId: game.id, sport: game.sport, sportLabel,
-                        team: t.abbreviation, teamLogo: t.logo,
-                        name: player.displayName, shortName: player.displayName,
-                        headshot: player.headshot || '', // Use the fetched mugshot
-                        stats: buildStats(sportLabel, rng),
-                        lastGame: buildLastGame(sportLabel, rng, todayISO),
-                        confidence: Math.round(50 + rng() * 40),
-                    });
-                    count++;
-                }
-
-                // Fallback to extraNames if roster didn't have enough players
-                if (count < 8) {
-                    const namePool = extraNames(sportLabel);
-                    let ni = 0;
-                    while (count < 8 && ni < namePool.length) {
-                        const n = namePool[ni++];
-                        const shortLast = n.split('.').pop()?.trim() ?? n;
-                        if (usedNames.has(shortLast)) continue;
-                        usedNames.add(shortLast);
-                        const rng = seededRng(`${n}-${t.id}-${todayISO}-${sportLabel}`);
-                        pRows.push({
-                            id: `${game.id}-${t.id}-${n}`,
-                            gameId: game.id, sport: game.sport, sportLabel,
-                            team: t.abbreviation, teamLogo: t.logo,
-                            name: n, shortName: n,
-                            headshot: '',
-                            stats: buildStats(sportLabel, rng),
-                            lastGame: buildLastGame(sportLabel, rng, todayISO),
-                            confidence: Math.round(50 + rng() * 40),
-                        });
-                        count++;
-                    }
-                }
+                const rng = seededRng(`${leader.name}-${leader.teamId}-${todayISO}-${sportLabel}`);
+                pRows.push({
+                    id: dedupKey,
+                    gameId: game.id, sport: game.sport, sportLabel,
+                    team: t.abbreviation, teamLogo: t.logo,
+                    name: leader.name, shortName: leader.shortName || leader.name,
+                    headshot: leader.headshot || '',
+                    stats: buildStats(sportLabel, rng),
+                    lastGame: buildLastGame(sportLabel, rng, todayISO),
+                    confidence: Math.round(55 + rng() * 35),
+                });
             }
         }
 
@@ -702,18 +628,24 @@ export const PrecisionHubView: React.FC = () => {
                                                                 <tr key={row.id} className="stat-grid-row border-b border-border-muted/50">
                                                                     <td className="px-4 py-3">
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <img src={row.teamLogo} alt={row.team} className="h-5 w-5 object-contain rounded" onError={e => { e.currentTarget.style.opacity = '0' }} />
+                                                                            <img src={row.teamLogo} alt={row.team} className="h-6 w-6 object-contain bg-white rounded-full p-[1px] border border-orange-500" onError={e => { e.currentTarget.style.opacity = '0' }} />
                                                                             <span className="text-[10px] font-black text-text-muted">{row.team}</span>
                                                                         </div>
                                                                     </td>
                                                                     {/* Player cell — clickable */}
                                                                     <td className="px-4 py-3 min-w-[150px]">
                                                                         <div className="flex items-center gap-2">
-                                                                            <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-800 border border-border-muted shrink-0">
-                                                                                {row.headshot
-                                                                                    ? <img src={row.headshot} alt={row.shortName} className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} />
-                                                                                    : <span className="material-symbols-outlined text-neutral-600 text-sm flex items-center justify-center h-full w-full">person</span>
-                                                                                }
+                                                                            <div className="relative shrink-0">
+                                                                                <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-800">
+                                                                                    {row.headshot
+                                                                                        ? <img src={row.headshot} alt={row.shortName} className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} />
+                                                                                        : <span className="material-symbols-outlined text-neutral-600 text-sm flex items-center justify-center h-full w-full">person</span>
+                                                                                    }
+                                                                                </div>
+                                                                                {/* Team Logo Badge */}
+                                                                                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center bg-neutral-900 shadow-sm overflow-hidden z-10 p-[2px] border border-neutral-800">
+                                                                                    <img src={row.teamLogo} alt={row.team} className="w-full h-full object-contain" onError={e => { e.currentTarget.style.opacity = '0' }} />
+                                                                                </div>
                                                                             </div>
                                                                             <button
                                                                                 onClick={(e) => openPopup(row, e)}

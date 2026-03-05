@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { SportKey } from '../../data/espnScoreboard';
+import { SportKey, ESPN_SCOREBOARD_URLS } from '../../data/espnScoreboard';
 import { Game } from '../../data/mockGames';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -116,23 +116,26 @@ export const GolfLeaderboardPanel: React.FC<GolfLeaderboardPanelProps> = ({ spor
         setLoading(true);
         setError(null);
         try {
+            // Get base URL for selected golf league
+            const baseUrl = ESPN_SCOREBOARD_URLS[sportKey] || 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard';
+
             // Golf PGA endpoint returns the active/next event (dates= param passed but usually ignored by API)
             const dateParam = selectedDate ? `?dates=${selectedDate.replace(/-/g, '')}` : '';
-            const url = `https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard${dateParam}`;
-            let res = await fetch(url);
+            const url = `${baseUrl}${dateParam}`;
+            const res = await fetch(url);
             if (!res.ok) {
                 setError(`ESPN returned ${res.status}.`);
                 setTournament(null);
                 return;
             }
-            let data = await res.json() as RawObj;
+            const data = await res.json() as RawObj;
             let events: RawObj[] = (data.events as RawObj[]) ?? [];
 
             // Fallback: If no events found for today's date, try without date filter to get the most recent tournament
             const todayStr = new Date().toISOString().split('T')[0];
             const isToday = !selectedDate || selectedDate === todayStr;
             if (events.length === 0 && isToday) {
-                const fallbackUrl = `https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard`;
+                const fallbackUrl = baseUrl;
                 const fallbackRes = await fetch(fallbackUrl);
                 if (fallbackRes.ok) {
                     const fallbackData = await fallbackRes.json() as RawObj;
@@ -154,7 +157,7 @@ export const GolfLeaderboardPanel: React.FC<GolfLeaderboardPanelProps> = ({ spor
         } finally {
             setLoading(false);
         }
-    }, [selectedDate]);
+    }, [selectedDate, sportKey]);
 
     useEffect(() => {
         fetchData();
@@ -185,12 +188,16 @@ export const GolfLeaderboardPanel: React.FC<GolfLeaderboardPanelProps> = ({ spor
 
     // ── No event ──
     if (!tournament) {
+        const isLIV = sportKey === 'Golf.LIV';
+        const isLPGA = sportKey === 'Golf.LPGA';
+        const tourName = isLIV ? "LIV Golf" : isLPGA ? "LPGA Tour" : "PGA Tour";
+
         return (
             <div className="flex flex-col items-center justify-center py-24 text-center">
                 <span className="text-5xl mb-4">⛳</span>
-                <h3 className="text-slate-400 font-bold text-lg mb-1">No PGA Tournament Active</h3>
+                <h3 className="text-slate-400 font-bold text-lg mb-1">No {tourName} Tournament Active</h3>
                 <p className="text-slate-600 text-sm max-w-xs">
-                    PGA Tour events typically run Thursday–Sunday. Check back during tournament week.
+                    Events typically run Thursday–Sunday. Check back during tournament week.
                 </p>
             </div>
         );

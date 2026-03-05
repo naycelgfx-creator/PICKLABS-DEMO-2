@@ -1,8 +1,14 @@
 import React, { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, ReferenceLine } from 'recharts';
+import {
+    LineChart, Line, AreaChart, Area, BarChart, Bar,
+    ScatterChart, Scatter, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell, ZAxis,
+} from 'recharts';
 import { useESPNTeamInfo } from '../../data/useESPNTeamInfo';
+import { useESPNRoster } from '../../data/useESPNRoster';
 
 interface TeamOverviewProps {
+    teamId?: string;
     teamName: string;
     abbr?: string;
     sport: string;
@@ -164,9 +170,11 @@ const getFormColor = (res: 'W' | 'L' | 'D') => {
     return 'bg-slate-500 text-white';
 };
 
-export const TeamOverview: React.FC<TeamOverviewProps> = ({ teamName, abbr, sport }) => {
-    const { info, loading } = useESPNTeamInfo(teamName, sport);
+export const TeamOverview: React.FC<TeamOverviewProps> = ({ teamId, teamName, abbr, sport }) => {
+    const { info, loading } = useESPNTeamInfo(teamName, sport, teamId);
+    const { players, loading: rosterLoading } = useESPNRoster(teamId || teamName, sport);
     const [activeGraph, setActiveGraph] = React.useState<'scoring' | 'form'>('scoring');
+    const [chartType, setChartType] = React.useState<'line' | 'area' | 'bar' | 'heatmap' | 'scatter' | 'bubble' | 'radar'>('line');
 
     const isSoccer = sport === 'Soccer';
     const isHockey = sport === 'NHL';
@@ -420,7 +428,8 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({ teamName, abbr, spor
                 <div className="lg:col-span-3 flex flex-col gap-4">
                     {/* Advanced Analytics Graph */}
                     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-lg flex flex-col relative overflow-hidden">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3 relative z-10">
+                        {/* ── Header row: title + data mode pills ── */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-3 relative z-10">
                             <div className="flex items-center gap-3">
                                 <span className="material-symbols-outlined text-accent-secondary text-xl">monitoring</span>
                                 <h3 className="text-white font-bold uppercase tracking-wider text-sm">Advanced Team Analytics</h3>
@@ -437,38 +446,228 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({ teamName, abbr, spor
                             </div>
                         </div>
 
+                        {/* ── Chart type icon toolbar ── */}
+                        <div className="flex items-center gap-1 mb-4 relative z-10 flex-wrap">
+                            {([
+                                { key: 'line', icon: 'show_chart', label: 'Line' },
+                                { key: 'area', icon: 'area_chart', label: 'Area' },
+                                { key: 'bar', icon: 'bar_chart', label: 'Bar' },
+                                { key: 'heatmap', icon: 'grid_on', label: 'Heat Map' },
+                                { key: 'scatter', icon: 'scatter_plot', label: 'Scatter' },
+                                { key: 'bubble', icon: 'bubble_chart', label: 'Bubble' },
+                                { key: 'radar', icon: 'radar', label: 'Radar' },
+                            ] as { key: typeof chartType; icon: string; label: string }[]).map(({ key, icon, label }) => (
+                                <button
+                                    key={key}
+                                    title={label}
+                                    onClick={() => setChartType(key)}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border ${chartType === key
+                                        ? 'bg-primary/20 border-primary text-primary'
+                                        : 'border-neutral-700 text-slate-500 hover:text-slate-300 hover:border-neutral-600'
+                                        }`}
+                                >
+                                    <span className="material-symbols-outlined text-[14px] leading-none">{icon}</span>
+                                    <span className="hidden sm:inline">{label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* ── Chart renderer ── */}
                         <div className="flex-grow w-full h-[240px] relative z-10">
                             {loading || graphData.length === 0 ? (
                                 <div className="w-full h-full bg-neutral-800 rounded animate-pulse" />
-                            ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    {activeGraph === 'scoring' ? (
+                            ) : (() => {
+                                const tip = { contentStyle: { backgroundColor: '#171717', border: '1px solid #333', borderRadius: '8px' }, itemStyle: { fontSize: '13px', fontWeight: 'bold' }, labelStyle: { color: '#888', marginBottom: '4px' } };
+                                const grid = <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />;
+                                const xax = <XAxis dataKey="game" stroke="#444" tick={{ fill: '#777', fontSize: 11 }} />;
+                                const yax = <YAxis stroke="#444" tick={{ fill: '#777', fontSize: 11 }} domain={['auto', 'auto']} />;
+
+                                // ── Heatmap (custom SVG) ──────────────────────────────────────────
+                                if (chartType === 'heatmap') {
+                                    const forMax = Math.max(...graphData.map(d => d.pointsFor));
+                                    const forMin = Math.min(...graphData.map(d => d.pointsFor));
+                                    const agMax = Math.max(...graphData.map(d => d.pointsAgainst));
+                                    const agMin = Math.min(...graphData.map(d => d.pointsAgainst));
+                                    const heat = (v: number, min: number, max: number) => {
+                                        const t = max === min ? 0.5 : (v - min) / (max - min);
+                                        const r = Math.round(t * 39 + (1 - t) * 239);
+                                        const g = Math.round(t * 255 + (1 - t) * 68);
+                                        const b = Math.round(t * 20 + (1 - t) * 68);
+                                        return `rgb(${r},${g},${b})`;
+                                    };
+                                    return (
+                                        <div className="w-full h-full flex flex-col gap-3">
+                                            <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-10">{scoringLabel} For</div>
+                                            <div className="flex gap-1 ml-10">
+                                                {graphData.map((d, i) => (
+                                                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                                        <div
+                                                            className="w-full rounded-md flex items-center justify-center text-[10px] font-black"
+                                                            style={{ background: heat(d.pointsFor, forMin, forMax), height: 52, color: '#000', opacity: 0.92 }}
+                                                        >{d.pointsFor}</div>
+                                                        <span className="text-[8px] text-slate-600 font-bold">{d.game}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-10">{scoringLabel} Against</div>
+                                            <div className="flex gap-1 ml-10">
+                                                {graphData.map((d, i) => (
+                                                    <div key={i} className="flex-1">
+                                                        <div
+                                                            className="w-full rounded-md flex items-center justify-center text-[10px] font-black"
+                                                            style={{ background: heat(d.pointsAgainst, agMin, agMax), height: 52, color: '#000', opacity: 0.92 }}
+                                                        >{d.pointsAgainst}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+
+                                // ── Radar ────────────────────────────────────────────────────────
+                                if (chartType === 'radar') {
+                                    const radarData = graphData.map((d) => ({
+                                        game: d.game,
+                                        For: d.pointsFor,
+                                        Against: d.pointsAgainst,
+                                        Diff: Math.abs(d.differential),
+                                    }));
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RadarChart data={radarData}>
+                                                <PolarGrid stroke="#333" />
+                                                <PolarAngleAxis dataKey="game" tick={{ fill: '#666', fontSize: 11 }} />
+                                                <PolarRadiusAxis tick={{ fill: '#555', fontSize: 9 }} />
+                                                <Radar name={`${scoringLabel} For`} dataKey="For" stroke="#39FF14" fill="#39FF14" fillOpacity={0.25} />
+                                                <Radar name={`${scoringLabel} Against`} dataKey="Against" stroke="#EF4444" fill="#EF4444" fillOpacity={0.2} />
+                                                <Tooltip {...tip} />
+                                            </RadarChart>
+                                        </ResponsiveContainer>
+                                    );
+                                }
+
+                                // ── Scatter ──────────────────────────────────────────────────────
+                                if (chartType === 'scatter') {
+                                    const scatterData = graphData.map((d, i) => ({ x: i + 1, y: activeGraph === 'scoring' ? d.pointsFor : d.differential, z: d.pointsAgainst, name: d.game }));
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ScatterChart margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                {grid}<XAxis type="number" dataKey="x" name="Game" domain={[1, 10]} tick={{ fill: '#777', fontSize: 11 }} tickFormatter={(v) => `G${v}`} stroke="#444" />
+                                                <YAxis type="number" dataKey="y" name={activeGraph === 'scoring' ? `${scoringLabel} For` : 'Differential'} stroke="#444" tick={{ fill: '#777', fontSize: 11 }} />
+                                                <Tooltip {...tip} cursor={{ strokeDasharray: '3 3' }} />
+                                                <Scatter data={scatterData} name={activeGraph === 'scoring' ? `${scoringLabel} For` : 'Differential'}>
+                                                    {scatterData.map((_, i) => (
+                                                        <Cell key={i} fill={activeGraph === 'scoring' ? '#39FF14' : (scatterData[i].y >= 0 ? '#39FF14' : '#EF4444')} />
+                                                    ))}
+                                                </Scatter>
+                                            </ScatterChart>
+                                        </ResponsiveContainer>
+                                    );
+                                }
+
+                                // ── Bubble ───────────────────────────────────────────────────────
+                                if (chartType === 'bubble') {
+                                    const bubbleData = graphData.map((d, i) => ({ x: i + 1, y: d.pointsFor, z: Math.abs(d.differential) * 3 + 5, game: d.game }));
+                                    const bubbleAgainst = graphData.map((d, i) => ({ x: i + 1, y: d.pointsAgainst, z: Math.abs(d.differential) * 3 + 5, game: d.game }));
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ScatterChart margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                {grid}<ZAxis type="number" dataKey="z" range={[30, 300]} />
+                                                <XAxis type="number" dataKey="x" domain={[0, 11]} tick={{ fill: '#777', fontSize: 11 }} tickFormatter={(v) => `G${v}`} stroke="#444" />
+                                                <YAxis type="number" dataKey="y" stroke="#444" tick={{ fill: '#777', fontSize: 11 }} />
+                                                <Tooltip {...tip} />
+                                                <Scatter name={`${scoringLabel} For`} data={bubbleData} fill="#39FF14" fillOpacity={0.7} />
+                                                <Scatter name={`${scoringLabel} Against`} data={bubbleAgainst} fill="#EF4444" fillOpacity={0.6} />
+                                            </ScatterChart>
+                                        </ResponsiveContainer>
+                                    );
+                                }
+
+                                // ── Bar ──────────────────────────────────────────────────────────
+                                if (chartType === 'bar') {
+                                    if (activeGraph === 'form') {
+                                        return (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                    {grid}{xax}{yax}
+                                                    <ReferenceLine y={0} stroke="#555" strokeDasharray="4 4" />
+                                                    <Tooltip {...tip} />
+                                                    <Bar dataKey="differential" name="Differential" radius={[4, 4, 0, 0]}>
+                                                        {graphData.map((d, i) => <Cell key={i} fill={d.differential >= 0 ? '#39FF14' : '#EF4444'} />)}
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        );
+                                    }
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                {grid}{xax}{yax}<Tooltip {...tip} />
+                                                <Bar dataKey="pointsFor" name={`${scoringLabel} For`} fill="#39FF14" fillOpacity={0.85} radius={[3, 3, 0, 0]} />
+                                                <Bar dataKey="pointsAgainst" name={`${scoringLabel} Against`} fill="#EF4444" fillOpacity={0.75} radius={[3, 3, 0, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    );
+                                }
+
+                                // ── Area ─────────────────────────────────────────────────────────
+                                if (chartType === 'area') {
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="areaFor" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#39FF14" stopOpacity={0.4} />
+                                                        <stop offset="95%" stopColor="#39FF14" stopOpacity={0} />
+                                                    </linearGradient>
+                                                    <linearGradient id="areaAgainst" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.35} />
+                                                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                                                    </linearGradient>
+                                                    <linearGradient id="areaDiff" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#00FFFF" stopOpacity={0.5} />
+                                                        <stop offset="95%" stopColor="#00FFFF" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                {grid}{xax}{yax}
+                                                {activeGraph === 'form' && <ReferenceLine y={0} stroke="#555" strokeDasharray="4 4" />}
+                                                <Tooltip {...tip} />
+                                                {activeGraph === 'scoring' ? (
+                                                    <>
+                                                        <Area type="monotone" dataKey="pointsFor" name={`${scoringLabel} For`} stroke="#39FF14" strokeWidth={2} fill="url(#areaFor)" />
+                                                        <Area type="monotone" dataKey="pointsAgainst" name={`${scoringLabel} Against`} stroke="#EF4444" strokeWidth={2} fill="url(#areaAgainst)" />
+                                                    </>
+                                                ) : (
+                                                    <Area type="monotone" dataKey="differential" name="Differential" stroke="#00FFFF" strokeWidth={2} fill="url(#areaDiff)" />
+                                                )}
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    );
+                                }
+
+                                // ── Line (default) ───────────────────────────────────────────────
+                                if (activeGraph === 'form') {
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                {grid}{xax}{yax}
+                                                <ReferenceLine y={0} stroke="#555" strokeDasharray="4 4" />
+                                                <Tooltip {...tip} />
+                                                <Line type="monotone" dataKey="differential" name="Differential" stroke="#00FFFF" strokeWidth={3} dot={{ fill: '#00FFFF', r: 4 }} activeDot={{ r: 6 }} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    );
+                                }
+                                return (
+                                    <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                                            <XAxis dataKey="game" stroke="#666" tick={{ fill: '#888', fontSize: 12 }} />
-                                            <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 12 }} domain={['auto', 'auto']} />
-                                            <Tooltip contentStyle={{ backgroundColor: '#171717', border: '1px solid #333', borderRadius: '8px' }} itemStyle={{ fontSize: '14px', fontWeight: 'bold' }} labelStyle={{ color: '#888', marginBottom: '4px' }} />
+                                            {grid}{xax}{yax}<Tooltip {...tip} />
                                             <Line type="monotone" dataKey="pointsFor" name={`${scoringLabel} For`} stroke="#39FF14" strokeWidth={3} dot={{ fill: '#39FF14', r: 4 }} activeDot={{ r: 6 }} />
                                             <Line type="monotone" dataKey="pointsAgainst" name={`${scoringLabel} Against`} stroke="#EF4444" strokeWidth={3} dot={{ fill: '#EF4444', r: 4 }} activeDot={{ r: 6 }} />
                                         </LineChart>
-                                    ) : (
-                                        <AreaChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                            <defs>
-                                                <linearGradient id="colorDiff" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#00FFFF" stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor="#00FFFF" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                                            <XAxis dataKey="game" stroke="#666" tick={{ fill: '#888', fontSize: 12 }} />
-                                            <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 12 }} />
-                                            <ReferenceLine y={0} stroke="#555" strokeDasharray="4 4" />
-                                            <Tooltip contentStyle={{ backgroundColor: '#171717', border: '1px solid #333', borderRadius: '8px' }} itemStyle={{ color: '#00FFFF', fontSize: '14px', fontWeight: 'bold' }} labelStyle={{ color: '#888', marginBottom: '4px' }} />
-                                            <Area type="monotone" dataKey="differential" name="Differential" stroke="#00FFFF" strokeWidth={2} fillOpacity={1} fill="url(#colorDiff)" />
-                                        </AreaChart>
-                                    )}
-                                </ResponsiveContainer>
-                            )}
+                                    </ResponsiveContainer>
+                                );
+                            })()}
                         </div>
 
                         {/* Bottom stats row */}
@@ -519,6 +718,48 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({ teamName, abbr, spor
                     )}
                 </div>
             </div>
+
+            {/* ─── Team Leaders (Top Players Preview) ─── */}
+            <div className="mt-4">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-white font-black text-lg tracking-widest uppercase flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary">group</span>
+                        Team Leaders
+                        {rosterLoading && <span className="text-[10px] text-slate-600 font-normal animate-pulse ml-2">Loading...</span>}
+                    </h3>
+                </div>
+                {rosterLoading ? (
+                    <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 animate-pulse h-28 w-48 shrink-0"></div>
+                        ))}
+                    </div>
+                ) : players.length > 0 ? (
+                    <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                        {players.slice(0, 8).map(p => (
+                            <div key={p.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex items-center gap-3 shadow-lg hover:border-primary/50 transition-colors w-64 shrink-0 group">
+                                <div className="w-14 h-14 shrink-0 bg-neutral-800 rounded-lg overflow-visible flex items-end justify-center relative border border-white/5 group-hover:border-primary/30 transition-colors">
+                                    <div className="w-full h-full rounded-lg overflow-hidden flex items-end justify-center">
+                                        <img
+                                            src={p.photoUrl}
+                                            alt={p.fullName}
+                                            className="w-[120%] h-[120%] object-cover object-top"
+                                            onError={e => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.fullName)}&background=111827&color=39ff14&rounded=true`; }}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-white font-bold text-sm truncate">{p.shortName ?? p.fullName}</span>
+                                    <span className="text-slate-500 font-medium text-xs">{p.position?.abbreviation ?? '—'} {p.jersey ? `#${p.jersey}` : ''}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-slate-500 text-sm italic">No roster data available right now.</div>
+                )}
+            </div>
+
         </div>
     );
 };

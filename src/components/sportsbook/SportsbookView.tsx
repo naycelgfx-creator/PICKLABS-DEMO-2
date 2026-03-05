@@ -432,6 +432,7 @@ interface PlayerPropCardProps {
     gameDate: string;
     matchupStr: string;
     teamName: string;
+    teamLogo?: string;
     betSlip: BetPick[];
     onAddBet: (bet: Omit<BetPick, 'id'>) => void;
     aiMode: boolean;
@@ -439,7 +440,7 @@ interface PlayerPropCardProps {
 }
 
 const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
-    player, sport, gameId, gameStatus, gameDate, matchupStr, teamName, betSlip, onAddBet, aiMode, rookieMode
+    player, sport, gameId, gameStatus, gameDate, matchupStr, teamName, teamLogo, betSlip, onAddBet, aiMode, rookieMode
 }) => {
     const isPitcher = (sport === 'MLB' || sport === 'WBC') && ['P', 'SP', 'RP'].includes(player.position.toUpperCase());
     const props = isPitcher ? [
@@ -472,23 +473,31 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
         <div className={`terminal-panel transition-all ${aiMode && propLines[0]?.aiPick ? '!border-green-500/35 shadow-[0_0_16px_rgba(34,197,94,0.08)]' : ''}`}>
             {/* Player header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1c2037] bg-black/20">
-                <div className="w-11 h-11 rounded-full bg-neutral-800 border border-border-muted overflow-hidden flex-shrink-0 relative">
-                    {player.headshot ? (
-                        <img
-                            src={player.headshot}
-                            alt={player.displayName}
-                            className="w-full h-full object-cover"
-                            onError={e => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.displayName)}&background=0d0f1a&color=fff&rounded=true`; }}
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-text-muted text-sm font-black">
-                            {player.displayName.slice(0, 2).toUpperCase()}
+                <div className="relative flex-shrink-0">
+                    <div className="w-11 h-11 rounded-full bg-neutral-800 overflow-hidden shrink-0">
+                        {player.headshot ? (
+                            <img
+                                src={player.headshot}
+                                alt={player.displayName}
+                                className="w-full h-full object-cover"
+                                onError={e => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.displayName)}&background=0d0f1a&color=fff&rounded=true`; }}
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-text-muted text-sm font-black">
+                                {player.displayName.slice(0, 2).toUpperCase()}
+                            </div>
+                        )}
+                    </div>
+                    {/* Team logo badge — outside the mugshot, bottom-right */}
+                    {teamLogo && (
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center overflow-hidden shadow-md p-[2px]">
+                            <img
+                                src={teamLogo}
+                                alt=""
+                                className="w-full h-full object-contain"
+                                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
                         </div>
-                    )}
-                    {player.jersey && (
-                        <span className="absolute -bottom-0.5 -right-0.5 bg-neutral-900 border border-border-muted rounded-full text-[8px] font-black font-mono text-text-muted w-4 h-4 flex items-center justify-center leading-none">
-                            {player.jersey}
-                        </span>
                     )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -620,14 +629,14 @@ const RosterPanel: React.FC<{
                         onClick={() => setActiveTeam('away')}
                         className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${activeTeam === 'away' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
                     >
-                        <img src={game.awayTeam.logo} alt="" className="w-3.5 h-3.5 object-contain" />
+                        <img src={game.awayTeam.logo} alt="" className="w-4 h-4 object-contain" />
                         {game.awayTeam.abbreviation}
                     </button>
                     <button
                         onClick={() => setActiveTeam('home')}
                         className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${activeTeam === 'home' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
                     >
-                        <img src={game.homeTeam.logo} alt="" className="w-3.5 h-3.5 object-contain" />
+                        <img src={game.homeTeam.logo} alt="" className="w-4 h-4 object-contain" />
                         {game.homeTeam.abbreviation}
                     </button>
                 </div>
@@ -651,6 +660,7 @@ const RosterPanel: React.FC<{
                             gameDate={game.date}
                             matchupStr={matchupStr}
                             teamName={teamName}
+                            teamLogo={activeTeam === 'home' ? game.homeTeam.logo : game.awayTeam.logo}
                             betSlip={betSlip}
                             onAddBet={onAddBet}
                             aiMode={aiMode}

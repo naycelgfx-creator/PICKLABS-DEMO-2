@@ -63,58 +63,88 @@ export const AITopBets: React.FC<AITopBetsProps> = ({ game, onAddBet }) => {
     const awayName = game.awayTeam.name;
     const homeName = game.homeTeam.name;
 
-    const topBets = [
-        {
-            title: 'Highest Confidence (98%)',
-            type: 'Spread' as const,
-            team: `${awayName} ${game.odds.spread}`,
-            gameId: game.id,
-            odds: '-110',
-            matchupStr: `${awayName} vs ${homeName}`,
-            stake: 50,
-            analysis: loading
-                ? 'Analyzing live data...'
-                : buildAnalysis(
-                    espnNews,
-                    awayName,
-                    `Model ran ${awayName} matchup 10,000x. Strong spread value detected vs ${homeName}.`
-                ),
-        },
-        {
-            title: 'Strong Value Play',
-            type: 'Over' as const,
-            team: `Over ${game.odds.overUnder.value}`,
-            gameId: game.id,
-            odds: '-110',
-            matchupStr: `${awayName} vs ${homeName}`,
-            stake: 50,
-            analysis: loading
-                ? 'Fetching live game context...'
-                : buildAnalysis(
-                    espnNews,
-                    homeName,
-                    `Both teams averaging high scoring outputs this week. Projected total well above the ${game.odds.overUnder.value} line.`
-                ),
-        },
-        {
-            title: 'Moneyline Lock',
-            type: 'ML' as const,
-            team: `${homeName} ML`,
-            gameId: game.id,
-            odds: game.odds.moneyline,
-            matchupStr: `${awayName} vs ${homeName}`,
-            stake: 100,
-            analysis: loading
-                ? 'Loading live news context...'
-                : !isPremiumUser
-                    ? `🔒 Win probability analysis and live edges are locked for Free Accounts. Upgrade to Premium to see this exclusive AI data.`
-                    : (
-                        espnNews.find(n => n.category === 'injury')?.headline
-                            ? `📋 Injury Alert: ${espnNews.find(n => n.category === 'injury')!.headline}. Win probability adjusted: ${homeName} 57%.`
-                            : `Win probability: 57% for ${homeName} at current odds. Edge confirmed via PickLabs analysis.`
+    const topBets: Array<{
+        title: string;
+        type: 'Spread' | 'Over' | 'ML' | 'Prop';
+        team: string;
+        gameId: string;
+        odds: string;
+        matchupStr: string;
+        stake: number;
+        analysis: string;
+    }> = [
+            {
+                title: 'Highest Confidence (98%)',
+                type: 'Spread' as const,
+                team: `${awayName} ${game.odds.spread}`,
+                gameId: game.id,
+                odds: '-110',
+                matchupStr: `${awayName} vs ${homeName}`,
+                stake: 50,
+                analysis: loading
+                    ? 'Analyzing live data...'
+                    : buildAnalysis(
+                        espnNews,
+                        awayName,
+                        `Model ran ${awayName} matchup 10,000x. Strong spread value detected vs ${homeName}.`
                     ),
-        },
-    ];
+            },
+            {
+                title: 'Strong Value Play',
+                type: 'Over' as const,
+                team: `Over ${game.odds.overUnder.value}`,
+                gameId: game.id,
+                odds: '-110',
+                matchupStr: `${awayName} vs ${homeName}`,
+                stake: 50,
+                analysis: loading
+                    ? 'Fetching live game context...'
+                    : buildAnalysis(
+                        espnNews,
+                        homeName,
+                        `Both teams averaging high scoring outputs this week. Projected total well above the ${game.odds.overUnder.value} line.`
+                    ),
+            },
+            {
+                title: 'Moneyline Lock',
+                type: 'ML' as const,
+                team: `${homeName} ML`,
+                gameId: game.id,
+                odds: game.odds.moneyline,
+                matchupStr: `${awayName} vs ${homeName}`,
+                stake: 100,
+                analysis: loading
+                    ? 'Loading live news context...'
+                    : !isPremiumUser
+                        ? `🔒 Win probability analysis and live edges are locked for Free Accounts. Upgrade to Premium to see this exclusive AI data.`
+                        : (
+                            espnNews.find(n => n.category === 'injury')?.headline
+                                ? `📋 Injury Alert: ${espnNews.find(n => n.category === 'injury')!.headline}. Win probability adjusted: ${homeName} 57%.`
+                                : `Win probability: 57% for ${homeName} at current odds. Edge confirmed via PickLabs analysis.`
+                        ),
+            },
+        ];
+
+    // Add Player Prop pick if Leaders data exists
+    if (game.leaders && game.leaders.length > 0) {
+        const topLeader = game.leaders[0];
+        const statVal = parseInt(topLeader.displayValue);
+        if (!isNaN(statVal) && statVal > 0) {
+            const threshold = Math.max(0, statVal > 10 ? statVal - 2 : statVal > 5 ? statVal - 1 : statVal);
+            topBets.push({
+                title: 'Data-Backed Prop',
+                type: 'Prop' as const,
+                team: `${topLeader.shortName} Over ${threshold}.5 ${topLeader.category}`,
+                gameId: game.id,
+                odds: '-110',
+                matchupStr: `${awayName} vs ${homeName}`,
+                stake: 25,
+                analysis: loading
+                    ? 'Analyzing recent player performances...'
+                    : `Based on a recent standout performance of ${topLeader.displayValue} ${topLeader.category.toLowerCase()}, the model projects heavy volume for ${topLeader.shortName}.`,
+            });
+        }
+    }
 
     return (
         <div className="terminal-panel border-primary/30 bg-primary/5 p-6 relative overflow-hidden mt-6">
@@ -125,7 +155,13 @@ export const AITopBets: React.FC<AITopBetsProps> = ({ game, onAddBet }) => {
                 <span className="material-symbols-outlined text-primary text-3xl">psychology</span>
                 <div className="flex-1">
                     <h3 className="text-lg font-black text-text-main uppercase tracking-[0.2em] italic flex items-center">
-                        <img src={sportLogo} alt={sport} className="h-6 w-auto inline-block mr-2 brightness-0 invert opacity-80" /> AI Predictions
+                        <img src={sportLogo} alt={sport} className="h-10 sm:h-12 w-auto inline-block mr-3 brightness-0 invert opacity-80 drop-shadow-md" />
+                        <span className="mt-1">AI Predictions</span>
+                        {game.broadcast && (
+                            <span className="ml-3 px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[9px] font-bold tracking-widest not-italic">
+                                ON {game.broadcast}
+                            </span>
+                        )}
                     </h3>
                     <p className="text-[10px] text-primary uppercase font-bold tracking-widest">
                         Based on PickLabs Live Data · 10,000 Simulations

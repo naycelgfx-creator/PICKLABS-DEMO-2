@@ -1,17 +1,25 @@
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import { getSportStatLabels } from '../../data/mockPlayers';
 import { useESPNRoster } from '../../data/useESPNRoster';
 import { ESPNRosterAthlete } from '../../data/espnService';
+import { ESPNAthleteListItem } from '../../data/espnScoreboard';
+import { PlayerProfileModal, parseStats, ParsedStats } from './PlayerProfileModal';
 
 interface RosterAndStatsProps {
     teamName: string;
     sport: string;
 }
 
-// Generate deterministic stat values from player id + seed
-const statFromId = (id: string, offset: number, min: number, max: number): number => {
-    const seed = id.split('').reduce((acc, c, i) => acc + c.charCodeAt(0) * (i + 1), 0);
-    return Math.round(((seed * 7 + offset * 13) % (max - min) * 10) + min * 10) / 10;
+// Map sport to ESPN API strings
+const SPORT_MAP: Record<string, { sport: string; league: string }> = {
+    'NBA': { sport: 'basketball', league: 'nba' },
+    'WNBA': { sport: 'basketball', league: 'wnba' },
+    'NCAAM': { sport: 'basketball', league: 'mens-college-basketball' },
+    'NCAAW': { sport: 'basketball', league: 'womens-college-basketball' },
+    'NFL': { sport: 'football', league: 'nfl' },
+    'CFB': { sport: 'football', league: 'college-football' },
+    'MLB': { sport: 'baseball', league: 'mlb' },
+    'NHL': { sport: 'hockey', league: 'nhl' },
 };
 
 // Skeleton placeholder row
@@ -34,29 +42,138 @@ export const RosterAndStats: React.FC<RosterAndStatsProps> = ({ teamName, sport 
 
     const isBasketball = ['NBA', 'WNBA', 'NCAAM', 'NCAAW'].includes(sport);
     const isFootball = ['NFL', 'CFB'].includes(sport);
-    const isHockey = sport === 'NHL';
 
-    // Map ESPN players to stat rows (deterministic from player id)
-    const rosterWithStats = useMemo(() => players.map(p => ({
-        ...p,
-        stat1: statFromId(p.id, 1, isBasketball ? 6 : isHockey ? 0.1 : isFootball ? 150 : 5, isBasketball ? 30 : isHockey ? 0.8 : isFootball ? 300 : 25),
-        stat2: statFromId(p.id, 2, 2, isFootball ? 80 : 12),
-        stat3: statFromId(p.id, 3, 1, isFootball ? 60 : 10),
-        stat4: statFromId(p.id, 4, 0.5, isFootball ? 8 : 2.5),
-        efg: statFromId(p.id, 5, 42, 62),
-        ts: statFromId(p.id, 6, 48, 68),
-        astPct: statFromId(p.id, 7, 5, 35),
-    })), [players, isBasketball, isHockey, isFootball]);
+    const [selectedAthlete, setSelectedAthlete] = useState<ESPNAthleteListItem | null>(null);
+
+    const openPlayerModal = (p: ESPNRosterAthlete) => {
+        setSelectedAthlete({
+            id: p.id,
+            uid: `s:${sport}~l:${sport}~a:${p.id}`,
+            guid: p.id,
+            alternateIds: {},
+            firstName: p.firstName || p.fullName.split(' ')[0],
+            lastName: p.lastName || p.fullName.split(' ').slice(1).join(' '),
+            fullName: p.fullName,
+            displayName: p.fullName,
+            shortName: p.shortName || p.fullName,
+            weight: 0,
+            displayWeight: p.displayWeight || '',
+            height: 0,
+            displayHeight: p.displayHeight || '',
+            age: p.age || 0,
+            dateOfBirth: '',
+            links: [],
+            birthPlace: { city: '', state: '', country: '' },
+            college: { id: '', name: p.collegeName },
+            slug: p.fullName.toLowerCase().replace(/ /g, '-'),
+            headshot: { href: p.photoUrl, alt: p.fullName },
+            jersey: p.jersey || '',
+            position: { id: '', name: p.position?.displayName || '', displayName: p.position?.displayName || '', abbreviation: p.position?.abbreviation || '' },
+            team: { id: teamName },
+            status: { id: '', name: 'Active', type: 'active', abbreviation: 'ACT' },
+            active: p.active ?? true,
+        });
+    };
+
+    const apiTarget = SPORT_MAP[sport] || { sport: sport.toLowerCase(), league: sport.toLowerCase() };
+
+    const [playerStats, setPlayerStats] = useState<Record<string, ParsedStats>>({});
+    const [statsLoading, setStatsLoading] = useState(true);
+
+    React.useEffect(() => {
+        if (!players.length) return;
+        let isMounted = true;
+        setStatsLoading(true);
+
+        const fetchStats = async () => {
+            const newStats: Record<string, ParsedStats> = {};
+
+            // Fetch stats in chunks to avoid 429 Too Many Requests from ESPN API
+            const chunkSize = 10;
+            for (let i = 0; i < players.length; i += chunkSize) {
+                if (!isMounted) break;
+
+                const chunk = players.slice(i, i + chunkSize);
+                const fetchPromises = chunk.map(async (p) => {
+                    try {
+                        const res = await fetch(`https://site.web.api.espn.com/apis/common/v3/sports/${apiTarget.sport}/${apiTarget.league}/athletes/${p.id}/stats`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const cats: any[] = data?.categories ?? [];
+                            return { id: p.id, stats: parseStats(cats, apiTarget.sport, p.position?.abbreviation ?? '') };
+                        }
+                    } catch {
+                        // fallthrough
+                    }
+                    return { id: p.id, stats: { items: [], seasonLabel: '' } };
+                });
+
+                const results = await Promise.allSettled(fetchPromises);
+                results.forEach((r) => {
+                    if (r.status === 'fulfilled' && r.value) {
+                        newStats[r.value.id] = r.value.stats;
+                    }
+                });
+
+                if (isMounted) {
+                    setPlayerStats({ ...newStats });
+                    if (i === 0) setStatsLoading(false); // Show UI after first chunk
+                }
+
+                // Small delay to let ESPN API breathe
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            if (isMounted) {
+                setStatsLoading(false);
+            }
+        };
+
+        fetchStats();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [players, apiTarget.sport, apiTarget.league]);
+
+    // Use dynamically generated stat labels if available, fallback to default structure
+    const dynamicLabels = React.useMemo(() => {
+        const firstWithStats = Object.values(playerStats).find(s => s.items.length >= 4);
+        if (firstWithStats) {
+            return firstWithStats.items.slice(0, 4).map(i => i.label);
+        }
+        return isBasketball ? ['PTS', 'REB', 'AST', 'STL'] : isFootball ? ['YDS', 'TD', 'INT', 'RTG'] : [statLabels.stat1, statLabels.stat2, statLabels.stat3, statLabels.stat4];
+    }, [playerStats, isBasketball, isFootball, statLabels]);
 
     const categories = [
-        { key: 'stat1' as const, title: isBasketball ? 'Points' : isFootball ? 'Passing' : statLabels.stat1 },
-        { key: 'stat2' as const, title: isBasketball ? 'Rebounds' : isFootball ? 'Rushing' : statLabels.stat2 },
-        { key: 'stat3' as const, title: isBasketball ? 'Assists' : isFootball ? 'Receiving' : statLabels.stat3 },
-        { key: 'stat4' as const, title: isBasketball ? 'Steals' : isFootball ? 'Tackles' : statLabels.stat4 },
+        { key: 0, title: dynamicLabels[0] },
+        { key: 1, title: dynamicLabels[1] },
+        { key: 2, title: dynamicLabels[2] },
+        { key: 3, title: dynamicLabels[3] },
     ];
 
-    const getLeader = (key: 'stat1' | 'stat2' | 'stat3' | 'stat4') =>
-        [...rosterWithStats].sort((a, b) => b[key] - a[key])[0];
+    const getPlayerStatObject = (playerId: string) => playerStats[playerId]?.items || [];
+
+    const getStatValue = (playerId: string, index: number) => {
+        const stats = getPlayerStatObject(playerId);
+        const val = stats[index]?.value;
+        return val ? parseFloat(val) : 0;
+    };
+
+    const getLeader = (index: number) => {
+        if (!players.length) return undefined;
+        let leader = players[0];
+        let maxVal = -1;
+        players.forEach(p => {
+            const val = getStatValue(p.id, index);
+            if (val > maxVal) {
+                maxVal = val;
+                leader = p;
+            }
+        });
+        return { leader, val: maxVal };
+    };
 
     return (
         <div className="flex flex-col gap-8 animate-fade-in mt-6">
@@ -70,25 +187,28 @@ export const RosterAndStats: React.FC<RosterAndStatsProps> = ({ teamName, sport 
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     {categories.map((cat, i) => {
-                        const leader: (typeof rosterWithStats)[0] | undefined = loading ? undefined : getLeader(cat.key);
-                        if (loading) return (
+                        const leaderData = (loading || statsLoading) ? undefined : getLeader(i);
+                        if (loading || statsLoading) return (
                             <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 animate-pulse h-24"></div>
                         );
-                        if (!leader) return null;
+                        if (!leaderData || leaderData.val === 0) return null;
+                        const { leader } = leaderData;
                         return (
                             <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col justify-between shadow-lg hover:border-primary/50 transition-colors group">
                                 <div className="flex justify-between items-start mb-2">
                                     <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">{cat.title}</span>
-                                    <span className="text-primary font-black text-xl">{leader[cat.key].toFixed(1)}</span>
+                                    <span className="text-primary font-black text-xl">{getPlayerStatObject(leader.id)[i]?.value || '0'}</span>
                                 </div>
                                 <div className="flex items-center gap-3 mt-2">
-                                    <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-primary/20 overflow-hidden flex-shrink-0 group-hover:border-primary/60 transition-colors">
-                                        <img
-                                            src={leader.photoUrl}
-                                            alt={leader.fullName}
-                                            className="w-full h-full object-cover"
-                                            onError={e => { (e.target as HTMLImageElement).src = AVATAR(leader.fullName); }}
-                                        />
+                                    <div className="w-12 h-12 shrink-0 bg-neutral-800 rounded-lg overflow-visible flex items-end justify-center relative border border-white/5 group-hover:border-primary/30 transition-colors">
+                                        <div className="w-full h-full rounded-lg overflow-hidden flex items-end justify-center">
+                                            <img
+                                                src={leader.photoUrl}
+                                                alt={leader.fullName}
+                                                className="w-[120%] h-[120%] object-cover object-top"
+                                                onError={e => { (e.target as HTMLImageElement).src = AVATAR(leader.fullName); }}
+                                            />
+                                        </div>
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-white font-bold text-sm truncate max-w-[120px]">{leader.shortName ?? leader.fullName}</span>
@@ -128,19 +248,21 @@ export const RosterAndStats: React.FC<RosterAndStatsProps> = ({ teamName, sport 
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-neutral-800/50">
-                                    {loading
+                                    {loading || statsLoading
                                         ? Array.from({ length: 12 }).map((_, i) => <SkeletonRow key={i} cols={5} />)
-                                        : rosterWithStats.map(p => (
-                                            <tr key={`ps-${p.id}`} className="hover:bg-neutral-800/30 transition-colors group">
+                                        : [...players].sort((a, b) => getStatValue(b.id, 0) - getStatValue(a.id, 0)).slice(0, 15).map(p => (
+                                            <tr key={`ps-${p.id}`} className="hover:bg-neutral-800/30 transition-colors group cursor-pointer" onClick={() => openPlayerModal(p)}>
                                                 <td className="py-3 px-6">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-neutral-800 overflow-hidden border border-neutral-700 shrink-0">
-                                                            <img
-                                                                src={p.photoUrl}
-                                                                alt={p.fullName}
-                                                                className="w-full h-full object-cover"
-                                                                onError={e => { (e.target as HTMLImageElement).src = AVATAR(p.fullName); }}
-                                                            />
+                                                        <div className="w-10 h-10 shrink-0 bg-neutral-800 rounded-lg overflow-visible flex items-end justify-center relative border border-white/5 group-hover:border-primary/30 transition-colors">
+                                                            <div className="w-full h-full rounded-lg overflow-hidden flex items-end justify-center">
+                                                                <img
+                                                                    src={p.photoUrl}
+                                                                    alt={p.fullName}
+                                                                    className="w-[120%] h-[120%] object-cover object-top"
+                                                                    onError={e => { (e.target as HTMLImageElement).src = AVATAR(p.fullName); }}
+                                                                />
+                                                            </div>
                                                         </div>
                                                         <div className="flex flex-col">
                                                             <span className="text-slate-200 font-bold text-sm group-hover:text-primary transition-colors">{p.shortName ?? p.fullName}</span>
@@ -148,10 +270,10 @@ export const RosterAndStats: React.FC<RosterAndStatsProps> = ({ teamName, sport 
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="py-3 px-4 text-right text-white font-black">{p.stat1.toFixed(1)}</td>
-                                                <td className="py-3 px-4 text-right text-slate-300 font-medium">{p.stat2.toFixed(1)}</td>
-                                                <td className="py-3 px-4 text-right text-slate-300 font-medium">{p.stat3.toFixed(1)}</td>
-                                                <td className="py-3 px-4 text-right text-slate-300 font-medium">{p.stat4.toFixed(1)}</td>
+                                                <td className="py-3 px-4 text-right text-white font-black">{getPlayerStatObject(p.id)[0]?.value ?? '—'}</td>
+                                                <td className="py-3 px-4 text-right text-slate-300 font-medium">{getPlayerStatObject(p.id)[1]?.value ?? '—'}</td>
+                                                <td className="py-3 px-4 text-right text-slate-300 font-medium">{getPlayerStatObject(p.id)[2]?.value ?? '—'}</td>
+                                                <td className="py-3 px-4 text-right text-slate-300 font-medium">{getPlayerStatObject(p.id)[3]?.value ?? '—'}</td>
                                             </tr>
                                         ))}
                                 </tbody>
@@ -165,7 +287,7 @@ export const RosterAndStats: React.FC<RosterAndStatsProps> = ({ teamName, sport 
                     <div className="bg-neutral-800 px-6 py-4 border-b border-neutral-700 flex justify-between items-center shrink-0">
                         <h4 className="font-black text-white uppercase tracking-widest text-sm flex items-center gap-2">
                             <span className="material-symbols-outlined text-accent-purple text-[18px]">track_changes</span>
-                            Shooting Stats
+                            {isBasketball ? 'Shooting Stats' : 'Advanced Stats'}
                         </h4>
                     </div>
                     <div className="overflow-x-auto flex-1">
@@ -174,41 +296,51 @@ export const RosterAndStats: React.FC<RosterAndStatsProps> = ({ teamName, sport 
                                 <thead className="sticky top-0 bg-neutral-900 border-b border-neutral-800 z-10">
                                     <tr>
                                         <th className="py-3 px-6 text-slate-500 font-black uppercase text-[10px] tracking-wider">Player</th>
-                                        <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider text-right">eFG%</th>
-                                        <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider text-right">TS%</th>
-                                        <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider text-right">AST%</th>
+                                        <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider text-right">{dynamicLabels[4] || 'STAT 5'}</th>
+                                        <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider text-right">{dynamicLabels[5] || 'STAT 6'}</th>
+                                        <th className="py-3 px-4 text-slate-500 font-black uppercase text-[10px] tracking-wider text-right">{dynamicLabels[6] || 'STAT 7'}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-neutral-800/50">
-                                    {loading
+                                    {loading || statsLoading
                                         ? Array.from({ length: 12 }).map((_, i) => <SkeletonRow key={i} cols={4} />)
-                                        : rosterWithStats.map(p => (
-                                            <tr key={`as-${p.id}`} className="hover:bg-neutral-800/30 transition-colors group">
-                                                <td className="py-3 px-6">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-7 h-7 rounded-full bg-neutral-800 overflow-hidden border border-neutral-700 shrink-0">
-                                                            <img
-                                                                src={p.photoUrl}
-                                                                alt={p.fullName}
-                                                                className="w-full h-full object-cover"
-                                                                onError={e => { (e.target as HTMLImageElement).src = AVATAR(p.fullName); }}
-                                                            />
+                                        : [...players].sort((a, b) => getStatValue(b.id, 4) - getStatValue(a.id, 4)).slice(0, 15).map(p => {
+                                            const stat5 = getPlayerStatObject(p.id)[4]?.value;
+                                            const stat6 = getPlayerStatObject(p.id)[5]?.value;
+                                            const stat7 = getPlayerStatObject(p.id)[6]?.value;
+                                            const stat5Num = parseFloat(stat5 ?? '0');
+                                            return (
+                                                <tr key={`as-${p.id}`} className="hover:bg-neutral-800/30 transition-colors group cursor-pointer" onClick={() => openPlayerModal(p)}>
+                                                    <td className="py-3 px-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 shrink-0 bg-neutral-800 rounded-lg overflow-visible flex items-end justify-center relative border border-white/5 group-hover:border-primary/30 transition-colors">
+                                                                <div className="w-full h-full rounded-lg overflow-hidden flex items-end justify-center">
+                                                                    <img
+                                                                        src={p.photoUrl}
+                                                                        alt={p.fullName}
+                                                                        className="w-[120%] h-[120%] object-cover object-top"
+                                                                        onError={e => { (e.target as HTMLImageElement).src = AVATAR(p.fullName); }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-slate-200 font-bold text-sm group-hover:text-accent-purple transition-colors">{p.shortName ?? p.fullName}</span>
                                                         </div>
-                                                        <span className="text-slate-200 font-bold text-sm group-hover:text-accent-purple transition-colors">{p.shortName ?? p.fullName}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 px-4 text-right">
-                                                    <div className="flex flex-col items-end">
-                                                        <span className="text-white font-black">{p.efg.toFixed(1)}%</span>
-                                                        <div className="w-16 h-1 bg-neutral-800 rounded-full mt-1 overflow-hidden">
-                                                            <div className="h-full bg-accent-purple rounded-full" style={{ width: `${p.efg}%` }}></div>
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="text-white font-black">{stat5 ?? '—'}</span>
+                                                            {(isBasketball && stat5Num > 0 && stat5Num <= 100) && (
+                                                                <div className="w-16 h-1 bg-neutral-800 rounded-full mt-1 overflow-hidden">
+                                                                    <div className="h-full bg-accent-purple rounded-full" style={{ width: `${stat5Num}%` }}></div>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 px-4 text-right text-slate-300 font-medium">{p.ts.toFixed(1)}%</td>
-                                                <td className="py-3 px-4 text-right text-slate-300 font-medium">{p.astPct.toFixed(1)}%</td>
-                                            </tr>
-                                        ))}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right text-slate-300 font-medium">{stat6 ?? '—'}</td>
+                                                    <td className="py-3 px-4 text-right text-slate-300 font-medium">{stat7 ?? '—'}</td>
+                                                </tr>
+                                            );
+                                        })}
                                 </tbody>
                             </table>
                         </div>
@@ -251,18 +383,20 @@ export const RosterAndStats: React.FC<RosterAndStatsProps> = ({ teamName, sport 
                             {loading
                                 ? Array.from({ length: 15 }).map((_, i) => <SkeletonRow key={i} cols={8} />)
                                 : players.map((p: ESPNRosterAthlete, idx: number) => (
-                                    <tr key={`profile-${p.id}`} className="hover:bg-neutral-800/30 transition-colors group">
+                                    <tr key={`profile-${p.id}`} className="hover:bg-neutral-800/30 transition-colors group cursor-pointer" onClick={() => openPlayerModal(p)}>
                                         <td className="py-3 px-4 text-slate-600 font-bold text-xs text-center">{p.jersey ?? idx + 1}</td>
                                         <td className="py-3 px-6">
                                             <div className="flex items-center gap-3">
                                                 {/* Real ESPN player headshot */}
-                                                <div className="w-11 h-11 rounded-full bg-neutral-800 overflow-hidden border-2 border-neutral-700 group-hover:border-primary/40 transition-colors shrink-0">
-                                                    <img
-                                                        src={p.photoUrl}
-                                                        alt={p.fullName}
-                                                        className="w-full h-full object-cover"
-                                                        onError={e => { (e.target as HTMLImageElement).src = AVATAR(p.fullName); }}
-                                                    />
+                                                <div className="w-12 h-12 shrink-0 bg-neutral-800 rounded-lg overflow-visible flex items-end justify-center relative border border-white/5 group-hover:border-primary/30 transition-colors">
+                                                    <div className="w-full h-full rounded-lg overflow-hidden flex items-end justify-center">
+                                                        <img
+                                                            src={p.photoUrl}
+                                                            alt={p.fullName}
+                                                            className="w-[120%] h-[120%] object-cover object-top"
+                                                            onError={e => { (e.target as HTMLImageElement).src = AVATAR(p.fullName); }}
+                                                        />
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <span className="text-slate-200 font-bold text-sm group-hover:text-primary transition-colors block whitespace-nowrap">{p.fullName}</span>
@@ -312,6 +446,14 @@ export const RosterAndStats: React.FC<RosterAndStatsProps> = ({ teamName, sport 
                 )}
             </div>
 
+            {selectedAthlete && (
+                <PlayerProfileModal
+                    athlete={selectedAthlete}
+                    sport={sport}
+                    league={sport.toLowerCase()}
+                    onClose={() => setSelectedAthlete(null)}
+                />
+            )}
         </div>
     );
 };

@@ -326,6 +326,31 @@ function App() {
                 gameDate: game.date,
               });
             }
+
+            // Pick 4: AI Player Prop (derived from ESPN game leaders)
+            if (game.leaders && game.leaders.length > 0) {
+              const topLeader = game.leaders[0];
+              if (topLeader && topLeader.displayValue) {
+                const statVal = parseInt(topLeader.displayValue);
+                if (!isNaN(statVal) && statVal > 0) {
+                  // Generate an Over line slightly below their actual performance to create an "edge"
+                  const threshold = Math.max(0, statVal > 10 ? statVal - 2 : statVal > 5 ? statVal - 1 : statVal);
+                  candidates.push({
+                    id: `ai-prop-${game.id}-${topLeader.shortName.replace(/[^a-zA-Z]/g, '')}`,
+                    gameId,
+                    type: 'Prop',
+                    team: `${topLeader.shortName} Over ${threshold}.5 ${topLeader.category}`,
+                    odds: '-110',
+                    matchupStr,
+                    stake: Math.max(10, Math.floor(aiData.suggestions.kelly * 0.5)),
+                    score: 65 + (edge * 100), // Competitive score to sometimes beat ML/Spread
+                    gameStatus: game.status,
+                    gameStatusName: game.statusName,
+                    gameDate: game.date,
+                  });
+                }
+              }
+            }
           }
         }
       } catch (err) {
@@ -358,6 +383,30 @@ function App() {
             gameStatusName: game.statusName,
             gameDate: game.date,
           });
+
+          // Fallback Pick 2: Player Prop
+          if (game.leaders && game.leaders.length > 0) {
+            const topLeader = game.leaders[0];
+            if (topLeader && topLeader.displayValue) {
+              const statVal = parseInt(topLeader.displayValue);
+              if (!isNaN(statVal) && statVal > 0) {
+                const threshold = Math.max(0, statVal > 10 ? statVal - 2 : statVal > 5 ? statVal - 1 : statVal);
+                candidates.push({
+                  id: `ai-prop-${game.id}-fallback-${topLeader.shortName.replace(/[^a-zA-Z]/g, '')}`,
+                  gameId,
+                  type: 'Prop',
+                  team: `${topLeader.shortName} Over ${threshold}.5 ${topLeader.category}`,
+                  odds: '-110',
+                  matchupStr,
+                  stake: 10,
+                  score: Math.max(pred.homeWinProb, pred.awayWinProb) - 2, // Slight penalty to prioritize ML fallback
+                  gameStatus: game.status,
+                  gameStatusName: game.statusName,
+                  gameDate: game.date,
+                });
+              }
+            }
+          }
         }
       }
     }

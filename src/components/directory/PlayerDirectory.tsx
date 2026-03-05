@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchTeamsWithRosters, ESPNAthleteListItem } from '../../data/espnScoreboard';
+import { PlayerProfileModal } from './PlayerProfileModal';
 
 const SPORT_OPTIONS = [
     { label: 'NFL', sport: 'football', league: 'nfl', icon: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png' },
     { label: 'NBA', sport: 'basketball', league: 'nba', icon: 'https://cdn.nba.com/logos/nba/nba-logoman-word-white.svg' },
     { label: 'MLB', sport: 'baseball', league: 'mlb', icon: 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png' },
     { label: 'NHL', sport: 'hockey', league: 'nhl', icon: 'https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png' },
-    { label: 'WNBA', sport: 'basketball', league: 'wnba', icon: 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png' },
+    { label: 'WNBA', sport: 'basketball', league: 'wnba', icon: '/wnba-logo-new.png' },
 ];
 
 export const PlayerDirectory: React.FC = () => {
@@ -16,6 +17,7 @@ export const PlayerDirectory: React.FC = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedAthlete, setSelectedAthlete] = useState<ESPNAthleteListItem | null>(null);
 
     const ITEMS_PER_PAGE = 40;
 
@@ -118,14 +120,29 @@ export const PlayerDirectory: React.FC = () => {
                             const pos = athlete.position?.abbreviation || 'N/A';
 
                             return (
-                                <div key={athlete.id} className="bg-neutral-900 border border-border-muted rounded-xl p-4 flex items-center gap-4 hover:border-primary/40 transition-colors group cursor-pointer relative overflow-hidden">
+                                <div
+                                    key={athlete.id}
+                                    onClick={() => setSelectedAthlete(athlete)}
+                                    className="bg-neutral-900 border border-border-muted rounded-xl p-4 flex items-center gap-4 hover:border-primary/40 transition-colors group cursor-pointer relative overflow-hidden">
                                     <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-black/20 to-transparent pointer-events-none" />
 
-                                    <div className="w-16 h-16 shrink-0 bg-neutral-800 rounded-lg overflow-hidden flex items-end justify-center relative border border-white/5 group-hover:border-primary/30 transition-colors">
-                                        {headshot ? (
-                                            <img src={headshot} alt={athlete.shortName} className="w-[120%] h-[120%] object-cover object-top" />
-                                        ) : (
-                                            <span className="material-symbols-outlined text-4xl text-neutral-700 pb-1">person</span>
+                                    <div className="w-16 h-16 shrink-0 bg-neutral-800 rounded-lg overflow-visible flex items-end justify-center relative border border-white/5 group-hover:border-primary/30 transition-colors">
+                                        <div className="w-full h-full rounded-lg overflow-hidden flex items-end justify-center">
+                                            {headshot ? (
+                                                <img src={headshot} alt={athlete.shortName} className="w-[120%] h-[120%] object-cover object-top" />
+                                            ) : (
+                                                <span className="material-symbols-outlined text-4xl text-neutral-700 pb-1">person</span>
+                                            )}
+                                        </div>
+                                        {athlete.teamLogo && (
+                                            <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white border border-[#0df20d] flex items-center justify-center shadow-lg z-10 p-0.5">
+                                                <img
+                                                    src={athlete.teamLogo}
+                                                    alt={athlete.teamAbbr || ''}
+                                                    className="w-full h-full object-contain"
+                                                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                                />
+                                            </div>
                                         )}
                                     </div>
 
@@ -182,6 +199,16 @@ export const PlayerDirectory: React.FC = () => {
                 )}
 
             </div>
+
+            {/* ── Player Profile Modal ── */}
+            {selectedAthlete && (
+                <PlayerProfileModal
+                    athlete={selectedAthlete}
+                    sport={activeSport.sport}
+                    league={activeSport.league}
+                    onClose={() => setSelectedAthlete(null)}
+                />
+            )}
         </div>
     );
 };

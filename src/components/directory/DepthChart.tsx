@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useESPNRoster } from '../../data/useESPNRoster';
 import { ESPNRosterAthlete } from '../../data/espnService';
+import { PlayerProfileModal } from './PlayerProfileModal';
+import { ESPNAthleteListItem } from '../../data/espnScoreboard';
 
 interface DepthChartProps {
     teamName: string;
@@ -33,6 +35,38 @@ const SkeletonRow = () => (
 
 export const DepthChart: React.FC<DepthChartProps> = ({ teamName, sport }) => {
     const { players, loading } = useESPNRoster(teamName, sport);
+
+    const [selectedAthlete, setSelectedAthlete] = useState<ESPNAthleteListItem | null>(null);
+
+    const openPlayerModal = (p: ESPNRosterAthlete) => {
+        setSelectedAthlete({
+            id: p.id,
+            uid: `s:${sport}~l:${sport}~a:${p.id}`,
+            guid: p.id,
+            alternateIds: {},
+            firstName: p.firstName || p.fullName.split(' ')[0],
+            lastName: p.lastName || p.fullName.split(' ').slice(1).join(' '),
+            fullName: p.fullName,
+            displayName: p.fullName,
+            shortName: p.shortName || p.fullName,
+            weight: 0,
+            displayWeight: p.displayWeight || '',
+            height: 0,
+            displayHeight: p.displayHeight || '',
+            age: p.age || 0,
+            dateOfBirth: '',
+            links: [],
+            birthPlace: { city: '', state: '', country: '' },
+            college: { id: '', name: p.collegeName },
+            slug: p.fullName.toLowerCase().replace(/ /g, '-'),
+            headshot: { href: p.photoUrl, alt: p.fullName },
+            jersey: p.jersey || '',
+            position: { id: '', name: p.position?.displayName || '', displayName: p.position?.displayName || '', abbreviation: p.position?.abbreviation || '' },
+            team: { id: teamName },
+            status: { id: '', name: 'Active', type: 'active', abbreviation: 'ACT' },
+            active: p.active ?? true,
+        });
+    };
 
     // Group ESPN players by position
     const groupedRoster = React.useMemo(() => {
@@ -104,7 +138,7 @@ export const DepthChart: React.FC<DepthChartProps> = ({ teamName, sport }) => {
                                             {/* Starter */}
                                             <td className="py-4 px-6">
                                                 {starter && (
-                                                    <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-3 cursor-pointer group/starter" onClick={() => openPlayerModal(starter)}>
                                                         <div className="w-9 h-9 rounded-full bg-neutral-800 border-2 border-primary/50 overflow-hidden shrink-0">
                                                             <img
                                                                 src={starter.photoUrl}
@@ -114,7 +148,7 @@ export const DepthChart: React.FC<DepthChartProps> = ({ teamName, sport }) => {
                                                             />
                                                         </div>
                                                         <div>
-                                                            <div className="text-white font-bold text-sm group-hover:text-primary transition-colors">{starter.fullName}</div>
+                                                            <div className="text-white font-bold text-sm group-hover/starter:text-primary transition-colors">{starter.fullName}</div>
                                                             <div className="flex items-center gap-1">
                                                                 <span className="text-[9px] text-primary font-bold">STARTER</span>
                                                                 {starter.jersey && (
@@ -132,7 +166,7 @@ export const DepthChart: React.FC<DepthChartProps> = ({ teamName, sport }) => {
                                             {/* 2nd String */}
                                             <td className="py-4 px-6">
                                                 {second ? (
-                                                    <div className="flex items-center gap-3 opacity-90">
+                                                    <div className="flex items-center gap-3 opacity-90 cursor-pointer group/second" onClick={() => openPlayerModal(second)}>
                                                         <div className="w-7 h-7 rounded-full bg-neutral-800 border border-slate-600 overflow-hidden shrink-0">
                                                             <img
                                                                 src={second.photoUrl}
@@ -142,7 +176,7 @@ export const DepthChart: React.FC<DepthChartProps> = ({ teamName, sport }) => {
                                                             />
                                                         </div>
                                                         <div>
-                                                            <div className="text-slate-300 font-bold text-[13px]">{second.fullName}</div>
+                                                            <div className="text-slate-300 font-bold text-[13px] group-hover/second:text-primary transition-colors">{second.fullName}</div>
                                                             {second.jersey && (
                                                                 <span className="text-[9px] text-slate-600">#{second.jersey}</span>
                                                             )}
@@ -158,7 +192,7 @@ export const DepthChart: React.FC<DepthChartProps> = ({ teamName, sport }) => {
                                                 {reserves.length > 0 ? (
                                                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                                                         {reserves.map((res) => (
-                                                            <div key={res.id} className="flex items-center gap-1.5">
+                                                            <div key={res.id} className="flex items-center gap-1.5 cursor-pointer group/reserve" onClick={() => openPlayerModal(res)}>
                                                                 <div className="w-5 h-5 rounded-full overflow-hidden bg-neutral-800 border border-neutral-700 shrink-0">
                                                                     <img
                                                                         src={res.photoUrl}
@@ -167,7 +201,7 @@ export const DepthChart: React.FC<DepthChartProps> = ({ teamName, sport }) => {
                                                                         onError={e => { (e.target as HTMLImageElement).src = AVATAR(res.fullName); }}
                                                                     />
                                                                 </div>
-                                                                <span className="text-slate-500 text-[12px] font-medium hover:text-slate-300 cursor-pointer transition-colors">
+                                                                <span className="text-slate-500 text-[12px] font-medium group-hover/reserve:text-primary transition-colors">
                                                                     {res.shortName ?? res.fullName}
                                                                 </span>
                                                             </div>
@@ -197,6 +231,15 @@ export const DepthChart: React.FC<DepthChartProps> = ({ teamName, sport }) => {
                     <span className="text-[10px] text-slate-600 font-medium">{orderedPositions.length} positions · {players.length} players · Source: PickLabs Data</span>
                     <span className="text-[10px] text-slate-600 font-medium">Sorted by jersey number (lower = likely starter)</span>
                 </div>
+            )}
+
+            {selectedAthlete && (
+                <PlayerProfileModal
+                    athlete={selectedAthlete}
+                    sport={sport}
+                    league={sport.toLowerCase()}
+                    onClose={() => setSelectedAthlete(null)}
+                />
             )}
         </div>
     );

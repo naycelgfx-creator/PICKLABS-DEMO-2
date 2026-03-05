@@ -43,10 +43,17 @@ export const useESPNRoster = (teamName: string, sport: string) => {
                 }) as unknown as ESPNRosterAthlete[];
             } else if (sport === 'UFC') {
                 data = await getApiSportsMMAFighters();
-            } else if (SPORTS_WITH_API_SPORTS.includes(sport)) {
-                data = await getApiSportsRoster(sport, teamName);
             } else {
-                data = await fetchESPNRosterBySport(teamName, sport);
+                // Try ESPN first for all other sports
+                try {
+                    data = await fetchESPNRosterBySport(teamName, sport);
+                } catch (e) {
+                    console.warn(`ESPN roster API failed for ${sport}, will try api-sports`, e);
+                }
+
+                if ((!data || data.length === 0) && SPORTS_WITH_API_SPORTS.includes(sport)) {
+                    data = await getApiSportsRoster(sport, teamName);
+                }
             }
 
             if (data.length === 0) {

@@ -43,7 +43,6 @@ export const TeamMatchupCard: React.FC<TeamMatchupCardProps> = ({ game }) => {
             {/* VS divider */}
             <div className="col-span-12 lg:col-span-2 flex flex-row lg:flex-col items-center justify-center gap-3 py-2 lg:py-0">
                 <div className="text-slate-600 font-black text-2xl italic tracking-tighter uppercase">VS</div>
-                <div className="text-[10px] text-slate-500 font-bold uppercase">Game ID: {game.matchupId}</div>
             </div>
 
             {/* Home team card */}

@@ -13,7 +13,9 @@ export type SportKey =
     | 'Soccer.LIGAMX'
     | 'Tennis.ATP'
     | 'Tennis.WTA'
-    | 'Golf.PGA'
+    | 'Golf.PGA' | 'Golf.LIV' | 'Golf.LPGA'
+    | 'Racing.NASCAR.CUP' | 'Racing.NASCAR.XFINITY' | 'Racing.NASCAR.TRUCK'
+    | 'Baseball.WBC'
     | 'WNBA'
     | 'NCAAW';
 
@@ -42,6 +44,14 @@ export const ESPN_SCOREBOARD_URLS: Record<SportKey, string> = {
     'Tennis.WTA': 'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',
     // ── Golf ──
     'Golf.PGA': 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard',
+    'Golf.LIV': 'https://site.api.espn.com/apis/site/v2/sports/golf/liv/scoreboard',
+    'Golf.LPGA': 'https://site.api.espn.com/apis/site/v2/sports/golf/lpga/scoreboard',
+    // ── Racing ──
+    'Racing.NASCAR.CUP': 'https://site.api.espn.com/apis/site/v2/sports/racing/nascar/cup/scoreboard',
+    'Racing.NASCAR.XFINITY': 'https://site.api.espn.com/apis/site/v2/sports/racing/nascar/xfinity/scoreboard',
+    'Racing.NASCAR.TRUCK': 'https://site.api.espn.com/apis/site/v2/sports/racing/nascar/truck/scoreboard',
+    // ── WBC ──
+    'Baseball.WBC': 'https://site.api.espn.com/apis/site/v2/sports/baseball/wbc/scoreboard',
 };
 
 // Soccer league metadata for the sub-nav selector
@@ -74,6 +84,32 @@ export interface TennisTour {
 export const TENNIS_TOURS: TennisTour[] = [
     { key: 'Tennis.ATP', label: 'ATP Tour', flag: '🎾', description: "Men's" },
     { key: 'Tennis.WTA', label: 'WTA Tour', flag: '🎾', description: "Women's" },
+];
+
+export interface NASCARSeries {
+    key: SportKey;
+    label: string;
+    flag: string;
+    description: string;
+}
+
+export const NASCAR_SERIES: NASCARSeries[] = [
+    { key: 'Racing.NASCAR.CUP', label: 'Cup Series', flag: '🏁', description: 'NASCAR' },
+    { key: 'Racing.NASCAR.XFINITY', label: 'Xfinity Series', flag: '🏎️', description: 'NASCAR' },
+    { key: 'Racing.NASCAR.TRUCK', label: 'Truck Series', flag: '🛻', description: 'NASCAR' },
+];
+
+export interface GolfLeague {
+    key: SportKey;
+    label: string;
+    flag: string;
+    description: string;
+}
+
+export const GOLF_LEAGUES: GolfLeague[] = [
+    { key: 'Golf.PGA', label: 'PGA Tour', flag: '⛳', description: "Men's" },
+    { key: 'Golf.LIV', label: 'LIV Golf', flag: '🏌️', description: "Men's" },
+    { key: 'Golf.LPGA', label: 'LPGA Tour', flag: '🏌️‍♀️', description: "Women's" },
 ];
 
 export interface ESPNTeamInfo {
@@ -130,16 +166,25 @@ const parseCompetition = (event: RawObj, sport: SportKey): ESPNGame | null => {
         if (!comp) return null;
 
         const competitors: ESPNTeamInfo[] = (comp.competitors as RawObj[]).map((c: RawObj) => {
-            const team = c.team as RawObj;
+            const entity = (c.team as RawObj) || (c.athlete as RawObj) || {};
             const records = c.records as RawObj[] | undefined;
             const linescores = c.linescores as RawObj[] | undefined;
+
+            // For MMA/Tennis, athletes might have a 'flag' object instead of a direct 'logo'
+            const flagObj = entity.flag as RawObj | undefined;
+            let logoUrl = (entity.logo as string) || (flagObj?.href as string);
+            if (!logoUrl) {
+                const fallbackAbbr = ((entity.abbreviation as string) || (entity.shortName as string) || 'unk').toLowerCase();
+                logoUrl = `https://a.espncdn.com/i/teamlogos/nba/500/${fallbackAbbr}.png`;
+            }
+
             return {
-                id: team.id as string,
-                displayName: team.displayName as string,
-                abbreviation: team.abbreviation as string,
-                logo: (team.logo as string) ?? `https://a.espncdn.com/i/teamlogos/nba/500/${(team.abbreviation as string)?.toLowerCase()}.png`,
-                color: (team.color as string) ?? '1a1a2e',
-                alternateColor: (team.alternateColor as string) ?? 'ffffff',
+                id: (entity.id as string) || String(Date.now()),
+                displayName: (entity.displayName as string) || (entity.fullName as string) || 'Unknown',
+                abbreviation: (entity.abbreviation as string) || (entity.shortName as string) || 'UNK',
+                logo: logoUrl,
+                color: (entity.color as string) ?? '1a1a2e',
+                alternateColor: (entity.alternateColor as string) ?? 'ffffff',
                 score: (c.score as string) ?? '0',
                 record: (records?.[0]?.summary as string) ?? '',
                 homeAway: c.homeAway as 'home' | 'away',
@@ -158,7 +203,16 @@ const parseCompetition = (event: RawObj, sport: SportKey): ESPNGame | null => {
 
         // Extract leaders
         const leaders: ESPNGameLeader[] = [];
-        const leaderCategories = ['points', 'rebounds', 'assists', 'completions', 'rushingYards', 'receivingYards', 'saves'];
+        const leaderCategories = [
+            // Basketball
+            'points', 'rebounds', 'assists', 'pointsPerGame', 'reboundsPerGame', 'assistsPerGame',
+            // Football
+            'passingYards', 'rushingYards', 'receivingYards', 'completions',
+            // Hockey / Soccer
+            'goals', 'saves', 'goalsAgainstAverage', 'points',
+            // Baseball
+            'homeRuns', 'runsBattedIn', 'wins', 'strikeouts', 'battingAverage'
+        ];
         for (const cat of leaderCategories) {
             const catData = (comp.competitors as RawObj[]).flatMap((c: RawObj) =>
                 ((c.leaders as RawObj[]) ?? []).filter((l: RawObj) => l.name === cat).flatMap((l: RawObj) =>
@@ -188,7 +242,14 @@ const parseCompetition = (event: RawObj, sport: SportKey): ESPNGame | null => {
 
         const venue = comp.venue as RawObj | undefined;
         const venueAddress = venue?.address as RawObj | undefined;
-        const broadcast = (comp.broadcast as string) || (event.broadcast as string) || '';
+        let broadcast = '';
+        if (typeof comp.broadcast === 'string') broadcast = comp.broadcast;
+        else if (typeof event.broadcast === 'string') broadcast = event.broadcast;
+        else {
+            const broadcasts = (comp.broadcasts as RawObj[]) || (event.broadcasts as RawObj[]) || [];
+            const broadcastNames = broadcasts.flatMap(b => (b.names as string[]) || (typeof b.name === 'string' ? [b.name] : []));
+            if (broadcastNames.length > 0) broadcast = Array.from(new Set(broadcastNames)).join(', ');
+        }
         const headlines = comp.headlines as RawObj[] | undefined;
         const headline = (headlines?.[0]?.shortLinkText as string) ?? (event.name as string);
 
@@ -252,6 +313,7 @@ export const APP_SPORT_TO_ESPN: Record<string, SportKey | null> = {
     'NFL': 'NFL',
     'MLB': 'MLB',
     'NHL': 'NHL',
+    'CFB': 'CFB',
     'NCAAM': 'CBB',      // College Basketball (Men's)
     'NCAAB': 'NCAAB',    // College Baseball
     'NCAAW': 'NCAAW',
@@ -271,9 +333,19 @@ export const APP_SPORT_TO_ESPN: Record<string, SportKey | null> = {
     'Tennis': 'Tennis.ATP',
     'Tennis.ATP': 'Tennis.ATP',
     'Tennis.WTA': 'Tennis.WTA',
-    // Golf: PGA only for now
+    // Golf
     'Golf': 'Golf.PGA',
     'Golf.PGA': 'Golf.PGA',
+    'Golf.LIV': 'Golf.LIV',
+    'Golf.LPGA': 'Golf.LPGA',
+    // Racing
+    'NASCAR': 'Racing.NASCAR.CUP',
+    'Racing.NASCAR.CUP': 'Racing.NASCAR.CUP',
+    'Racing.NASCAR.XFINITY': 'Racing.NASCAR.XFINITY',
+    'Racing.NASCAR.TRUCK': 'Racing.NASCAR.TRUCK',
+    // WBC
+    'WBC': 'Baseball.WBC',
+    'Baseball.WBC': 'Baseball.WBC',
     'Esports': null,
 };
 
@@ -293,7 +365,7 @@ export const fetchESPNScoreboardByDate = async (sport: SportKey, dateStr: string
 
         // Fallback: If no events found for today, fetch the most recent final games (for out-of-season sports)
         const todayStr = new Date().toISOString().split('T')[0];
-        const isIntermittentSport = ['NFL', 'WNBA', 'UFC'].includes(sport);
+        const isIntermittentSport = ['NFL', 'WNBA', 'UFC', 'CFB'].includes(sport);
         if (events.length === 0 && dateStr === todayStr && isIntermittentSport) {
             const fallbackRes = await fetch(baseUrl);
             if (fallbackRes.ok) {
@@ -344,10 +416,29 @@ export async function fetchESPNRoster(sport: string, teamId: string): Promise<ES
         NFL: 'football/nfl',
         MLB: 'baseball/mlb',
         NHL: 'hockey/nhl',
+        // College Basketball (men)
+        CBB: 'basketball/mens-college-basketball',
         NCAAM: 'basketball/mens-college-basketball',
-        NCAAB: 'baseball/college-baseball',
+        // College Basketball (women)
         NCAAW: 'basketball/womens-college-basketball',
+        NCAAAW: 'basketball/womens-college-basketball',
+        // College Baseball
+        NCAAB: 'baseball/college-baseball',
+        // College Football
         CFB: 'football/college-football',
+        NCAAF: 'football/college-football',
+        // WNBA
+        WNBA: 'basketball/wnba',
+        // Soccer leagues — keys match SportKey enum
+        'Soccer.EPL': 'soccer/eng.1',
+        'Soccer.MLS': 'soccer/usa.1',
+        'Soccer.LaLiga': 'soccer/esp.1',
+        'Soccer.Bundesliga': 'soccer/ger.1',
+        'Soccer.SerieA': 'soccer/ita.1',
+        'Soccer.Ligue1': 'soccer/fra.1',
+        'Soccer.UCL': 'soccer/uefa.champions',
+        'Soccer.LIGAMX': 'soccer/mex.1',
+        // Plain fallbacks
         Soccer: 'soccer/eng.1',
     };
     const league = ESPN_LEAGUE[sport];
@@ -360,11 +451,19 @@ export async function fetchESPNRoster(sport: string, teamId: string): Promise<ES
         const athletes: ESPNRosterPlayer[] = [];
         const groups = json.athletes || [];
         for (const group of groups) {
-            for (const item of (group.items || [])) {
+            // Handle both flat array (NBA) and nested items array (MLB/NFL/NHL)
+            const playerList = group.items ? group.items : [group];
+            for (const item of playerList) {
+                if (!item.id) continue;
+                // ESPN CDN headshots use sport-level dirs like 'basketball', 'soccer', 'football'
+                // NOT the league sub-path like 'eng.1' or 'nba'
+                const headshotSportDir = league ? league.split('/')[0] : sport.toLowerCase();
+                const photoUrl = item.headshot?.href || `https://a.espncdn.com/i/headshots/${headshotSportDir}/players/full/${item.id}.png`;
+
                 athletes.push({
                     id: item.id,
                     displayName: item.displayName || item.fullName || '',
-                    headshot: item.headshot?.href,
+                    headshot: photoUrl,
                     position: item.position?.abbreviation || '',
                     jersey: item.jersey || '',
                     status: item.status?.type?.name,
@@ -405,6 +504,11 @@ export interface ESPNAthleteListItem {
     team: { id: string };
     status: { id: string; name: string; type: string; abbreviation: string };
     active: boolean;
+    // Enriched client-side — not from ESPN directly
+    teamLogo?: string;
+    teamAbbr?: string;
+    teamColor?: string;    // hex, no '#'
+    teamAltColor?: string; // hex, no '#'
 }
 
 export const fetchAllAthletes = async (sport: string, league: string, page = 1): Promise<{ athletes: ESPNAthleteListItem[], count: number, pageIndex: number, pageCount: number }> => {
@@ -441,6 +545,20 @@ export const fetchTeamsWithRosters = async (sport: string, league: string): Prom
 
         const teams = data.sports?.[0]?.leagues?.[0]?.teams || [];
 
+        // Build a team logo + abbr + color lookup map from the teams response
+        const teamMeta: Record<string, { logo: string; abbr: string; color: string; altColor: string }> = {};
+        for (const t of teams) {
+            const raw = t.team || t;
+            const id = (raw as { id?: string }).id;
+            if (!id) continue;
+            const logos: { href?: string }[] = (raw as { logos?: { href?: string }[] }).logos || [];
+            const logo = logos[0]?.href || '';
+            const abbr = (raw as { abbreviation?: string }).abbreviation || '';
+            const color = (raw as { color?: string }).color || '';
+            const altColor = (raw as { alternateColor?: string }).alternateColor || '';
+            teamMeta[id] = { logo, abbr, color, altColor };
+        }
+
         const rosterPromises = teams.map(async (t: { team?: { id: string } }) => {
             try {
                 const teamId = t.team?.id;
@@ -450,6 +568,7 @@ export const fetchTeamsWithRosters = async (sport: string, league: string): Prom
                 const rData = await rRes.json();
 
                 const rostersRaw = rData.athletes || [];
+                let athletes: ESPNAthleteListItem[];
                 // The ESPN `/teams/{id}/roster` endpoint can return nested groups like: `{ athletes: [ { items: [ ...athletes... ] } ] }`
                 if (rostersRaw.length > 0 && rostersRaw[0].items) {
                     const flatAthletes: ESPNAthleteListItem[] = [];
@@ -458,10 +577,23 @@ export const fetchTeamsWithRosters = async (sport: string, league: string): Prom
                             flatAthletes.push(...group.items);
                         }
                     });
-                    return flatAthletes;
+                    athletes = flatAthletes;
+                } else {
+                    athletes = rostersRaw as ESPNAthleteListItem[];
                 }
 
-                return rostersRaw as ESPNAthleteListItem[];
+                // Enrich each athlete with the team logo, abbr, and colors
+                const meta = teamMeta[teamId];
+                if (meta) {
+                    athletes = athletes.map(a => ({
+                        ...a,
+                        teamLogo: meta.logo,
+                        teamAbbr: meta.abbr,
+                        teamColor: meta.color,
+                        teamAltColor: meta.altColor,
+                    }));
+                }
+                return athletes;
             } catch {
                 return [];
             }

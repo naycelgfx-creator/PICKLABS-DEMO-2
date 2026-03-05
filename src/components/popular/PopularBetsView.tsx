@@ -26,6 +26,9 @@ interface SGPBet {
     homeLogo: string;
     awayLogo: string;
     isLive: boolean;
+    playerHeadshot?: string;
+    playerTeamLogo?: string;
+    playerTeamAltColor?: string;
     aiProbability?: string;
     aiEdge?: string;
 }
@@ -41,30 +44,30 @@ const generateSGP = (game: ESPNGame, idx: number): SGPBet => {
     // Sport-specific prop templates
     const propTemplates: Record<string, SGPLeg[]> = {
         NBA: [
-            { player: `${home} Starter`, prop: 'Points', line: `${Math.round(parseFloat(pred.total) / 2 / 5) * 5 + 0.5}+` },
-            { player: `${away} PG`, prop: 'Assists', line: `6.5+` },
-            { player: `${home} Center`, prop: 'Rebounds', line: `9.5+` },
+            { player: `${home} Starter`, prop: 'Points', line: `Over ${Math.round(parseFloat(pred.total) / 2 / 5) * 5 + 0.5}` },
+            { player: `${away} PG`, prop: 'Assists', line: `Over 6.5` },
+            { player: `${home} Center`, prop: 'Rebounds', line: `Over 9.5` },
         ],
         NFL: [
-            { player: `${home} QB`, prop: 'Passing Yards', line: `249.5+` },
-            { player: `${away} WR1`, prop: 'Receiving Yards', line: `74.5+` },
+            { player: `${home} QB`, prop: 'Passing Yards', line: `Over 249.5` },
+            { player: `${away} WR1`, prop: 'Receiving Yards', line: `Over 74.5` },
             { player: `${home} RB`, prop: 'Anytime TD', line: `Yes` },
         ],
         MLB: [
-            { player: `${home} SP`, prop: 'Strikeouts', line: `6.5+` },
-            { player: `${away} OF`, prop: 'Total Bases', line: `1.5+` },
-            { player: `${home} 1B`, prop: 'Hits + Runs + RBIs', line: `2.5+` },
+            { player: `${home} SP`, prop: 'Strikeouts', line: `Over 6.5` },
+            { player: `${away} OF`, prop: 'Total Bases', line: `Over 1.5` },
+            { player: `${home} 1B`, prop: 'Hits + Runs + RBIs', line: `Over 2.5` },
         ],
         NHL: [
-            { player: `${home} C`, prop: 'Points', line: `0.5+` },
-            { player: `${away} D`, prop: 'Shots on Goal', line: `3.5+` },
+            { player: `${home} C`, prop: 'Points', line: `Over 0.5` },
+            { player: `${away} D`, prop: 'Shots on Goal', line: `Over 3.5` },
             { player: `${home} LW`, prop: 'Anytime Scorer', line: `Yes` },
         ],
     };
 
     const legs = propTemplates[sport] ?? [
-        { player: `${home}`, prop: 'Total Goals', line: `1.5+` },
-        { player: `${away}`, prop: 'Total Goals', line: `0.5+` },
+        { player: `${home}`, prop: 'Total Goals', line: `Over 1.5` },
+        { player: `${away}`, prop: 'Total Goals', line: `Over 0.5` },
         { player: 'Game', prop: 'Both Teams Score', line: `Yes` },
     ];
 
@@ -112,31 +115,29 @@ const SPORT_COLORS: Record<string, string> = {
 
 // ── Component ─────────────────────────────────────────────────────────────
 export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) => {
-    const [bets, setBets] = useState<SGPBet[]>([]);
     const [loading, setLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState('');
     const [addedBets, setAddedBets] = useState<Set<string>>(new Set());
+    const [activeSport, setActiveSport] = useState<string>('All');
+    const [allGames, setAllGames] = useState<ESPNGame[]>([]);
+
+    // Split bets by category
+    const [aiPicks, setAiPicks] = useState<SGPBet[]>([]);
+    const [mlBets, setMlBets] = useState<SGPBet[]>([]);
+    const [totalBets, setTotalBets] = useState<SGPBet[]>([]);
+    const [spreadBets, setSpreadBets] = useState<SGPBet[]>([]);
+    const [playerProps, setPlayerProps] = useState<SGPBet[]>([]);
 
     useEffect(() => {
         const load = async () => {
             setLoading(true);
             try {
                 const data = await fetchMultiSportScoreboard(['NBA', 'NFL', 'MLB', 'NHL']);
-                const allGames: ESPNGame[] = Object.values(data).flat();
-
-                // Prioritise live games, then upcoming
-                const sorted = [
-                    ...allGames.filter(g => g.status === 'in'),
-                    ...allGames.filter(g => g.status === 'pre'),
-                    ...allGames.filter(g => g.status === 'post'),
-                ];
-
-                const top6 = sorted.slice(0, 6);
-                const generated = top6.map((g, i) => generateSGP(g, i));
-                setBets(generated);
+                const fetchedGames: ESPNGame[] = Object.values(data).flat();
+                setAllGames(fetchedGames);
                 setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
             } catch {
-                setBets([]);
+                setAllGames([]);
             } finally {
                 setLoading(false);
             }
@@ -147,13 +148,120 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        if (!allGames.length) {
+            setAiPicks([]);
+            setMlBets([]);
+            setTotalBets([]);
+            setSpreadBets([]);
+            setPlayerProps([]);
+            return;
+        }
+
+        const filteredGames = activeSport === 'All'
+            ? allGames
+            : allGames.filter(g => g.sport === activeSport);
+
+        const sorted = [
+            ...filteredGames.filter(g => g.status === 'in'),
+            ...filteredGames.filter(g => g.status === 'pre'),
+            ...filteredGames.filter(g => g.status === 'post'),
+        ];
+
+        if (sorted.length === 0) {
+            setAiPicks([]);
+            setMlBets([]);
+            setTotalBets([]);
+            setSpreadBets([]);
+            setPlayerProps([]);
+            return;
+        }
+
+        const getGame = (i: number) => sorted[i % sorted.length];
+
+        // Helper to create a specific type of single-leg bet formatted like an SGP card
+        const createSingleLegBet = (game: ESPNGame, type: 'ML' | 'OU' | 'SPREAD' | 'PROP', index: number): SGPBet => {
+            const pred = generateAIPrediction(game.homeTeam.record, game.awayTeam.record, game.sport, [], []);
+            const homeW = Number(pred.homeWinProb) > 50;
+
+            // Simple win prob to ML odds converter
+            const winProbToMLStr = (prob: number) => {
+                const winP = prob / 100;
+                if (winP > 0.5) return `-${Math.round((winP / (1 - winP)) * 100)}`;
+                return `+${Math.round(((1 - winP) / winP) * 100)}`;
+            };
+
+            const homeML = winProbToMLStr(Number(pred.homeWinProb));
+            const awayML = winProbToMLStr(Number(pred.awayWinProb));
+
+            let leg: SGPLeg;
+            let playerHeadshot: string | undefined;
+            let playerTeamLogo: string | undefined;
+            if (type === 'ML') {
+                leg = { player: homeW ? game.homeTeam.displayName : game.awayTeam.displayName, prop: 'Moneyline', line: homeW ? homeML : awayML };
+            } else if (type === 'OU') {
+                const isOver = Math.random() > 0.5;
+                leg = { player: 'Game', prop: 'Total Points', line: `${isOver ? 'Over' : 'Under'} ${pred.total}` };
+            } else if (type === 'SPREAD') {
+                leg = { player: homeW ? game.homeTeam.displayName : game.awayTeam.displayName, prop: 'Spread', line: homeW ? pred.spread : (pred.spread.includes('-') ? pred.spread.replace('-', '+') : `-${pred.spread}`) };
+            } else {
+                // Player prop ticket
+                if (game.leaders && game.leaders.length > 0) {
+                    const leader = game.leaders[index % game.leaders.length];
+                    const isHome = leader.teamId === game.homeTeam.id;
+                    playerHeadshot = leader.headshot;
+                    playerTeamLogo = isHome ? game.homeTeam.logo : game.awayTeam.logo;
+                    const lineVal = parseFloat(leader.displayValue) || 2.5;
+                    const lineOver = Math.max(0.5, lineVal - 0.5);
+
+                    leg = { player: leader.name, prop: leader.category, line: `Over ${lineOver}` };
+                } else {
+                    const templates: Record<string, { p: string, t: string, l: string }> = {
+                        NBA: { p: 'Starter', t: 'Points', l: `Over ${Math.round(parseFloat(pred.total) / 2 / 5) * 5 + 0.5}` },
+                        NFL: { p: 'QB', t: 'Passing Yards', l: 'Over 249.5' },
+                        MLB: { p: 'SP', t: 'Strikeouts', l: 'Over 5.5' },
+                        NHL: { p: 'C', t: 'Shots on Goal', l: 'Over 3.5' },
+                    };
+                    const tmpl = templates[game.sport] || { p: 'Star', t: 'Goals', l: 'Over 1.5' };
+                    const playerTeam = homeW ? game.homeTeam.displayName : game.awayTeam.displayName;
+                    leg = { player: `${playerTeam} ${tmpl.p}`, prop: tmpl.t, line: tmpl.l };
+                }
+            }
+
+            return {
+                id: `${type.toLowerCase()}-${game.id}-${index}`,
+                description: `${game.awayTeam.displayName} vs ${game.homeTeam.displayName} — ${type === 'PROP' ? 'Player Prop Ticket' : type === 'OU' ? 'Game Total' : type === 'SPREAD' ? 'Point Spread' : 'Moneyline'}`,
+                odds: type === 'PROP' ? '-110' : type === 'ML' ? (homeW ? homeML : awayML) : '-110',
+                legs: [leg],
+                placedCount: `${Math.floor(10 + Math.random() * 40)}K`,
+                sport: game.sport,
+                homeTeam: game.homeTeam.displayName,
+                awayTeam: game.awayTeam.displayName,
+                homeLogo: game.homeTeam.logo,
+                awayLogo: game.awayTeam.logo,
+                isLive: game.status === 'in',
+                playerHeadshot,
+                playerTeamLogo,
+                aiProbability: `${Math.round(Number(homeW ? pred.homeWinProb : pred.awayWinProb))}%`,
+                aiEdge: `+${(Math.random() * 5 + 1).toFixed(1)}%`,
+            };
+        };
+
+        setAiPicks(Array.from({ length: 6 }).map((_, i) => generateSGP(getGame(i), i)));
+        setMlBets(Array.from({ length: 6 }).map((_, i) => createSingleLegBet(getGame(i + 6), 'ML', i)));
+        setTotalBets(Array.from({ length: 6 }).map((_, i) => createSingleLegBet(getGame(i + 12), 'OU', i)));
+        setSpreadBets(Array.from({ length: 6 }).map((_, i) => createSingleLegBet(getGame(i + 18), 'SPREAD', i)));
+        setPlayerProps(Array.from({ length: 6 }).map((_, i) => createSingleLegBet(getGame(i + 24), 'PROP', i)));
+
+    }, [allGames, activeSport]);
+
     // Helper to add the SGP legs
     const handleAddSGP = (betMatch: SGPBet) => {
         if (!onAddBet) return;
         betMatch.legs.forEach(leg => {
             const teamStr = leg.player === 'Game' || leg.player.includes(betMatch.homeTeam) || leg.player.includes(betMatch.awayTeam)
                 ? leg.player // If it's a team/game prop, the player field describes it nicely
-                : `${leg.player} Over ${leg.line.replace('+', '')} ${leg.prop}`; // player prop string format
+                : leg.line === 'Yes' ? `${leg.player} ${leg.prop}` : `${leg.player} ${leg.line} ${leg.prop}`;
 
             onAddBet({
                 gameId: betMatch.id.replace(/^sgp-/, 'espn-').replace(/-\d+$/, ''),
@@ -195,6 +303,22 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
                     </div>
                 </div>
 
+                {/* Sport Tabs */}
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+                    {['All', 'NBA', 'NFL', 'MLB', 'NHL'].map(sport => (
+                        <button
+                            key={sport}
+                            onClick={() => setActiveSport(sport)}
+                            className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest whitespace-nowrap transition-colors border ${activeSport === sport
+                                ? 'bg-primary text-black border-primary'
+                                : 'bg-neutral-800/50 text-text-muted border-border-muted hover:border-slate-500 hover:text-text-main'
+                                }`}
+                        >
+                            {sport}
+                        </button>
+                    ))}
+                </div>
+
                 {/* Loading skeleton */}
                 {loading && (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-4">
@@ -211,7 +335,7 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
                 )}
 
                 {/* Empty state */}
-                {!loading && bets.length === 0 && (
+                {!loading && aiPicks.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border-muted rounded-xl">
                         <span className="material-symbols-outlined text-5xl text-slate-600 mb-4">event_busy</span>
                         <h3 className="text-text-main font-black text-xl uppercase tracking-widest mb-2">No Games Today</h3>
@@ -221,88 +345,129 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
                     </div>
                 )}
 
-                {/* SGP Cards Grid */}
-                {!loading && bets.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-4">
-                        {bets.map(bet => (
-                            <div
-                                key={bet.id}
-                                className="glass-panel p-6 border border-border-muted hover:border-orange-500/50 transition-colors flex flex-col h-full bg-neutral-900/60 relative overflow-hidden group"
-                            >
-                                {/* Background glow */}
-                                <div className="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-colors"></div>
+                {/* Categories container */}
+                {!loading && aiPicks.length > 0 && (
+                    <div className="flex flex-col gap-12 mt-4">
 
-                                {/* Card Header */}
-                                <div className="flex justify-between items-start mb-4 relative z-10">
-                                    <div className="flex flex-col gap-1.5">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${SPORT_COLORS[bet.sport] ?? 'bg-primary/10 text-primary border-primary/30'}`}>
-                                                {bet.sport}
-                                            </span>
-                                            {bet.isLive && (
-                                                <span className="text-[10px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded uppercase tracking-widest flex items-center gap-1">
-                                                    <span className="w-1 h-1 bg-red-400 rounded-full animate-pulse"></span>
-                                                    Live
-                                                </span>
-                                            )}
-                                            <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">SGP</span>
-                                        </div>
-                                        {/* Team logos + names */}
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <img src={bet.awayLogo} alt={bet.awayTeam} className="w-5 h-5 object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                            <span className="text-xs font-bold text-text-muted">{bet.awayTeam}</span>
-                                            <span className="text-text-muted">@</span>
-                                            <img src={bet.homeLogo} alt={bet.homeTeam} className="w-5 h-5 object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                            <span className="text-xs font-bold text-text-main">{bet.homeTeam}</span>
-                                        </div>
-                                        {/* AI Edge Badge */}
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <span className="text-[9px] font-black text-green-400 bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded tracking-wider flex items-center gap-1 uppercase">
-                                                <span className="material-symbols-outlined text-[10px]">psychology</span>
-                                                AI Edge {bet.aiEdge}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="text-right shrink-0">
-                                        <span className="text-xl font-black text-primary bg-primary/10 px-3 py-1 rounded">{bet.odds}</span>
-                                        <div className="mt-1 flex flex-col justify-end">
-                                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">AI Win Prob</span>
-                                            <span className="text-[11px] font-black text-text-main tabular-nums">{bet.aiProbability}</span>
-                                        </div>
+                        {[
+                            { title: 'AI Editor\'s Picks', subtitle: 'Same Game Parlays', bets: aiPicks, icon: 'psychology', color: 'text-primary' },
+                            { title: 'Sharp Moneylines', subtitle: 'Match Winners', bets: mlBets, icon: 'monetization_on', color: 'text-green-500' },
+                            { title: 'Over / Unders', subtitle: 'Game Totals', bets: totalBets, icon: 'swap_vert', color: 'text-blue-500' },
+                            { title: 'Vegas Spreads', subtitle: 'Point Covers', bets: spreadBets, icon: 'compare_arrows', color: 'text-orange-500' },
+                            { title: 'Player Prop Tickets', subtitle: 'Individual Leaders', bets: playerProps, icon: 'person', color: 'text-accent-purple' },
+                        ].map((category, catIdx) => (
+                            <div key={catIdx} className="flex flex-col gap-5">
+                                <div className="flex items-center gap-3 border-b border-border-muted/50 pb-2">
+                                    <span className={`material-symbols-outlined ${category.color} text-2xl`}>{category.icon}</span>
+                                    <div>
+                                        <h3 className="text-xl font-black text-text-main uppercase tracking-widest">{category.title}</h3>
+                                        <p className="text-xs text-text-muted font-bold uppercase">{category.subtitle}</p>
                                     </div>
                                 </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    {category.bets.map(bet => (
+                                        <div
+                                            key={bet.id}
+                                            className="glass-panel p-6 border border-border-muted hover:border-orange-500/50 transition-colors flex flex-col h-full bg-neutral-900/60 relative overflow-hidden group"
+                                        >
+                                            {/* Background glow */}
+                                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-colors"></div>
 
-                                {/* Legs List */}
-                                <div className="flex-1 flex flex-col gap-2 mb-5 relative z-10">
-                                    {bet.legs.map((leg, i) => (
-                                        <div key={i} className="flex items-center justify-between bg-neutral-800/60 border border-border-muted p-3 rounded">
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-bold text-text-main">{leg.player}</span>
-                                                <span className="text-[10px] text-text-muted font-medium">{leg.prop}</span>
+                                            {/* Card Header */}
+                                            <div className="flex justify-between items-start mb-4 relative z-10">
+                                                <div className="flex flex-col gap-1.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${SPORT_COLORS[bet.sport] ?? 'bg-primary/10 text-primary border-primary/30'}`}>
+                                                            {bet.sport}
+                                                        </span>
+                                                        {bet.isLive && (
+                                                            <span className="text-[10px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded uppercase tracking-widest flex items-center gap-1">
+                                                                <span className="w-1 h-1 bg-red-400 rounded-full animate-pulse"></span>
+                                                                Live
+                                                            </span>
+                                                        )}
+                                                        <span className={`text-[10px] font-bold ${category.color} uppercase tracking-widest bg-neutral-800 px-2 py-0.5 rounded border border-border-muted`}>
+                                                            {category.subtitle.split(' ')[0]}
+                                                        </span>
+                                                    </div>
+                                                    {/* Team logos + names or Player Headshot */}
+                                                    {bet.playerHeadshot ? (
+                                                        <div className="flex items-center gap-3 mt-1 py-1">
+                                                            <div className="relative">
+                                                                <img src={bet.playerHeadshot} alt={bet.legs[0]?.player} className="w-10 h-10 rounded-full object-cover bg-neutral-800" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                                {bet.playerTeamLogo && (
+                                                                    <img src={bet.playerTeamLogo} className="w-6 h-6 absolute -bottom-1 -right-2 object-contain drop-shadow-md z-10" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-black text-text-main leading-tight">{bet.legs[0]?.player}</span>
+                                                                <span className="text-[9px] text-text-muted font-bold truncate">
+                                                                    {bet.awayTeam} @ {bet.homeTeam}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <img src={bet.awayLogo} alt={bet.awayTeam} className="w-6 h-6 object-contain drop-shadow-sm" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                            <span className="text-xs font-bold text-text-muted">{bet.awayTeam}</span>
+                                                            <span className="text-text-muted">@</span>
+                                                            <img src={bet.homeLogo} alt={bet.homeTeam} className="w-6 h-6 object-contain drop-shadow-sm" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                            <span className="text-xs font-bold text-text-main">{bet.homeTeam}</span>
+                                                        </div>
+                                                    )}
+                                                    {/* AI Edge Badge */}
+                                                    <div className="flex items-center gap-2 mt-1.5">
+                                                        <span className="text-[9px] font-black text-green-400 bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded tracking-wider flex items-center gap-1 uppercase">
+                                                            <span className="material-symbols-outlined text-[10px]">psychology</span>
+                                                            AI Edge {bet.aiEdge}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <span className="text-xl font-black text-primary bg-primary/10 px-3 py-1 rounded">{bet.odds}</span>
+                                                    <div className="mt-1 flex flex-col justify-end">
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">AI Win Prob</span>
+                                                        <span className="text-[11px] font-black text-text-main tabular-nums">{bet.aiProbability}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <span className="text-xs font-black text-primary">{leg.line}</span>
+
+                                            {/* Legs List */}
+                                            <div className="flex-1 flex flex-col gap-2 mb-5 relative z-10">
+                                                {bet.legs.map((leg, i) => (
+                                                    <div key={i} className="flex items-center justify-between bg-neutral-800/60 border border-border-muted p-3 rounded">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-bold text-text-main">{leg.player}</span>
+                                                            <span className="text-[10px] text-text-muted font-medium">
+                                                                {leg.line === 'Yes' ? leg.prop : `${leg.line.includes('Over') || leg.line.includes('Under') || leg.line.includes('+') || leg.line.includes('-') ? '' : 'Over '}${leg.line} ${leg.prop}`}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-xs font-black text-primary">{leg.line === 'Yes' ? 'Yes' : leg.line.replace(/Over\s*/i, '').replace(/Under\s*/i, '')}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Footer */}
+                                            <div className="mt-auto flex items-center justify-between border-t border-border-muted pt-4 relative z-10">
+                                                <div className="flex items-center gap-1.5 bg-orange-500 text-black px-3 py-1.5 rounded-full font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                                                    <span className="material-symbols-outlined text-sm">local_fire_department</span>
+                                                    {bet.placedCount} <span className="text-[9px] font-bold opacity-80">Placed</span>
+                                                </div>
+                                                <button
+                                                    disabled={addedBets.has(bet.id)}
+                                                    onClick={() => handleAddSGP(bet)}
+                                                    className={`transition-colors px-4 py-2 rounded font-black text-xs uppercase tracking-widest filter active:brightness-75 ${addedBets.has(bet.id)
+                                                        ? 'bg-green-500 text-black border border-green-500 cursor-not-allowed'
+                                                        : 'bg-primary text-black border border-primary hover:bg-primary/80 hover:scale-105'
+                                                        }`}
+                                                >
+                                                    {addedBets.has(bet.id) ? (
+                                                        <div className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">check</span> Added</div>
+                                                    ) : 'Add to Slip'}
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
-                                </div>
-
-                                {/* Footer */}
-                                <div className="mt-auto flex items-center justify-between border-t border-border-muted pt-4 relative z-10">
-                                    <div className="flex items-center gap-1.5 bg-orange-500 text-black px-3 py-1.5 rounded-full font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(249,115,22,0.3)]">
-                                        <span className="material-symbols-outlined text-sm">local_fire_department</span>
-                                        {bet.placedCount} <span className="text-[9px] font-bold opacity-80">Placed</span>
-                                    </div>
-                                    <button
-                                        disabled={addedBets.has(bet.id)}
-                                        onClick={() => handleAddSGP(bet)}
-                                        className={`transition-colors px-4 py-2 rounded font-black text-xs uppercase tracking-widest filter active:brightness-75 ${addedBets.has(bet.id)
-                                            ? 'bg-green-500 text-black border border-green-500 cursor-not-allowed'
-                                            : 'bg-primary text-black border border-primary hover:bg-primary/80 hover:scale-105'
-                                            }`}
-                                    >
-                                        {addedBets.has(bet.id) ? (
-                                            <div className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">check</span> Added</div>
-                                        ) : 'Add to Slip'}
-                                    </button>
                                 </div>
                             </div>
                         ))}

@@ -2,8 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SportsNav } from './SportsNav';
 import { SoccerLeagueNav } from './SoccerLeagueNav';
 import { TennisSubNav } from './TennisSubNav';
+import { NASCARSubNav } from './NASCARSubNav';
+import { GolfSubNav } from './GolfSubNav';
 import { TennisTournamentPanel } from './TennisTournamentPanel';
 import { GolfLeaderboardPanel } from './GolfLeaderboardPanel';
+import { NASCARRacePanel } from './NASCARRacePanel';
 import { GameCard } from './GameCard';
 import { BetSlip } from './BetSlip';
 import { DateFilter } from './DateFilter';
@@ -195,17 +198,30 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
     const isTennis = activeSport === 'Tennis';
     const isGolf = activeSport === 'Golf';
 
+    // NASCAR series sub-selection (defaults to Cup)
+    const [activeNASCARSeries, setActiveNASCARSeries] = useState<SportKey>('Racing.NASCAR.CUP');
+    const isNASCAR = activeSport === 'NASCAR';
+
+    // Golf league sub-selection (defaults to PGA)
+    const [activeGolfLeague, setActiveGolfLeague] = useState<SportKey>('Golf.PGA');
+
     // Sports that use TennisTournamentPanel (player-vs-player matches)
     const useTennisPanel = isTennis;
     // Golf uses dedicated leaderboard panel
     const useGolfPanel = isGolf;
+    // NASCAR uses dedicated race panel
+    const useNASCARPanel = isNASCAR;
 
     // The effective ESPN key: for Soccer use selected sub-league, for Tennis use selected tour, for Golf use PGA
     const effectiveEspnKey: SportKey | null = isSoccer
         ? activeSoccerLeague
         : isTennis
             ? activeTennisTour
-            : (APP_SPORT_TO_ESPN[activeSport] as SportKey | null);
+            : isNASCAR
+                ? activeNASCARSeries
+                : isGolf
+                    ? activeGolfLeague
+                    : (APP_SPORT_TO_ESPN[activeSport] as SportKey | null);
 
     // Real ESPN games for Simulated tab
     const [espnGames, setEspnGames] = useState<Game[]>([]);
@@ -324,6 +340,28 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                 />
             )}
 
+            {/* NASCAR series sub-nav — Cup / Xfinity / Truck */}
+            {isNASCAR && (
+                <NASCARSubNav
+                    activeSeries={activeNASCARSeries}
+                    onSelectSeries={(series) => {
+                        setActiveNASCARSeries(series);
+                        setActiveTab('espn');
+                    }}
+                />
+            )}
+
+            {/* Golf league sub-nav — PGA / LIV / LPGA */}
+            {isGolf && (
+                <GolfSubNav
+                    activeLeague={activeGolfLeague}
+                    onSelectLeague={(league) => {
+                        setActiveGolfLeague(league);
+                        setActiveTab('espn');
+                    }}
+                />
+            )}
+
             <DateFilter selectedDate={selectedDate} onSelectDate={setSelectedDate} activeSport={activeSport} />
             <main className="max-w-[1536px] mx-auto px-2 sm:px-6 py-2 grid grid-cols-12 gap-2 sm:gap-6 relative w-full overflow-hidden">
                 <div className="col-span-12 lg:col-span-9 space-y-4 sm:space-y-6">
@@ -348,8 +386,14 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                                 <h2 className="text-2xl font-black text-text-main italic uppercase">
                                     {activeTennisTour === 'Tennis.ATP' ? 'ATP Tour' : 'WTA Tour'} Live Board
                                 </h2>
+                            ) : isNASCAR ? (
+                                <h2 className="text-2xl font-black text-text-main italic uppercase">
+                                    {activeNASCARSeries === 'Racing.NASCAR.CUP' ? 'Cup Series' : activeNASCARSeries === 'Racing.NASCAR.XFINITY' ? 'Xfinity Series' : 'Truck Series'} Live Board
+                                </h2>
                             ) : isGolf ? (
-                                <h2 className="text-2xl font-black text-text-main italic uppercase">⛳ PGA Tour Live Board</h2>
+                                <h2 className="text-2xl font-black text-text-main italic uppercase">
+                                    {activeGolfLeague === 'Golf.PGA' ? 'PGA Tour' : activeGolfLeague === 'Golf.LIV' ? 'LIV Golf' : 'LPGA Tour'} Live Board
+                                </h2>
                             ) : (
                                 <h2 className="text-2xl font-black text-text-main italic uppercase">{activeSport} Live Board</h2>
                             )}
@@ -467,6 +511,14 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                             <GolfLeaderboardPanel
                                 sportKey={effectiveEspnKey!}
                                 selectedDate={selectedDate}
+                                onSelectGame={(game) => {
+                                    onSelectGame(game);
+                                    setCurrentView('matchup-terminal');
+                                }}
+                            />
+                        ) : useNASCARPanel ? (
+                            <NASCARRacePanel
+                                sportKey={effectiveEspnKey!}
                                 onSelectGame={(game) => {
                                     onSelectGame(game);
                                     setCurrentView('matchup-terminal');

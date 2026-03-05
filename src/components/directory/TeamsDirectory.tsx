@@ -1,16 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SPORT_LOGOS } from '../../data/mockGames';
 import { TeamDetails } from './TeamDetails';
-import { getWBCTeams } from '../../data/mlbStatsService';
+
 
 // ── ESPN Teams API response types ─────────────────────────────────────────────
-interface EspnLogoEntry { href: string; width?: number; height?: number; }
-interface EspnTeamEntry {
-    id?: string; name?: string; abbreviation?: string;
-    displayName?: string; shortDisplayName?: string;
-    logos?: EspnLogoEntry[]; color?: string; alternateColor?: string;
-    location?: string;
-}
 import { fetchAllTeams } from '../../data/espnTeams';
 
 const ESPN_SPORT_MAP: Record<string, { sport: string, league: string, groups?: string }> = {
@@ -171,47 +164,36 @@ interface ESPNTeam {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseESPNTeams(data: Record<string, any>): ESPNTeam[] {
-    const sports = data?.sports ?? [];
-    if (sports.length > 0) {
-        const leagues = sports[0]?.leagues ?? [];
-        if (leagues.length > 0) {
-            const rawTeams = leagues[0]?.teams ?? [];
-            return rawTeams.map((t: { team?: EspnTeamEntry } & EspnTeamEntry) => {
-                const team = t.team ?? t;
-                const logos: EspnLogoEntry[] = team.logos ?? [];
-                const logo = logos[0]?.href ?? logos.find((l: EspnLogoEntry) => l.href)?.href ?? '';
-                return {
-                    id: team.id ?? '',
-                    name: team.name ?? '',
-                    abbreviation: team.abbreviation ?? '',
-                    displayName: team.displayName ?? team.name ?? '',
-                    shortDisplayName: team.shortDisplayName ?? team.name ?? '',
-                    logo,
-                    color: team.color ?? '',
-                    alternateColor: team.alternateColor ?? '',
-                    location: team.location ?? '',
-                };
-            });
-        }
+function parseESPNTeams(data: any): ESPNTeam[] {
+    let rawTeams: any[] = [];
+
+    if (data?.sports?.[0]?.leagues?.[0]?.teams) {
+        rawTeams = data.sports[0].leagues[0].teams;
+    } else if (data?.teams) {
+        rawTeams = data.teams;
+    } else if (Array.isArray(data)) {
+        rawTeams = data;
     }
-    const rawTeams = data?.teams ?? [];
-    return rawTeams.map((t: { team?: EspnTeamEntry } & EspnTeamEntry) => {
-        const team = t.team ?? t;
-        const logos: EspnLogoEntry[] = team.logos ?? [];
-        const logo = logos[0]?.href ?? '';
+
+    if (!Array.isArray(rawTeams)) return [];
+
+    return rawTeams.map((t: any) => {
+        const team = t?.team || t || {};
+        const logos = team.logos || [];
+        const logo = logos[0]?.href || logos.find((l: any) => l?.href)?.href || '';
+
         return {
-            id: team.id ?? '',
-            name: team.name ?? '',
-            abbreviation: team.abbreviation ?? '',
-            displayName: team.displayName ?? team.name ?? '',
-            shortDisplayName: team.shortDisplayName ?? team.name ?? '',
-            logo,
-            color: team.color ?? '',
-            alternateColor: team.alternateColor ?? '',
-            location: team.location ?? '',
+            id: String(team.id || ''),
+            name: String(team.name || ''),
+            abbreviation: String(team.abbreviation || ''),
+            displayName: String(team.displayName || team.name || ''),
+            shortDisplayName: String(team.shortDisplayName || team.name || ''),
+            logo: String(logo),
+            color: String(team.color || ''),
+            alternateColor: String(team.alternateColor || ''),
+            location: String(team.location || ''),
         };
-    });
+    }).filter(t => t.id && t.displayName && t.displayName !== 'undefined');
 }
 
 // ── Sport logos displayed in the header ───────────────────────────────────
@@ -221,18 +203,18 @@ const EXTRA_SPORT_LOGOS: Record<string, string> = {
     NFL: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png',
     MLB: 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png',
     NHL: 'https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png',
-    WNBA: 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png',
+    WNBA: '/wnba-logo-new.png',
     NCAAB: '/basketball-men.svg',
     NCAAW: '/basketball-women.svg',
     CFB: '/football.svg',
     Tennis: '/Wimbledon.svg.png',
     Golf: '/pga_tour.png',
     Soccer: '/FIFA-Logo.svg',
-    WBC: 'https://sports.cbsimg.net/fly/images/icon-logos/baseball.svg',
+    WBC: '/wbc-logo-new.png',
     UFC: 'https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png',
 };
 
-const SPORTS_WITH_ESPN_API = [...Object.keys(ESPN_SPORT_MAP), 'Soccer', 'WBC', 'UFC'];
+const SPORTS_WITH_ESPN_API = [...Object.keys(ESPN_SPORT_MAP), 'Soccer', 'WBC', 'UFC', 'Tennis', 'Golf', 'NASCAR'];
 
 // ── Team Card ─────────────────────────────────────────────────────────────
 interface TeamCardProps {
@@ -419,21 +401,29 @@ export const TeamsDirectory: React.FC = () => {
         setError(null);
         try {
             if (sport === 'WBC') {
-                const wbcTeams = await getWBCTeams();
-                // map WBC team structure to ESPNTeam structure
-                const mappedWbc = wbcTeams.map(t => ({
-                    id: String(t.id),
+                // The ESPN WBC teams endpoint currently returns 0 items because the tournament is inactive.
+                // We mock the top teams to allow users to click them and fetch their rosters.
+                const wbcTeamsData = [
+                    { id: 'usa', name: 'USA', displayName: 'USA Baseball', shortDisplayName: 'USA', color: '002868', alternateColor: 'bf0a30' },
+                    { id: 'jpn', name: 'Japan', displayName: 'Samurai Japan', shortDisplayName: 'JPN', color: '000000', alternateColor: 'ffffff' },
+                    { id: 'dom', name: 'Dominican Republic', displayName: 'Dominican Rep', shortDisplayName: 'DOM', color: '002d62', alternateColor: 'ce1126' },
+                    { id: 'pri', name: 'Puerto Rico', displayName: 'Puerto Rico', shortDisplayName: 'PRI', color: '0055a4', alternateColor: 'ef3340' },
+                    { id: 'ven', name: 'Venezuela', displayName: 'Venezuela', shortDisplayName: 'VEN', color: 'fce300', alternateColor: '00247d' },
+                    { id: 'mex', name: 'Mexico', displayName: 'Mexico', shortDisplayName: 'MEX', color: '006341', alternateColor: 'c60c30' },
+                    { id: 'kor', name: 'South Korea', displayName: 'South Korea', shortDisplayName: 'KOR', color: '0047a0', alternateColor: 'cd2e3a' },
+                    { id: 'cub', name: 'Cuba', displayName: 'Cuba', shortDisplayName: 'CUB', color: '002a8f', alternateColor: 'cc0000' }
+                ];
+                setTeams(wbcTeamsData.map(t => ({
+                    id: t.id,
                     name: t.name,
-                    abbreviation: t.abbreviation,
-                    displayName: t.name,
-                    shortDisplayName: t.name,
-                    logo: t.logo,
-                    color: t.color || '121a12',
-                    alternateColor: t.alternateColor || '0df20d',
-                    location: t.location || 'International'
-                }));
-                mappedWbc.sort((a, b) => a.displayName.localeCompare(b.displayName));
-                setTeams(mappedWbc);
+                    abbreviation: t.shortDisplayName,
+                    displayName: t.displayName,
+                    shortDisplayName: t.shortDisplayName,
+                    logo: `https://a.espncdn.com/i/teamlogos/countries/500/${t.id}.png`,
+                    color: t.color,
+                    alternateColor: t.alternateColor,
+                    location: t.name
+                })));
             } else if (sport === 'UFC') {
                 setTeams([{
                     id: 'ufc',
@@ -446,6 +436,23 @@ export const TeamsDirectory: React.FC = () => {
                     alternateColor: '000000',
                     location: 'International'
                 }]);
+            } else if (sport === 'Tennis') {
+                setTeams([
+                    { id: 'atp', name: 'ATP Tour', abbreviation: 'ATP', displayName: 'ATP Men', shortDisplayName: 'ATP', logo: '/Wimbledon.svg.png', color: '2b4db3', alternateColor: 'ffffff', location: 'International' },
+                    { id: 'wta', name: 'WTA Tour', abbreviation: 'WTA', displayName: 'WTA Women', shortDisplayName: 'WTA', logo: '/Wimbledon.svg.png', color: '8b3687', alternateColor: 'ffffff', location: 'International' }
+                ]);
+            } else if (sport === 'Golf') {
+                setTeams([
+                    { id: 'pga', name: 'PGA Tour', abbreviation: 'PGA', displayName: 'PGA Tour', shortDisplayName: 'PGA', logo: '/pga_tour.png', color: '0b3058', alternateColor: 'ffffff', location: 'International' },
+                    { id: 'liv', name: 'LIV Golf', abbreviation: 'LIV', displayName: 'LIV Golf', shortDisplayName: 'LIV', logo: '/pga_tour.png', color: '000000', alternateColor: '0df20d', location: 'International' },
+                    { id: 'lpga', name: 'LPGA Tour', abbreviation: 'LPGA', displayName: 'LPGA Tour', shortDisplayName: 'LPGA', logo: '/pga_tour.png', color: '154c86', alternateColor: 'ffffff', location: 'International' }
+                ]);
+            } else if (sport === 'NASCAR') {
+                setTeams([
+                    { id: 'cup', name: 'Cup Series', abbreviation: 'CUP', displayName: 'Cup Series', shortDisplayName: 'CUP', logo: '/nascar-header-logo.png', color: 'ffb81c', alternateColor: '000000', location: 'USA' },
+                    { id: 'xfinity', name: 'Xfinity Series', abbreviation: 'XFINITY', displayName: 'Xfinity Series', shortDisplayName: 'XFIN', logo: '/nascar-header-logo.png', color: 'e31837', alternateColor: '000000', location: 'USA' },
+                    { id: 'truck', name: 'Truck Series', abbreviation: 'TRUCK', displayName: 'Truck Series', shortDisplayName: 'TRK', logo: '/nascar-header-logo.png', color: '006aa6', alternateColor: '000000', location: 'USA' }
+                ]);
             } else {
                 const map = ESPN_SPORT_MAP[sport];
                 if (!map) return;
@@ -601,7 +608,7 @@ export const TeamsDirectory: React.FC = () => {
                                     <TeamCard
                                         key={team.id}
                                         team={team}
-                                        onClick={() => setSelectedTeam({ name: team.displayName, abbr: team.abbreviation, url: team.logo })}
+                                        onClick={() => setSelectedTeam({ id: team.id, name: team.displayName, abbr: team.abbreviation, url: team.logo })}
                                     />
                                 ))}
                             </div>

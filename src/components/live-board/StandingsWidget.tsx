@@ -101,57 +101,85 @@ export const StandingsWidget: React.FC<StandingsWidgetProps> = ({ sportKey }) =>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border-muted/30">
-                                {group.standings?.entries?.map((entry, idx) => {
-                                    const team = entry.team;
-                                    const stats = entry.stats;
+                                {(() => {
+                                    // Explicitly sort teams from highest to lowest based on rank, points, or win percentage
+                                    const sortedEntries = [...(group.standings?.entries || [])].sort((a, b) => {
+                                        // 1. Sort by Win Percentage descending
+                                        const pctA = a.stats.find(s => s.name === 'winPercent')?.value ?? undefined;
+                                        const pctB = b.stats.find(s => s.name === 'winPercent')?.value ?? undefined;
+                                        if (pctA !== undefined && pctB !== undefined && pctA !== pctB) {
+                                            return pctB - pctA;
+                                        }
 
-                                    // Safely grab stats by name or fallback
-                                    const wins = getStatValue(stats, 'wins');
-                                    const losses = getStatValue(stats, 'losses');
-                                    const pct = getStatValue(stats, 'winPercent');
-                                    const gb = getStatValue(stats, 'gamesBehind');
-                                    const streak = getStatValue(stats, 'streak');
-                                    const l10 = getStatValue(stats, 'Last Ten Games') !== '-'
-                                        ? getStatValue(stats, 'Last Ten Games')
-                                        : getStatValue(stats, 'overall'); // Fallback to overall record if L10 missing
+                                        // 2. Sort by Points (Soccer, NHL) descending
+                                        const ptsA = a.stats.find(s => s.name === 'points')?.value ?? undefined;
+                                        const ptsB = b.stats.find(s => s.name === 'points')?.value ?? undefined;
+                                        if (ptsA !== undefined && ptsB !== undefined && ptsA !== ptsB) {
+                                            return ptsB - ptsA;
+                                        }
 
-                                    // Sometimes Logo array is weird
-                                    const logoHref = team.logos?.[0]?.href;
+                                        // 3. Sort by Wins descending
+                                        const winsA = a.stats.find(s => s.name === 'wins')?.value ?? undefined;
+                                        const winsB = b.stats.find(s => s.name === 'wins')?.value ?? undefined;
+                                        if (winsA !== undefined && winsB !== undefined && winsA !== winsB) {
+                                            return winsB - winsA;
+                                        }
 
-                                    return (
-                                        <tr key={team.id} className="hover:bg-white/[0.02] transition-colors group cursor-default">
-                                            <td className="px-4 py-3 text-center text-text-muted font-medium">
-                                                {idx + 1}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-3">
-                                                    {logoHref && (
-                                                        <img src={logoHref} alt={team.abbreviation} className="w-6 h-6 object-contain" />
-                                                    )}
-                                                    <span className="font-bold text-white group-hover:text-primary transition-colors">
-                                                        {team.displayName || team.name}
-                                                    </span>
-                                                    <span className="text-[10px] text-text-muted font-black bg-neutral-800 px-1.5 py-0.5 rounded ml-1">
-                                                        {team.abbreviation}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-right text-white font-medium">{wins}</td>
-                                            <td className="px-4 py-3 text-right text-white font-medium">{losses}</td>
-                                            <td className="px-4 py-3 text-right text-slate-400">{pct}</td>
-                                            <td className="px-4 py-3 text-right text-slate-400">{gb}</td>
-                                            <td className="px-4 py-3 text-right">
-                                                <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${streak.startsWith('W') ? 'bg-green-500/10 text-green-400' :
+                                        return 0;
+                                    });
+
+                                    return sortedEntries.map((entry, idx) => {
+                                        const team = entry.team;
+                                        const stats = entry.stats;
+
+                                        // Safely grab stats by name or fallback
+                                        const wins = getStatValue(stats, 'wins');
+                                        const losses = getStatValue(stats, 'losses');
+                                        const pct = getStatValue(stats, 'winPercent');
+                                        const gb = getStatValue(stats, 'gamesBehind');
+                                        const streak = getStatValue(stats, 'streak');
+                                        const l10 = getStatValue(stats, 'Last Ten Games') !== '-'
+                                            ? getStatValue(stats, 'Last Ten Games')
+                                            : getStatValue(stats, 'overall'); // Fallback to overall record if L10 missing
+
+                                        // Sometimes Logo array is weird
+                                        const logoHref = team.logos?.[0]?.href;
+
+                                        return (
+                                            <tr key={team.id} className="hover:bg-white/[0.02] transition-colors group cursor-default">
+                                                <td className="px-4 py-3 text-center text-text-muted font-medium">
+                                                    {idx + 1}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        {logoHref && (
+                                                            <img src={logoHref} alt={team.abbreviation} className="w-6 h-6 object-contain" />
+                                                        )}
+                                                        <span className="font-bold text-white group-hover:text-primary transition-colors">
+                                                            {team.displayName || team.name}
+                                                        </span>
+                                                        <span className="text-[10px] text-text-muted font-black bg-neutral-800 px-1.5 py-0.5 rounded ml-1">
+                                                            {team.abbreviation}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-right text-white font-medium">{wins}</td>
+                                                <td className="px-4 py-3 text-right text-white font-medium">{losses}</td>
+                                                <td className="px-4 py-3 text-right text-slate-400">{pct}</td>
+                                                <td className="px-4 py-3 text-right text-slate-400">{gb}</td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${streak.startsWith('W') ? 'bg-green-500/10 text-green-400' :
                                                         streak.startsWith('L') ? 'bg-red-500/10 text-red-400' :
                                                             'bg-neutral-800 text-text-muted'
-                                                    }`}>
-                                                    {streak}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-right text-slate-400">{l10}</td>
-                                        </tr>
-                                    );
-                                })}
+                                                        }`}>
+                                                        {streak}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right text-slate-400">{l10}</td>
+                                            </tr>
+                                        );
+                                    });
+                                })()}
                             </tbody>
                         </table>
                     </div>

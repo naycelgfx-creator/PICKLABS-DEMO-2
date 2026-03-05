@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Game } from '../../data/mockGames';
+import { fetchESPNRoster, ESPNRosterPlayer } from '../../data/espnScoreboard';
 import { generateMockPlayers, Player, PlayerProp, PlayerLog } from '../../data/mockPlayers';
 import { BetPick } from '../../App';
 import { FavoritePlayerPanel } from './FavoritePlayerPanel';
@@ -136,13 +137,54 @@ export const PlayerPropsForm: React.FC<PlayerPropsFormProps> = ({ game, onAddBet
     const { isRookieModeActive } = useRookieMode();
 
     useEffect(() => {
-        const away = generateMockPlayers(game.awayTeam.name, game.sport, 5);
-        const home = generateMockPlayers(game.homeTeam.name, game.sport, 5);
-        setPlayers([...away, ...home]);
-        setExpandedKey(null);
+        let mounted = true;
+        const loadPlayers = async () => {
+            try {
+                // Fetch real ESPN athletes for both teams
+                const [awayRoster, homeRoster] = await Promise.all([
+                    fetchESPNRoster(game.sport, game.awayTeam.id),
+                    fetchESPNRoster(game.sport, game.homeTeam.id)
+                ]);
+
+                if (!mounted) return;
+
+                // Map ESPNRosterPlayer to the simpler interface mockPlayers.ts expects
+                const mapAthlete = (p: ESPNRosterPlayer) => ({
+                    name: p.displayName,
+                    headshot: p.headshot || '',
+                    position: p.position
+                });
+
+                const awayReal = awayRoster.map(mapAthlete);
+                const homeReal = homeRoster.map(mapAthlete);
+
+                // Pass the real athletes. If the roster is smaller than 5, generateMockPlayers will fallback.
+                const away = generateMockPlayers(game.awayTeam.name, game.sport, 5, awayReal);
+                const home = generateMockPlayers(game.homeTeam.name, game.sport, 5, homeReal);
+
+                setPlayers([...away, ...home]);
+                setExpandedKey(null);
+            } catch (err) {
+                console.error("Failed to load real rosters for props", err);
+                if (mounted) {
+                    // Fallback completely
+                    const away = generateMockPlayers(game.awayTeam.name, game.sport, 5);
+                    const home = generateMockPlayers(game.homeTeam.name, game.sport, 5);
+                    setPlayers([...away, ...home]);
+                    setExpandedKey(null);
+                }
+            }
+        };
+
+        loadPlayers();
+        return () => { mounted = false; };
     }, [game]);
 
-    if (players.length === 0) return null;
+    if (players.length === 0) return (
+        <div className="terminal-panel p-10 flex justify-center items-center h-[300px]">
+            <span className="material-symbols-outlined text-primary text-3xl animate-spin">sync</span>
+        </div>
+    );
 
     // Build flat rows (each player × each prop)
     const rows: PropRow[] = players.flatMap(player =>

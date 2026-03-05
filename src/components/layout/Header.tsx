@@ -114,15 +114,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                 setIsBookieOpen(false);
             }
             if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
-                setIsSettingsOpen(prev => {
-                    if (prev) {
-                        setCurrentView('landing-page' as any);
-                        setTimeout(() => {
-                            document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                        }, 100);
-                    }
-                    return false;
-                });
+                setIsSettingsOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClick);
@@ -173,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                     </a>
 
                     {/* ── Desktop Nav ── */}
-                    <nav className="hidden lg:flex items-center gap-5">
+                    <nav className="hidden xl:flex items-center gap-2 xl:gap-5">
                         <a className={navLinkClass('live-board')} onClick={(e) => { e.preventDefault(); setCurrentView('live-board'); }}>Live Board</a>
                         <a
                             className={`flex items-center gap-1 text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors ${currentView === 'precision-hub' ? 'text-yellow-400 border-b-2 border-yellow-400 pb-1' : 'text-yellow-500/70 hover:text-yellow-400'}`}
@@ -250,15 +242,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                     {/* ── SETTINGS & PROFILE ── */}
                     <div className="relative hidden md:block" ref={settingsRef}>
                         <button
-                            onClick={() => setIsSettingsOpen(prev => {
-                                if (prev) {
-                                    setCurrentView('landing-page' as any);
-                                    setTimeout(() => {
-                                        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                                    }, 100);
-                                }
-                                return !prev;
-                            })}
+                            onClick={() => setIsSettingsOpen(prev => !prev)}
                             title="Settings & Profile"
                             aria-label="Settings & Profile"
                             className={`h-8 w-8 shrink-0 rounded border flex items-center justify-center cursor-pointer transition-all ${isSettingsOpen
@@ -466,8 +450,8 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                         )}
                     </div>
 
-                    {/* ── BOOKIE MANAGER — icon + dropdown ── */}
-                    <div className="relative" ref={bookieRef}>
+                    {/* ── BOOKIE MANAGER — icon + dropdown (hidden on mobile) ── */}
+                    <div className="relative hidden sm:block" ref={bookieRef}>
                         <button
                             onClick={() => setIsBookieOpen(prev => !prev)}
                             title="Sportsbook Manager"
@@ -749,38 +733,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                 <span className="material-symbols-outlined text-sm">logout</span>
                                 <span className="text-[11px] font-bold">Sign Out</span>
                             </button>
-                        </div>
-
-                        {/* Mobile Bookie Manager */}
-                        <div className="bg-neutral-900 border border-border-muted rounded-xl overflow-hidden">
-                            <div className="px-4 py-3 border-b border-border-muted flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-primary text-sm">store</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-text-main">Bookie Manager</span>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={enableAll} className="text-[9px] font-black text-primary uppercase tracking-widest">All On</button>
-                                    <button onClick={disableAll} className="text-[9px] font-black text-text-muted uppercase tracking-widest hover:text-red-400">All Off</button>
-                                </div>
-                            </div>
-                            {SPORTSBOOKS.map(book => {
-                                const on = enabledBooks[book.id];
-                                return (
-                                    <div
-                                        key={book.id}
-                                        className="flex items-center gap-3 px-4 py-2.5 border-b border-border-muted last:border-none active:bg-white/5"
-                                        onClick={() => toggleBook(book.id)}
-                                    >
-                                        <div className={`h-6 w-6 rounded flex items-center justify-center shrink-0 ${on ? 'opacity-100' : 'opacity-30 grayscale'}`} style={{ backgroundColor: book.color }}>
-                                            <img src={`https://www.google.com/s2/favicons?domain=${book.domain}&sz=64`} alt={book.name} className="h-3 w-3 object-contain" />
-                                        </div>
-                                        <span className={`text-[11px] font-bold flex-1 ${on ? 'text-text-main' : 'text-slate-600'}`}>{book.name}</span>
-                                        <div className={`relative h-5 w-9 rounded-full border transition-all duration-300 ${on ? 'bg-primary/20 border-primary/60' : 'bg-neutral-800 border-border-muted'}`}>
-                                            <div className={`absolute top-0.5 h-4 w-4 rounded-full transition-all duration-300 ${on ? 'translate-x-4 bg-primary' : 'translate-x-0.5 bg-slate-600'}`} />
-                                        </div>
-                                    </div>
-                                );
-                            })}
                         </div>
                     </div>
                 </div>

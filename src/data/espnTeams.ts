@@ -78,9 +78,9 @@ const resolveTeamId = (teamName: string, sport: string): number | null => {
 
 // ─── Team season info / record ─────────────────────────────────────────────────
 
-export const fetchESPNTeamInfo = async (teamName: string, sport: string): Promise<ESPNTeamInfo | null> => {
+export const fetchESPNTeamInfo = async (teamName: string, sport: string, providedTeamId?: string): Promise<ESPNTeamInfo | null> => {
     const cfg = SPORT_CFG[sport];
-    const teamId = resolveTeamId(teamName, sport);
+    const teamId = providedTeamId || resolveTeamId(teamName, sport);
     if (!cfg || !teamId) return null;
 
     try {

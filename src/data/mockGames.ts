@@ -43,6 +43,7 @@ export interface Game {
             target: number;
         };
     };
+    leaders?: import('./espnScoreboard').ESPNGameLeader[];
 }
 
 export const SPORT_LOGOS: Record<string, string> = {
@@ -56,9 +57,9 @@ export const SPORT_LOGOS: Record<string, string> = {
     UFC: 'https://upload.wikimedia.org/wikipedia/commons/9/92/UFC_Logo.svg',
     NCAAM: '/CBB_logo.png',
     NCAAB: '/NCAAB_logo.png',
-    WNBA: 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png',
+    WNBA: '/wnba-logo-new.png',
     NCAAW: '/NCAAW_logo.png',
-    WBC: '/wbc-logo.png'
+    WBC: '/wbc-logo-new.png'
 };
 
 export const REAL_TEAMS: Record<string, { name: string, abbr: string, type?: 'team' | 'player', url?: string, league?: string }[]> = {
@@ -356,7 +357,7 @@ const generateDummyGames = (sport: string, count: number): Game[] => {
         const awayTeamInfo = sportTeams[awayIdx] || { name: `${sport} Away ${i + 1}`, abbr: '' };
         const homeTeamInfo = sportTeams[homeIdx] || { name: `${sport} Home ${i + 1}`, abbr: '' };
 
-        const BROADCAST_NETWORKS = ['ESPN', 'TNT', 'ABC', 'CBS', 'NBC', 'FOX', 'Prime Video', 'Apple TV+', 'Peacock', 'NBA League Pass'];
+        const BROADCAST_NETWORKS = ['ESPN', 'TNT', 'ABC', 'CBS', 'NBC', 'NBC Sports', 'FOX', 'Prime Video', 'Apple TV+', 'Peacock', 'NBA League Pass'];
         const randomBroadcast = BROADCAST_NETWORKS[Math.floor(Math.random() * BROADCAST_NETWORKS.length)];
 
         return {
@@ -403,7 +404,7 @@ const generateDummyGames = (sport: string, count: number): Game[] => {
     });
 };
 
-export const SPORTS = ['NBA', 'WNBA', 'NCAAM', 'NCAAB', 'NCAAW', 'CFB', 'NFL', 'MLB', 'NHL', 'Soccer', 'Tennis', 'Golf', 'UFC'];
+export const SPORTS = ['NBA', 'WNBA', 'NCAAM', 'NCAAB', 'NCAAW', 'CFB', 'NFL', 'MLB', 'WBC', 'NHL', 'Soccer', 'Tennis', 'Golf', 'NASCAR', 'UFC'];
 
 export const mockGamesBySport: Record<string, Game[]> = SPORTS.reduce((acc, sport) => {
     const games = generateDummyGames(sport, 6);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Game } from '../../data/mockGames';
+import { SPORT_LOGOS } from '../live-board/SportsNav';
 import { TeamMatchupCard } from './TeamMatchupCard';
 import { WeatherImpact } from './WeatherImpact';
 import { HeadCoachMatchup } from './HeadCoachMatchup';
@@ -43,6 +44,8 @@ export const MatchupTerminalView: React.FC<MatchupTerminalViewProps> = ({
     setBetSlip
 }) => {
     const [showBetSlip, setShowBetSlip] = useState<boolean>(true);
+    const sportLogo = SPORT_LOGOS[game.sport as string]?.primary;
+
     return (
         <main className="max-w-[1536px] mx-auto p-4 md:p-6 grid grid-cols-12 gap-4 md:gap-6 relative">
             <div className={`${showBetSlip ? 'col-span-12 xl:col-span-9' : 'col-span-12'} space-y-6 transition-all duration-300`}>
@@ -89,6 +92,44 @@ export const MatchupTerminalView: React.FC<MatchupTerminalViewProps> = ({
                     <div className="flex gap-4">
                         <div className="text-[10px] text-slate-500 uppercase font-bold">Games Found: <span className="text-accent-purple dark:text-white font-black">1</span></div>
                         <div className="text-[10px] text-slate-500 uppercase font-bold hidden sm:block">Total Volume: <span className="text-accent-purple dark:text-white font-black">$4.2M</span></div>
+                    </div>
+                </div>
+
+                {/* Matchup Header (Reference UI Match) */}
+                <div className="flex flex-col gap-3 mb-6 border-b border-border-muted pb-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center shrink-0">
+                                {sportLogo ? (
+                                    <img src={sportLogo} alt={game.sport as string} className="max-w-full max-h-full object-contain brightness-0 invert opacity-80 drop-shadow-md" />
+                                ) : (
+                                    <span className="material-symbols-outlined text-[32px] sm:text-[40px] text-white">sports_navigation</span>
+                                )}
+                            </div>
+                            <span className="px-2 py-1 text-[10px] font-black uppercase tracking-wider bg-neutral-800 text-slate-300 rounded">
+                                Upcoming
+                            </span>
+                            <span className="text-sm font-black text-slate-300 uppercase tracking-wider">
+                                {game.date || 'TBD'}
+                            </span>
+                        </div>
+                        <div className="text-right flex flex-col items-end">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Matchup ID</span>
+                            <span className="text-sm font-black text-slate-300">
+                                {game.matchupId || `#PL-${Math.random().toString().slice(2, 10)}`}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">
+                        <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[16px]">tv</span>
+                            {game.broadcast || 'TBD'}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[16px]">location_on</span>
+                            {game.venue?.name?.toUpperCase() || 'TBD'}
+                            {game.venue?.location ? `, ${game.venue.location.toUpperCase()}` : ''}
+                        </div>
                     </div>
                 </div>
 

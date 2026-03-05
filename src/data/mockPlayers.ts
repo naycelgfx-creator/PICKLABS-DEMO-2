@@ -148,12 +148,17 @@ function generatePositionalMatchups(pos: string[], line: number, _opponent: stri
     }));
 }
 
-export const generateMockPlayers = (teamName: string, sport: string, count: number = 3): Player[] => {
+// Accept an array of real athletes to seed the mock data with genuine ESPN names and mugshots
+export const generateMockPlayers = (teamName: string, sport: string, count: number = 3, realAthletes: { name: string, headshot: string, position: string }[] = []): Player[] => {
     const config = SPORT_STATS[sport] || SPORT_STATS['NBA'];
 
     return Array.from({ length: count }).map((_, i) => {
         const id = `${teamName.replace(/\s+/g, '-').toLowerCase()}-player-${i + 1}`;
-        let actualName = `${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]} ${LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]}`;
+
+        // Use real athlete data if available, otherwise fallback
+        const realPlayer = realAthletes[i];
+        let actualName = realPlayer?.name || `${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]} ${LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]}`;
+        let photoUrl = realPlayer?.headshot || `https://ui-avatars.com/api/?name=${encodeURIComponent(actualName)}&background=random&color=fff&rounded=true`;
 
         const avg1 = +(Math.random() * (config.defaultLines[0] * 1.5)).toFixed(1);
         const avg2 = +(Math.random() * (config.defaultLines[1] * 1.5)).toFixed(1);
@@ -314,25 +319,25 @@ export const generateMockPlayers = (teamName: string, sport: string, count: numb
         }
 
         // Mock Headshots logic
-        let photoUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(actualName)}&background=random&color=fff&rounded=true`;
+        if (!realPlayer) {
+            if (sport === 'NBA') {
+                const REAL_NBA_PLAYERS: Record<string, { name: string, id: string }[]> = {
+                    'Lakers': [{ name: 'LeBron James', id: '1966' }, { name: 'Anthony Davis', id: '6583' }, { name: 'D\'Angelo Russell', id: '3136776' }, { name: 'Austin Reaves', id: '4397193' }, { name: 'Rui Hachimura', id: '4395651' }],
+                    'Celtics': [{ name: 'Jayson Tatum', id: '4065648' }, { name: 'Jaylen Brown', id: '3917376' }, { name: 'Jrue Holiday', id: '3995' }, { name: 'Derrick White', id: '4070232' }, { name: 'Kristaps Porzingis', id: '3102531' }],
+                    'Suns': [{ name: 'Devin Booker', id: '3136193' }, { name: 'Kevin Durant', id: '3202' }, { name: 'Bradley Beal', id: '6589' }, { name: 'Jusuf Nurkic', id: '3102530' }, { name: 'Grayson Allen', id: '3136198' }],
+                    'Nuggets': [{ name: 'Nikola Jokic', id: '3112335' }, { name: 'Jamal Murray', id: '3936299' }, { name: 'Michael Porter Jr.', id: '4239968' }, { name: 'Aaron Gordon', id: '3116743' }, { name: 'KCP', id: '2581' }],
+                    'Warriors': [{ name: 'Stephen Curry', id: '3975' }, { name: 'Draymond Green', id: '6589' }, { name: 'Andrew Wiggins', id: '3059319' }, { name: 'Klay Thompson', id: '6475' }, { name: 'Jonathan Kuminga', id: '4433247' }],
+                    'Heat': [{ name: 'Jimmy Butler', id: '6430' }, { name: 'Bam Adebayo', id: '4066261' }, { name: 'Tyler Herro', id: '4397011' }, { name: 'Terry Rozier', id: '3074752' }, { name: 'Duncan Robinson', id: '3157465' }],
+                    'Bulls': [{ name: 'Zach LaVine', id: '3064440' }, { name: 'DeMar DeRozan', id: '3978' }, { name: 'Nikola Vucevic', id: '6478' }, { name: 'Coby White', id: '4395651' }, { name: 'Alex Caruso', id: '3149673' }],
+                    'Knicks': [{ name: 'Jalen Brunson', id: '3934672' }, { name: 'Julius Randle', id: '3064514' }, { name: 'OG Anunoby', id: '3932223' }, { name: 'Josh Hart', id: '3136215' }, { name: 'Donte DiVincenzo', id: '3136195' }]
+                };
 
-        if (sport === 'NBA') {
-            const REAL_NBA_PLAYERS: Record<string, { name: string, id: string }[]> = {
-                'Lakers': [{ name: 'LeBron James', id: '1966' }, { name: 'Anthony Davis', id: '6583' }, { name: 'D\'Angelo Russell', id: '3136776' }, { name: 'Austin Reaves', id: '4397193' }, { name: 'Rui Hachimura', id: '4395651' }],
-                'Celtics': [{ name: 'Jayson Tatum', id: '4065648' }, { name: 'Jaylen Brown', id: '3917376' }, { name: 'Jrue Holiday', id: '3995' }, { name: 'Derrick White', id: '4070232' }, { name: 'Kristaps Porzingis', id: '3102531' }],
-                'Suns': [{ name: 'Devin Booker', id: '3136193' }, { name: 'Kevin Durant', id: '3202' }, { name: 'Bradley Beal', id: '6589' }, { name: 'Jusuf Nurkic', id: '3102530' }, { name: 'Grayson Allen', id: '3136198' }],
-                'Nuggets': [{ name: 'Nikola Jokic', id: '3112335' }, { name: 'Jamal Murray', id: '3936299' }, { name: 'Michael Porter Jr.', id: '4239968' }, { name: 'Aaron Gordon', id: '3116743' }, { name: 'KCP', id: '2581' }],
-                'Warriors': [{ name: 'Stephen Curry', id: '3975' }, { name: 'Draymond Green', id: '6589' }, { name: 'Andrew Wiggins', id: '3059319' }, { name: 'Klay Thompson', id: '6475' }, { name: 'Jonathan Kuminga', id: '4433247' }],
-                'Heat': [{ name: 'Jimmy Butler', id: '6430' }, { name: 'Bam Adebayo', id: '4066261' }, { name: 'Tyler Herro', id: '4397011' }, { name: 'Terry Rozier', id: '3074752' }, { name: 'Duncan Robinson', id: '3157465' }],
-                'Bulls': [{ name: 'Zach LaVine', id: '3064440' }, { name: 'DeMar DeRozan', id: '3978' }, { name: 'Nikola Vucevic', id: '6478' }, { name: 'Coby White', id: '4395651' }, { name: 'Alex Caruso', id: '3149673' }],
-                'Knicks': [{ name: 'Jalen Brunson', id: '3934672' }, { name: 'Julius Randle', id: '3064514' }, { name: 'OG Anunoby', id: '3932223' }, { name: 'Josh Hart', id: '3136215' }, { name: 'Donte DiVincenzo', id: '3136195' }]
-            };
-
-            const knownTeamPlayers = REAL_NBA_PLAYERS[teamName];
-            if (knownTeamPlayers && knownTeamPlayers[i]) {
-                const player = knownTeamPlayers[i];
-                actualName = player.name;
-                photoUrl = `https://a.espncdn.com/i/headshots/nba/players/full/${player.id}.png`;
+                const knownTeamPlayers = REAL_NBA_PLAYERS[teamName];
+                if (knownTeamPlayers && knownTeamPlayers[i]) {
+                    const player = knownTeamPlayers[i];
+                    actualName = player.name;
+                    photoUrl = `https://a.espncdn.com/i/headshots/nba/players/full/${player.id}.png`;
+                }
             }
         }
 

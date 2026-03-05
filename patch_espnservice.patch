@@ -1,0 +1,59 @@
+--- src/data/espnService.ts
++++ src/data/espnService.ts
+@@ -37,12 +37,18 @@
+ // site.api.espn.com is publicly accessible with CORS headers
+ 
+ const ESPN_SITE_ROSTER: Record<string, string> = {
+-    NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{id}/roster',
+-    NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{id}/roster',
+-    MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/{id}/roster',
+-    NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/{id}/roster',
++    NBA: 'basketball/nba',
++    NFL: 'football/nfl',
++    MLB: 'baseball/mlb',
++    NHL: 'hockey/nhl',
++    NCAAM: 'basketball/mens-college-basketball',
++    NCAAB: 'baseball/college-baseball',
++    NCAAW: 'basketball/womens-college-basketball',
++    CFB: 'football/college-football',
++    'Soccer.EPL': 'soccer/eng.1',
++    'Soccer.MLS': 'soccer/usa.1',
+ };
+ 
+ const ESPN_HEADSHOT_SPORT: Record<string, string> = {
+     NBA: 'nba',
+     NFL: 'nfl',
+     MLB: 'mlb',
+     NHL: 'nhl',
++    NCAAM: 'mens-college-basketball',
++    NCAAW: 'womens-college-basketball',
++    CFB: 'college-football',
++    WNBA: 'wnba'
+ };
+@@ -109,7 +115,10 @@
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ const parseAthleteFromRoster = (athlete: Record<string, any>, sport: string): ESPNRosterAthlete => {
+     const id = String(athlete.id ?? '');
+-    const headshotSport = ESPN_HEADSHOT_SPORT[sport] ?? sport.toLowerCase();
++    // use the exact sport from ESPN_HEADSHOT_SPORT or use the back of the mapping e.g soccer/eng.1 -> eng.1
++    const leaguePath = ESPN_SITE_ROSTER[sport];
++    const defaultSport = leaguePath ? leaguePath.split('/')[1] : sport.toLowerCase();
++    const headshotSport = ESPN_HEADSHOT_SPORT[sport] ?? defaultSport;
+     const photoUrl = athlete.headshot?.href
+         ?? `https://a.espncdn.com/i/headshots/${headshotSport}/players/full/${id}.png`;
+     const pos = athlete.position as { abbreviation?: string; displayName?: string } | undefined;
+ 
+@@ -156,9 +165,10 @@
+ 
+ // ─── PRIMARY: site.api ESPN roster (CORS-friendly) ────────────────────────────
+ const fetchRosterViaSiteAPI = async (teamId: number, sport: string): Promise<ESPNRosterAthlete[]> => {
+-    const urlTemplate = ESPN_SITE_ROSTER[sport];
+-    if (!urlTemplate) return [];
++    const league = ESPN_SITE_ROSTER[sport];
++    if (!league) return [];
+ 
+-    const url = urlTemplate.replace('{id}', String(teamId));
++    // Now we construct the generic endpoint that site.api supports, exactly like fetchESPNRoster (espnScoreboard.ts)
++    const url = `https://site.api.espn.com/apis/site/v2/sports/${league}/teams/${teamId}/roster`;
+     const res = await fetch(url);
+     if (!res.ok) throw new Error(`ESPN site API ${res.status}`);

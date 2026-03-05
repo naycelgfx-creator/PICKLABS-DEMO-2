@@ -32,7 +32,7 @@ const MATCHUPS = [
     },
     {
         league: 'WNBA',
-        leagueLogo: 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png',
+        leagueLogo: '/wnba-logo-new.png',
         matchupId: '#WNBA-402',
         time: 'Q3 • 08:12',
         team1: { name: 'ACES', score: 62, record: '28-4 (12-2 A)', logo: 'https://a.espncdn.com/i/teamlogos/wnba/500/lv.png', prob: 75, color: 'text-text-muted', form: ['W', 'W', 'W', 'W', 'L'] },

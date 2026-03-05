@@ -6,52 +6,53 @@ interface NBABoxScoreLineupProps {
     game: Game;
 }
 
-// ─── Stat bar ────────────────────────────────────────────────────────────────
-const StatBar: React.FC<{ label: string; value: number; max: number; color: string }> = ({ label, value, max, color }) => {
-    const pct = Math.min((value / Math.max(max, 1)) * 100, 100);
+// ─── Shooting tile ────────────────────────────────────────────────────────────
+const ShootingTile: React.FC<{ label: string; value: string; accentColor: string }> = ({ label, value, accentColor }) => {
+    const parts = value.split('-').map(Number);
+    const makes = parts[0] || 0;
+    const attempts = parts[1] || 0;
+    const pct = attempts > 0 ? Math.round((makes / attempts) * 100) : 0;
+    const r = 20;
+    const circ = 2 * Math.PI * r;
+    const filled = attempts > 0 ? (makes / attempts) * circ : 0;
+
     return (
-        <div className="flex items-center gap-2">
-            <span className="text-[9px] text-slate-500 font-black uppercase w-8 flex-shrink-0">{label}</span>
-            <div className="flex-1 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
-                <div
-                    className={`h-full rounded-full transition-all duration-700 ${color}`}
-                    style={{ width: `${pct}%` }}
-                />
+        <div className="flex flex-col items-center gap-2 flex-1">
+            {/* Ring */}
+            <div className="relative">
+                <svg width="56" height="56" viewBox="0 0 56 56">
+                    {/* Track */}
+                    <circle cx="28" cy="28" r={r} fill="none" stroke="#1e1e2e" strokeWidth="5" />
+                    {/* Fill */}
+                    <circle
+                        cx="28" cy="28" r={r}
+                        fill="none"
+                        stroke={accentColor}
+                        strokeWidth="5"
+                        strokeDasharray={`${filled} ${circ}`}
+                        strokeLinecap="round"
+                        transform="rotate(-90 28 28)"
+                        style={{ transition: 'stroke-dasharray 0.6s ease' }}
+                    />
+                    <text x="28" y="33" textAnchor="middle" fontSize="10" fontWeight="900" fill="white">{pct}%</text>
+                </svg>
             </div>
-            <span className="text-[10px] font-black text-text-main w-6 text-right flex-shrink-0">{value}</span>
+            {/* Label + split */}
+            <div className="text-center">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+                <p className="text-[11px] font-black text-white mt-0.5">{value}</p>
+            </div>
         </div>
     );
 };
 
-// ─── FG mini pie (arc segment) ───────────────────────────────────────────────
-const FGDonut: React.FC<{ value: string; color: string; label: string }> = ({ value, color, label }) => {
-    const parts = value.split('-').map(Number);
-    const makes = parts[0] || 0;
-    const attempts = parts[1] || 0;
-    const pct = attempts > 0 ? ((makes / attempts) * 100).toFixed(0) : '0';
-    const r = 16;
-    const circ = 2 * Math.PI * r;
-    const strokePct = attempts > 0 ? (makes / attempts) * circ : 0;
-    return (
-        <div className="flex flex-col items-center gap-0.5">
-            <svg width="40" height="40" viewBox="0 0 40 40">
-                <circle cx="20" cy="20" r={r} fill="none" stroke="#1a1a1a" strokeWidth="4" />
-                <circle
-                    cx="20" cy="20" r={r}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth="4"
-                    strokeDasharray={`${strokePct} ${circ}`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 20 20)"
-                />
-                <text x="20" y="24" textAnchor="middle" fontSize="8" fontWeight="900" fill="white">{pct}%</text>
-            </svg>
-            <span className="text-[8px] text-slate-500 font-black uppercase">{label}</span>
-            <span className="text-[9px] text-slate-400 font-bold">{value}</span>
-        </div>
-    );
-};
+// ─── Stat highlight block ──────────────────────────────────────────────────────
+const StatBlock: React.FC<{ label: string; value: number | string; accent?: string }> = ({ label, value, accent }) => (
+    <div className="flex flex-col items-center text-center flex-1 py-2 px-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+        <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">{label}</span>
+        <span className={`text-lg font-black leading-none ${accent ?? 'text-white'}`}>{value}</span>
+    </div>
+);
 
 // ─── Single expanded player card ─────────────────────────────────────────────
 const PlayerExpandedCard: React.FC<{ player: BoxScorePlayer }> = ({ player }) => {
@@ -59,38 +60,43 @@ const PlayerExpandedCard: React.FC<{ player: BoxScorePlayer }> = ({ player }) =>
     const isHot = player.hotScore >= 3;
     const isCold = player.hotScore <= -3;
 
+    const borderColor = isHot ? 'border-orange-500/40' : isCold ? 'border-blue-500/40' : 'border-white/10';
+    const bgColor = isHot ? 'bg-orange-950/10' : isCold ? 'bg-blue-950/10' : 'bg-white/[0.02]';
+
+    const ptColor = isHot ? 'text-orange-400' : 'text-primary';
+
     return (
-        <div className={`mt-2 p-4 rounded-xl border space-y-4 bg-background-dark transition-all ${isHot ? 'border-orange-500/40 bg-orange-950/10' : isCold ? 'border-blue-500/40 bg-blue-950/10' : 'border-border-muted'
-            }`}>
-            {/* Stat bars — major stats */}
-            <div className="grid grid-cols-1 gap-1.5">
-                <StatBar label="PTS" value={s.pts} max={40} color={isHot ? 'bg-orange-400' : 'bg-primary'} />
-                <StatBar label="REB" value={s.reb} max={20} color="bg-accent-purple" />
-                <StatBar label="AST" value={s.ast} max={15} color="bg-blue-400" />
-                <StatBar label="STL" value={s.stl} max={5} color="bg-teal-400" />
-                <StatBar label="BLK" value={s.blk} max={5} color="bg-red-400" />
-                <StatBar label="TO" value={s.to} max={8} color="bg-yellow-500" />
+        <div className={`mt-1.5 rounded-xl border ${borderColor} ${bgColor} overflow-hidden`}>
+
+            {/* ── Primary stat row ── */}
+            <div className="grid grid-cols-6 divide-x divide-white/5 border-b border-white/5">
+                <StatBlock label="PTS" value={s.pts} accent={ptColor} />
+                <StatBlock label="REB" value={s.reb} accent="text-violet-400" />
+                <StatBlock label="AST" value={s.ast} accent="text-blue-400" />
+                <StatBlock label="STL" value={s.stl} accent="text-teal-400" />
+                <StatBlock label="BLK" value={s.blk} accent="text-red-400" />
+                <StatBlock label="TO" value={s.to} accent={s.to > 3 ? 'text-yellow-400' : 'text-slate-400'} />
             </div>
 
-            {/* Shooting donuts */}
-            <div className="flex justify-around pt-2 border-t border-border-muted/50">
-                <FGDonut value={s.fg} color="#0ca810" label="FG%" />
-                <FGDonut value={s.fg3} color="#a855f7" label="3PT%" />
-                <FGDonut value={s.ft} color="#3b82f6" label="FT%" />
+            {/* ── Shooting splits ── */}
+            <div className="flex items-stretch divide-x divide-white/5 border-b border-white/5 px-2 py-3">
+                <ShootingTile label="FG%" value={s.fg} accentColor="#0df20d" />
+                <ShootingTile label="3PT%" value={s.fg3} accentColor="#a855f7" />
+                <ShootingTile label="FT%" value={s.ft} accentColor="#3b82f6" />
             </div>
 
-            {/* Secondary stats grid */}
-            <div className="grid grid-cols-4 gap-2 pt-2 border-t border-border-muted/50">
-                {[
-                    ['MIN', s.min],
-                    ['OREB', s.oreb],
-                    ['DREB', s.dreb],
-                    ['PF', s.pf],
-                    ['+/-', s.plusMinus],
-                ].map(([label, val]) => (
-                    <div key={label} className="text-center">
-                        <p className="text-[9px] text-slate-500 font-black uppercase">{label}</p>
-                        <p className={`text-sm font-black ${String(val).startsWith('+') ? 'text-primary' : String(val).startsWith('-') ? 'text-red-400' : 'text-text-main'}`}>{val}</p>
+            {/* ── Secondary stats ── */}
+            <div className="grid grid-cols-5 divide-x divide-white/5 px-0">
+                {([
+                    ['MIN', s.min, ''],
+                    ['OREB', s.oreb, 'text-slate-300'],
+                    ['DREB', s.dreb, 'text-slate-300'],
+                    ['PF', s.pf, s.pf >= 4 ? 'text-red-400' : ''],
+                    ['+/-', s.plusMinus, String(s.plusMinus).startsWith('+') ? 'text-primary' : String(s.plusMinus).startsWith('-') ? 'text-red-400' : 'text-slate-400'],
+                ] as [string, string | number, string][]).map(([lbl, val, accent]) => (
+                    <div key={lbl} className="flex flex-col items-center text-center py-2.5 px-1">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-600 mb-0.5">{lbl}</span>
+                        <span className={`text-[13px] font-black leading-none ${accent || 'text-white'}`}>{val}</span>
                     </div>
                 ))}
             </div>

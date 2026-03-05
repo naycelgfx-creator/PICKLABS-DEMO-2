@@ -84,10 +84,7 @@ export const BetSlip: React.FC<BetSlipProps & { onClose?: () => void }> = ({ bet
             <div className="xl:sticky xl:top-[140px] terminal-panel bg-neutral-900/50 overflow-hidden">
 
                 <div className="p-4 border-b border-border-muted bg-neutral-900 pb-3 group relative">
-                    <div className="text-[9px] font-black tracking-[0.2em] text-[#A3FF00] flex items-center gap-1.5 mb-2">
-                        <span className="w-1.5 h-1.5 bg-[#A3FF00] inline-block rotate-45 transform"></span>
-                        SESSION LOG
-                    </div>
+
                     {onClose && (
                         <button
                             onClick={onClose}
@@ -157,8 +154,8 @@ export const BetSlip: React.FC<BetSlipProps & { onClose?: () => void }> = ({ bet
                 <div className="p-4 space-y-3 max-h-[480px] overflow-y-auto custom-scrollbar">
                     {betSlip.length === 0 ? (
                         <div className="text-center py-24 space-y-4">
-                            <span className="material-symbols-outlined text-[40px] text-[#A3FF00]/40 mb-2 inline-block">science</span>
-                            <p className="text-[#A3FF00]/60 text-[10px] font-black uppercase tracking-[0.2em]">NO SPECIMENS QUEUED</p>
+                            <img src="/picklabs-logo.svg" alt="PickLabs" className="w-24 h-24 mx-auto mb-2" style={{ opacity: 0.4 }} />
+                            <p className="text-[#A3FF00]/60 text-[10px] font-black uppercase tracking-[0.2em]">EMPTY BET SLIP</p>
                             <p className="text-[10px] text-slate-500 font-bold tracking-widest mt-1">Click odds on any game to add</p>
                         </div>
                     ) : mode === 'singles' ? (
