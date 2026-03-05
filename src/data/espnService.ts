@@ -158,11 +158,7 @@ const resolveTeamId = (teamName: string, sport: string): number | null => {
     const exactKey = Object.keys(teamIds).find(k => k.toLowerCase() === lower);
     if (exactKey) return teamIds[exactKey];
 
-    // Case-insensitive ends-with match (e.g., "Charlotte Hornets" -> "Hornets")
-    const endsWithKey = Object.keys(teamIds).find(k => lower.endsWith(k.toLowerCase()));
-    if (endsWithKey) return teamIds[endsWithKey];
-
-    // Fallback: Case-insensitive partial match with word boundaries to avoid 'Hornets' matching 'Nets'
+    // Case-insensitive partial match with word boundaries to avoid 'Hornets' matching 'Nets'
     const partialKey = Object.keys(teamIds).find(k => {
         const regex = new RegExp(`\\b${k.toLowerCase()}\\b`, 'i');
         return regex.test(lower);
