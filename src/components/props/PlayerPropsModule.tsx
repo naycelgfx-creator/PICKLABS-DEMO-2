@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { useESPNRoster } from '../../data/useESPNRoster';
 import { ESPNRosterAthlete } from '../../data/espnService';
+import {
+    LineChart, Line, AreaChart, Area, BarChart, Bar, ScatterChart, Scatter,
+    PieChart, Pie, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ZAxis
+} from 'recharts';
 
 interface PlayerPropsModuleProps {
     sport: string;
@@ -229,254 +234,204 @@ const buildPropsFromRoster = (players: ESPNRosterAthlete[], sport: string, teamA
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  PropBarChart — Full SVG chart with hover tooltip
+//  UniversalPropChart — Renders 8 different chart types via Recharts
 // ─────────────────────────────────────────────────────────────────────────────
-interface HoverInfo {
-    log: GameLog;
-    xPct: number;
-    yPct: number;
-}
+export type ChartType = 'bar' | 'line' | 'area' | 'scatter' | 'heat' | 'bubble' | 'pie' | 'radar';
 
-interface PropBarChartProps {
+interface UniversalPropChartProps {
     logs: GameLog[];
     line: number;
     propType: string;
     playerName: string;
+    chartType: ChartType;
 }
 
-const PropBarChart: React.FC<PropBarChartProps> = ({ logs, line, propType, playerName: _playerName }) => {
-    void _playerName; // acknowledged — reserved for future tooltip
-    const [hover, setHover] = useState<HoverInfo | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
+    if (active && payload && payload.length) {
+        // payload[0].payload contains the `log` data we passed in
+        const log = payload[0].payload.log || payload[0].payload;
+        if (!log || !log.date) return null;
+        return (
+            <div className="bg-[#0f172a] border border-[#1e3a5f] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] overflow-hidden min-w-[180px] animate-in zoom-in-95 duration-100">
+                <div className="px-3 py-2 border-b border-[#1e3a5f] bg-[#111827]">
+                    <div className="flex items-center justify-between gap-4">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            {log.date}
+                        </span>
+                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${log.isOver ? 'text-[#a3ff00] bg-[#a3ff00]/15' : 'text-orange-500 bg-orange-500/15'}`}>
+                            {log.isOver ? 'OVER ✓' : 'UNDER ✗'}
+                        </span>
+                    </div>
+                    <div className="text-sm font-black text-white mt-0.5">{log.opp}</div>
+                </div>
+                <div className="px-3 py-2 bg-[#0d1117]">
+                    <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Score</span>
+                        <span className="text-xs font-black text-slate-300">{log.score}</span>
+                    </div>
+                    <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Value</span>
+                        <span className={`text-lg font-black tabular-nums ${log.isOver ? 'text-[#a3ff00]' : 'text-orange-500'}`}>
+                            {log.value % 1 === 0 ? log.value : log.value.toFixed(1)}
+                        </span>
+                    </div>
+                    {log.oppRank && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Opp Rank</span>
+                            <span className={`text-xs font-black px-1.5 py-0.5 rounded border ${log.oppRank <= 10 ? 'text-[#a3ff00] border-[#a3ff00]/30 bg-[#a3ff00]/10'
+                                : log.oppRank <= 20 ? 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10'
+                                    : 'text-orange-500 border-orange-500/30 bg-orange-500/10'
+                                }`}>
+                                {log.oppRank}{OrdinalSuffix(log.oppRank)}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
+
+const UniversalPropChart: React.FC<UniversalPropChartProps> = ({ logs, line, propType, playerName, chartType }) => {
+    void playerName;
+    void propType;
 
     if (!logs.length) return null;
 
-    const values = logs.map(l => l.value);
-    const maxVal = Math.max(...values, line * 1.5);
-    const minVal = 0;
-    const range = maxVal - minVal || 1;
+    const data = logs.map((log, i) => ({
+        name: log.date,
+        value: log.value,
+        isOver: log.isOver,
+        opp: log.opp.replace(/^(vs|@) /, ''),
+        log,
+        index: i,
+        fill: log.isOver ? '#a3ff00' : '#f97316'
+    }));
 
-    // Chart layout constants
-    const CHART_HEIGHT = 220;
-    const PAD_LEFT = 36;
-    const PAD_RIGHT = 12;
-    const PAD_TOP = 28;
-    const PAD_BOTTOM = 52;
-    const CHART_VB_W = 700;
-    const CHART_VB_H = CHART_HEIGHT + PAD_TOP + PAD_BOTTOM;
-    const chartW = CHART_VB_W - PAD_LEFT - PAD_RIGHT;
-    const chartH = CHART_HEIGHT;
+    const pieData = [
+        { name: 'OVER', value: logs.filter(l => l.isOver).length, fill: '#a3ff00' },
+        { name: 'UNDER', value: logs.filter(l => !l.isOver).length, fill: '#f97316' }
+    ];
 
-    const barCount = logs.length;
-    const barGap = chartW / barCount;
-    const barWidth = barGap * 0.62;
-    const barPad = (barGap - barWidth) / 2;
+    const maxVal = Math.max(...logs.map(l => l.value), line * 1.5) + 2;
 
-    const toY = (val: number) => PAD_TOP + chartH - ((val - minVal) / range) * chartH;
-
-    // Y-axis gridlines — smart increments
-    const niceStep = (range: number) => {
-        const rough = range / 5;
-        const pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
-        return Math.ceil(rough / pow10) * pow10;
+    const renderChart = () => {
+        switch (chartType) {
+            case 'line':
+            case 'area':
+            case 'bar':
+            case 'heat':
+            case 'scatter':
+            case 'bubble':
+                return (
+                    <ResponsiveContainer width="100%" height={260}>
+                        {chartType === 'line' ? (
+                            <LineChart data={data} margin={{ top: 20, right: 30, left: -20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                                <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickMargin={10} />
+                                <YAxis stroke="#475569" fontSize={11} domain={[0, maxVal]} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#334155', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                <ReferenceLine y={line} stroke="#f87171" strokeDasharray="5 5" strokeWidth={2} label={{ position: 'top', value: `LINE ${line}`, fill: '#f87171', fontSize: 10, fontWeight: 'bold' }} />
+                                <Line type="monotone" dataKey="value" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 4, fill: '#0ea5e9', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#fff' }} />
+                            </LineChart>
+                        ) : chartType === 'area' ? (
+                            <AreaChart data={data} margin={{ top: 20, right: 30, left: -20, bottom: 20 }}>
+                                <defs>
+                                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                                <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickMargin={10} />
+                                <YAxis stroke="#475569" fontSize={11} domain={[0, maxVal]} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <ReferenceLine y={line} stroke="#f87171" strokeDasharray="5 5" strokeWidth={2} />
+                                <Area type="monotone" dataKey="value" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorValue)" strokeWidth={2} />
+                            </AreaChart>
+                        ) : chartType === 'scatter' ? (
+                            <ScatterChart margin={{ top: 20, right: 30, left: -20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                                <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickMargin={10} />
+                                <YAxis dataKey="value" stroke="#475569" fontSize={11} domain={[0, maxVal]} />
+                                <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
+                                <ReferenceLine y={line} stroke="#f87171" strokeDasharray="5 5" strokeWidth={2} />
+                                <Scatter name="Logs" data={data}>
+                                    {data.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.isOver ? '#a3ff00' : '#f97316'} />
+                                    ))}
+                                </Scatter>
+                            </ScatterChart>
+                        ) : chartType === 'bubble' ? (
+                            <ScatterChart margin={{ top: 20, right: 30, left: -20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                                <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickMargin={10} />
+                                <YAxis dataKey="value" stroke="#475569" fontSize={11} domain={[0, maxVal]} />
+                                <ZAxis dataKey="value" range={[50, 400]} name="Value" />
+                                <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
+                                <ReferenceLine y={line} stroke="#f87171" strokeDasharray="5 5" strokeWidth={2} />
+                                <Scatter name="Logs" data={data} opacity={0.7}>
+                                    {data.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.isOver ? '#a3ff00' : '#f97316'} />
+                                    ))}
+                                </Scatter>
+                            </ScatterChart>
+                        ) : (
+                            <BarChart data={data} margin={{ top: 20, right: 30, left: -20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                                <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickMargin={10} />
+                                <YAxis stroke="#475569" fontSize={11} domain={[0, maxVal]} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffffff', opacity: 0.05 }} />
+                                <ReferenceLine y={line} stroke="#f87171" strokeDasharray="5 5" strokeWidth={2} />
+                                <Bar dataKey="value" radius={chartType === 'heat' ? 0 : [4, 4, 0, 0]}>
+                                    {data.map((entry, index) => {
+                                        if (chartType === 'heat') {
+                                            const intensity = Math.min(1, 0.4 + (entry.value / maxVal) * 0.6);
+                                            return <Cell key={`cell-${index}`} fill={entry.isOver ? '#10b981' : '#ef4444'} fillOpacity={intensity} />;
+                                        }
+                                        return <Cell key={`cell-${index}`} fill={entry.isOver ? '#a3ff00' : '#f97316'} />;
+                                    })}
+                                </Bar>
+                            </BarChart>
+                        )}
+                    </ResponsiveContainer>
+                );
+            case 'pie':
+                return (
+                    <ResponsiveContainer width="100%" height={260}>
+                        <PieChart>
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90} label>
+                                {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.fill} stroke="#0d1117" strokeWidth={4} />
+                                ))}
+                            </Pie>
+                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e3a5f', color: '#fff' }} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                );
+            case 'radar':
+                return (
+                    <ResponsiveContainer width="100%" height={260}>
+                        <RadarChart cx="50%" cy="50%" outerRadius={80} data={data}>
+                            <PolarGrid stroke="#334155" />
+                            <PolarAngleAxis dataKey="opp" tick={{ fill: '#cbd5e1', fontSize: 10 }} />
+                            <PolarRadiusAxis angle={30} domain={[0, maxVal]} tick={{ fill: '#64748b', fontSize: 10 }} />
+                            <Radar name={propType} dataKey="value" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.4} />
+                            <Tooltip content={<CustomTooltip />} />
+                        </RadarChart>
+                    </ResponsiveContainer>
+                );
+            default:
+                return null;
+        }
     };
-    const step = Math.max(1, niceStep(range));
-    const gridVals: number[] = [];
-    for (let v = 0; v <= maxVal + step; v += step) {
-        if (v >= minVal && v <= maxVal + step) gridVals.push(Math.round(v));
-    }
-
-    const lineY = toY(line);
 
     return (
-        <div className="relative w-full select-none">
-            <svg
-                viewBox={`0 0 ${CHART_VB_W} ${CHART_VB_H}`}
-                className="w-full block"
-                onMouseLeave={() => setHover(null)}
-                onClick={() => setHover(null)}
-            >
-                {/* ── Grid lines ── */}
-                {gridVals.map(v => (
-                    <g key={v}>
-                        <line
-                            x1={PAD_LEFT} y1={toY(v)}
-                            x2={PAD_LEFT + chartW} y2={toY(v)}
-                            stroke="#1f2937" strokeWidth="1" strokeDasharray="4 3"
-                        />
-                        <text
-                            x={PAD_LEFT - 5} y={toY(v) + 4}
-                            textAnchor="end" fontSize="13" fill="#475569" fontWeight="600"
-                        >
-                            {v}
-                        </text>
-                    </g>
-                ))}
-
-                {/* ── Prop line (dashed) ── */}
-                <line
-                    x1={PAD_LEFT} y1={lineY}
-                    x2={PAD_LEFT + chartW} y2={lineY}
-                    stroke="#f87171" strokeWidth="2" strokeDasharray="8 5" opacity="0.9"
-                />
-                {/* Prop line label */}
-                <rect x={PAD_LEFT + chartW - 42} y={lineY - 12} width="44" height="15" rx="3"
-                    fill="#f87171" opacity="0.15" />
-                <text x={PAD_LEFT + chartW - 20} y={lineY - 2} textAnchor="middle"
-                    fontSize="11" fill="#f87171" fontWeight="800">{line}</text>
-
-                {/* ── Bars ── */}
-                {logs.map((log, i) => {
-                    const x = PAD_LEFT + i * barGap + barPad;
-                    const barH = ((log.value - minVal) / range) * chartH;
-                    const y = PAD_TOP + chartH - barH;
-                    const isActiveHover = hover?.log === log;
-                    const fill = log.isOver
-                        ? (isActiveHover ? '#bdfc3d' : '#a3ff00') // Lighter lime on hover, #a3ff00 standard
-                        : (isActiveHover ? '#fb923c' : '#f97316'); // Lighter orange on hover, #f97316 standard
-
-                    return (
-                        <g key={i}>
-                            {/* Bar */}
-                            <rect
-                                x={x} y={y} width={barWidth} height={Math.max(barH, 2)}
-                                rx="3" ry="3"
-                                fill={fill}
-                                opacity={isActiveHover ? 1 : 0.85}
-                                style={{ cursor: 'pointer', transition: 'opacity 0.1s', WebkitTapHighlightColor: 'transparent' }}
-                                onMouseEnter={() => {
-                                    setHover({
-                                        log,
-                                        xPct: ((x + barWidth / 2) / CHART_VB_W) * 100,
-                                        yPct: (y / CHART_VB_H) * 100,
-                                    });
-                                }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setHover({
-                                        log,
-                                        xPct: ((x + barWidth / 2) / CHART_VB_W) * 100,
-                                        yPct: (y / CHART_VB_H) * 100,
-                                    });
-                                }}
-                                onMouseLeave={() => setHover(null)}
-                            />
-                            {/* Glow on hover */}
-                            {isActiveHover && (
-                                <rect
-                                    x={x - 2} y={y - 2} width={barWidth + 4} height={Math.max(barH, 2) + 4}
-                                    rx="4" ry="4"
-                                    fill="none"
-                                    stroke={log.isOver ? '#bdfc3d' : '#fb923c'}
-                                    strokeWidth="2" opacity="0.6"
-                                />
-                            )}
-                            {/* Value label */}
-                            <text
-                                x={x + barWidth / 2} y={y - 6}
-                                textAnchor="middle" fontSize="13" fontWeight="800"
-                                fill={log.isOver ? '#bdfc3d' : '#fb923c'} opacity={0.95}
-                            >
-                                {log.value % 1 === 0 ? log.value : log.value.toFixed(1)}
-                            </text>
-
-                            {/* X-axis: Date — skip every other label for L20+ to prevent crowding */}
-                            {(barCount <= 10 || i % 2 === 0) && (
-                                <text
-                                    x={x + barWidth / 2} y={PAD_TOP + chartH + 17}
-                                    textAnchor="middle" fontSize={barCount > 14 ? 9 : barCount > 10 ? 10 : 12} fontWeight="700"
-                                    fill={isActiveHover ? '#e2e8f0' : '#94a3b8'}
-                                >
-                                    {log.date}
-                                </text>
-                            )}
-                            {/* X-axis: Opponent */}
-                            {(barCount <= 10 || i % 2 === 0) && (
-                                <text
-                                    x={x + barWidth / 2} y={PAD_TOP + chartH + 33}
-                                    textAnchor="middle" fontSize={barCount > 14 ? 8 : barCount > 10 ? 9 : 11} fontWeight="600"
-                                    fill={isActiveHover ? '#94a3b8' : '#64748b'}
-                                >
-                                    {log.opp.replace(/^(vs|@) /, barCount > 12 ? '' : '$&')}
-                                </text>
-                            )}
-                        </g>
-                    );
-                })}
-
-                {/* ── Chart border bottom ── */}
-                <line
-                    x1={PAD_LEFT} y1={PAD_TOP + chartH}
-                    x2={PAD_LEFT + chartW} y2={PAD_TOP + chartH}
-                    stroke="#1e293b" strokeWidth="1.5"
-                />
-            </svg>
-
-            {/* ── Hover Tooltip (absolute positioned relative to chart) ── */}
-            {hover && (
-                <div
-                    className="absolute z-50 pointer-events-none"
-                    style={{
-                        left: `${hover.xPct}%`,
-                        top: `calc(${hover.yPct}% - 10px)`,
-                        transform: `translate(${hover.xPct > 80 ? '-85%' : hover.xPct < 20 ? '-15%' : '-50%'}, -100%)`,
-                    }}
-                >
-                    <div className="bg-[#0f172a] border border-[#1e3a5f] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] overflow-hidden min-w-[180px] origin-bottom animate-in zoom-in-95 duration-100">
-                        {/* Header: matchup */}
-                        <div className="px-3 py-2 border-b border-[#1e3a5f] bg-[#111827]">
-                            <div className="flex items-center justify-between gap-4">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                    {hover.log.date}
-                                </span>
-                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${hover.log.isOver ? 'text-[#a3ff00] bg-[#a3ff00]/15' : 'text-orange-500 bg-orange-500/15'}`}>
-                                    {hover.log.isOver ? 'OVER ✓' : 'UNDER ✗'}
-                                </span>
-                            </div>
-                            <div className="text-sm font-black text-white mt-0.5">
-                                {hover.log.opp}
-                            </div>
-                        </div>
-
-                        {/* Score */}
-                        <div className="px-3 py-2 bg-[#0d1117]">
-                            <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Score</span>
-                                <span className="text-xs font-black text-slate-300">{hover.log.score}</span>
-                            </div>
-
-                            {/* Stat value */}
-                            <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{propType}</span>
-                                <span className={`text-lg font-black tabular-nums ${hover.log.isOver ? 'text-[#a3ff00]' : 'text-orange-500'}`}>
-                                    {hover.log.value % 1 === 0 ? hover.log.value : hover.log.value.toFixed(1)}
-                                </span>
-                            </div>
-
-                            {/* Opp rank */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Opp Rank</span>
-                                <span className={`text-xs font-black px-1.5 py-0.5 rounded border ${hover.log.oppRank <= 10 ? 'text-[#a3ff00] border-[#a3ff00]/30 bg-[#a3ff00]/10'
-                                    : hover.log.oppRank <= 20 ? 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10'
-                                        : 'text-orange-500 border-orange-500/30 bg-orange-500/10'
-                                    }`}>
-                                    {hover.log.oppRank}{OrdinalSuffix(hover.log.oppRank)}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Arrow */}
-                        <div
-                            className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full"
-                            style={{
-                                width: 0, height: 0,
-                                borderLeft: '7px solid transparent',
-                                borderRight: '7px solid transparent',
-                                borderTop: '7px solid #1e3a5f',
-                            }}
-                        />
-                    </div>
-                </div>
-            )}
+        <div className="w-full flex justify-center py-2 h-[260px] overflow-hidden select-none">
+            {renderChart()}
         </div>
     );
 };
@@ -692,6 +647,7 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
     const [altLinesOpen, setAltLinesOpen] = useState(false);
     const [insightsOpen, setInsightsOpen] = useState(false);
     const [selectedAltLine, setSelectedAltLine] = useState<{ line: number; dir: 'over' | 'under' } | null>(null);
+    const [chartType, setChartType] = useState<ChartType>('bar');
 
     const allPropTypes = getPropTypes(sport);
     const seed = `${prop.player}-${prop.team}-${activePropType}-hero`;
@@ -841,9 +797,23 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
                 </span>
             </div>
 
-            {/* ── Bar Chart ── */}
+            {/* ── Chart Type Selectors ── */}
+            <div className="px-5 py-2 flex flex-wrap gap-2 items-center border-b border-neutral-800/60 bg-black/20">
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mr-2">Chart Type:</span>
+                {(['bar', 'line', 'area', 'scatter', 'bubble', 'heat', 'pie', 'radar'] as const).map(ct => (
+                    <button
+                        key={ct}
+                        onClick={() => setChartType(ct)}
+                        className={`text-[9px] px-2 py-1 rounded font-bold uppercase tracking-widest transition-colors ${chartType === ct ? 'bg-primary text-black' : 'bg-neutral-800 text-slate-400 hover:text-white border border-transparent hover:border-slate-700'}`}
+                    >
+                        {ct}
+                    </button>
+                ))}
+            </div>
+
+            {/* ── Chart Rendering ── */}
             <div className="px-4 pb-4">
-                <PropBarChart logs={logs} line={effectiveLine} propType={activePropType} playerName={prop.player} />
+                <UniversalPropChart logs={logs} line={effectiveLine} propType={activePropType} playerName={prop.player} chartType={chartType} />
             </div>
 
             {/* ── AltLines Modal ── */}

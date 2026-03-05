@@ -67,7 +67,7 @@ export interface BoxingEvent {
 }
 
 async function fetchMostRecentBoxingEvent(daysBack = 180): Promise<BoxingEvent | null> {
-    const base = (ESPN_SCOREBOARD_URLS as any)['Boxing'] || 'https://site.api.espn.com/apis/site/v2/sports/boxing/match/scoreboard';
+    const base = (ESPN_SCOREBOARD_URLS as Record<string, string>)['Boxing'] || 'https://site.api.espn.com/apis/site/v2/sports/boxing/match/scoreboard';
     for (let d = 0; d <= daysBack; d++) {
         const dt = new Date();
         dt.setDate(dt.getDate() - d);
@@ -297,7 +297,7 @@ export const BoxingBoutPanel: React.FC<BoxingBoutPanelProps> = ({ onSelectGame }
 
                                 <div className="flex justify-between items-center mb-8 px-2 sm:px-6">
                                     <div className="flex-1 text-center">
-                                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full border-[3px] border-neutral-700 bg-neutral-800 flex items-center justify-center mb-3 overflow-hidden shadow-inner">
+                                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center mb-3 overflow-hidden shadow-inner">
                                             <span className="text-xl sm:text-2xl font-black text-slate-500">{o.homeTeam.substring(0, 2).toUpperCase()}</span>
                                         </div>
                                         <h3 className="text-sm sm:text-lg font-black text-text-main leading-tight">{o.homeTeam}</h3>
@@ -309,7 +309,7 @@ export const BoxingBoutPanel: React.FC<BoxingBoutPanelProps> = ({ onSelectGame }
                                     </div>
 
                                     <div className="flex-1 text-center">
-                                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full border-[3px] border-neutral-700 bg-neutral-800 flex items-center justify-center mb-3 overflow-hidden shadow-inner">
+                                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center mb-3 overflow-hidden shadow-inner">
                                             <span className="text-xl sm:text-2xl font-black text-slate-500">{o.awayTeam.substring(0, 2).toUpperCase()}</span>
                                         </div>
                                         <h3 className="text-sm sm:text-lg font-black text-text-main leading-tight">{o.awayTeam}</h3>
@@ -402,7 +402,7 @@ export const BoxingBoutPanel: React.FC<BoxingBoutPanelProps> = ({ onSelectGame }
                         <div className="flex-1 flex flex-col items-start gap-1 min-w-0">
                             <div className="flex items-center gap-2">
                                 {bout.fighter2.headshot && (
-                                    <img src={bout.fighter2.headshot} alt={bout.fighter2.shortName} className="w-10 h-10 rounded-full object-cover border border-neutral-700 bg-neutral-800" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                    <img src={bout.fighter2.headshot} alt={bout.fighter2.shortName} className="w-10 h-10 rounded-full object-cover bg-neutral-800 border border-purple-500" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                 )}
                                 {!bout.fighter2.headshot && bout.fighter2.flagUrl && (
                                     <img src={bout.fighter2.flagUrl} alt="" className="h-5 w-7 object-cover rounded-sm border border-neutral-700/40" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -434,7 +434,7 @@ export const BoxingBoutPanel: React.FC<BoxingBoutPanelProps> = ({ onSelectGame }
                         <div className="flex-1 flex flex-col items-end gap-1 min-w-0">
                             <div className="flex items-center gap-2 flex-row-reverse">
                                 {bout.fighter1.headshot && (
-                                    <img src={bout.fighter1.headshot} alt={bout.fighter1.shortName} className="w-10 h-10 rounded-full object-cover border border-neutral-700 bg-neutral-800" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                    <img src={bout.fighter1.headshot} alt={bout.fighter1.shortName} className="w-10 h-10 rounded-full object-cover bg-neutral-800 border border-purple-500" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                 )}
                                 {!bout.fighter1.headshot && bout.fighter1.flagUrl && (
                                     <img src={bout.fighter1.flagUrl} alt="" className="h-5 w-7 object-cover rounded-sm border border-neutral-700/40" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />

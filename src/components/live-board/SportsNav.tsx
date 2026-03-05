@@ -5,7 +5,7 @@ import { SPORTS } from '../../data/mockGames';
 // Tier 1 (primary): ESPN CDN — best quality, real league logos for major US sports
 // Tier 2 (fallback): CBS Sports SVG CDN — sport category icons (confirmed working)
 // Tier 3: Material Symbols icon (always available)
-const SPORT_LOGOS: Record<string, { primary: string; fallback: string }> = {
+export const SPORT_LOGOS: Record<string, { primary: string; fallback: string }> = {
     NBA: {
         primary: 'https://a.espncdn.com/i/teamlogos/leagues/500/nba.png',
         fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/basketball.svg',
@@ -23,7 +23,7 @@ const SPORT_LOGOS: Record<string, { primary: string; fallback: string }> = {
         fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/hockey.svg',
     },
     WNBA: {
-        primary: 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png',
+        primary: '/wnba-logo-new.png',
         fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/basketball.svg',
     },
     CFB: {
@@ -48,8 +48,8 @@ const SPORT_LOGOS: Record<string, { primary: string; fallback: string }> = {
         fallback: '/FIFA-Logo.svg',
     },
     WBC: {
-        primary: '/wbc-logo.png',
-        fallback: '/wbc-logo.png',
+        primary: '/wbc-logo-new.png',
+        fallback: '/wbc-logo-new.png',
     },
     Tennis: {
         primary: '/Wimbledon.svg.png',
@@ -66,6 +66,10 @@ const SPORT_LOGOS: Record<string, { primary: string; fallback: string }> = {
     Esports: {
         primary: 'https://a.espncdn.com/i/teamlogos/leagues/500/esports.png',
         fallback: 'https://sports.cbsimg.net/fly/images/icon-logos/esports.svg',
+    },
+    NASCAR: {
+        primary: '/nascar-header-logo.png',
+        fallback: '/racing-flag.png', // using standard fallback if available or relying on material
     },
 };
 
@@ -85,6 +89,8 @@ const SPORT_ICON_MATERIAL: Record<string, string> = {
     NCAAB: 'sports_baseball',
     NCAAW: 'sports_basketball',
     CFB: 'sports_football',
+    NASCAR: 'sports_score', // default material icon
+    WBC: 'sports_baseball',
 };
 
 interface SportsNavProps {
@@ -96,7 +102,7 @@ export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport
     return (
         <div className="bg-white dark:bg-neutral-900/40 border-b border-border-muted z-40 w-full overflow-hidden">
             <div className="max-w-[1536px] mx-auto px-2 sm:px-6 py-3 sm:py-4">
-                <div className="flex overflow-x-auto scrollbar-hide lg:flex-wrap items-center lg:justify-center gap-2 sm:gap-3 xl:gap-8 pb-3 sm:pb-2 w-full snap-x">
+                <div className="flex overflow-x-auto scrollbar-hide items-center justify-between xl:justify-center gap-1 sm:gap-2 lg:gap-3 pb-3 sm:pb-2 w-full snap-x">
                     {SPORTS.map(sport => {
                         const entry = SPORT_LOGOS[sport];
                         const primarySrc = entry?.primary;
@@ -105,14 +111,14 @@ export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport
                         return (
                             <div
                                 key={sport}
-                                className={`sport-chip shrink-0 snap-start flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-1 sm:gap-2 px-3 sm:px-2 py-2 rounded-lg transition-all cursor-pointer ${activeSport === sport ? 'bg-primary/20 text-primary border border-primary/40' : 'text-slate-400 hover:text-white border border-transparent'} min-w-[70px] sm:min-w-0`}
+                                className={`sport-chip shrink-0 snap-start flex-1 flex flex-col items-center justify-center text-center gap-1.5 p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer border hover:-translate-y-1 hover:shadow-lg ${activeSport === sport ? 'bg-neutral-800 border-primary shadow-[0_0_15px_rgba(13,242,13,0.15)] text-white' : 'bg-[#111] border-neutral-800 text-slate-400 hover:text-white hover:bg-neutral-800 hover:border-neutral-700'} aspect-square min-w-[76px] sm:min-w-[85px] max-w-[90px] sm:max-w-[110px]`}
                                 onClick={() => onSelectSport(sport)}
                             >
-                                <span className="relative flex items-center justify-center w-4 h-4 shrink-0">
+                                <span className="relative flex items-center justify-center w-full min-h-[32px] max-h-[44px] sm:max-h-[50px] mb-0.5">
                                     <img
                                         src={primarySrc}
                                         alt={sport}
-                                        className="h-4 w-4 object-contain"
+                                        className="h-full w-full object-contain drop-shadow-md"
                                         onError={e => {
                                             const img = e.currentTarget;
                                             if (fallbackSrc && img.src !== fallbackSrc) {
@@ -127,13 +133,13 @@ export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport
                                         }}
                                     />
                                     <span
-                                        className="material-symbols-outlined text-[20px] sm:text-[14px] text-text-muted"
+                                        className="material-symbols-outlined text-[24px] sm:text-[28px] text-text-muted"
                                         style={{ display: 'none' }}
                                     >
                                         {materialIcon}
                                     </span>
                                 </span>
-                                <span className="text-[10px] sm:text-xs font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full">
+                                <span className="text-[10px] sm:text-[11px] leading-none font-black tracking-[0.05em] uppercase w-full px-0.5 truncate">
                                     {sport === 'CFB' ? "NCAAF" : sport}
                                 </span>
                             </div>

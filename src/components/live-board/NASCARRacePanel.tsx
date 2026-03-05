@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ESPN_SCOREBOARD_URLS } from '../../data/espnScoreboard';
+import { ESPN_SCOREBOARD_URLS, SportKey } from '../../data/espnScoreboard';
 import { Game } from '../../data/mockGames';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,8 +36,8 @@ export interface NASCARRace {
 }
 
 // Walk back up to 30 days to find a recent NASCAR race
-async function fetchMostRecentNASCARRace(daysBack = 30): Promise<NASCARRace | null> {
-    const base = (ESPN_SCOREBOARD_URLS as any)['NASCAR'] || 'https://site.api.espn.com/apis/site/v2/sports/racing/nascar/scoreboard';
+async function fetchMostRecentNASCARRace(sportKey: string, daysBack = 30): Promise<NASCARRace | null> {
+    const base = ESPN_SCOREBOARD_URLS[sportKey as SportKey] || 'https://site.api.espn.com/apis/site/v2/sports/racing/nascar/cup/scoreboard';
     for (let d = 0; d <= daysBack; d++) {
         const dt = new Date();
         dt.setDate(dt.getDate() - d);
@@ -122,7 +122,7 @@ function driverToGame(driver: NASCARDriver, race: NASCARRace): Game {
         timeLabel: race.status === 'FINAL' ? `FINAL — ${race.lapTotal} Laps` : race.status,
         league: 'NASCAR Cup Series',
         venue: { name: race.track, location: race.location },
-        sportLogo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nascar.png',
+        sportLogo: '/nascar-header-logo.png',
         broadcast: '',
         odds: { spread: 'N/A', moneyline: { away: 0, home: 0 }, overUnder: { value: 0, pick: 'over' } },
         winProbability: { home: driver.position === 1 ? 75 : 50, away: 50 },
@@ -132,10 +132,11 @@ function driverToGame(driver: NASCARDriver, race: NASCARRace): Game {
 }
 
 interface NASCARRacePanelProps {
+    sportKey: string;
     onSelectGame?: (game: Game) => void;
 }
 
-export const NASCARRacePanel: React.FC<NASCARRacePanelProps> = ({ onSelectGame }) => {
+export const NASCARRacePanel: React.FC<NASCARRacePanelProps> = ({ sportKey, onSelectGame }) => {
     const [race, setRace] = useState<NASCARRace | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -144,12 +145,12 @@ export const NASCARRacePanel: React.FC<NASCARRacePanelProps> = ({ onSelectGame }
         setLoading(true);
         setError(null);
         try {
-            const r = await fetchMostRecentNASCARRace(30);
+            const r = await fetchMostRecentNASCARRace(sportKey, 30);
             if (r) setRace(r);
             else setError('No recent NASCAR races found.');
         } catch { setError('Failed to load NASCAR data.'); }
         finally { setLoading(false); }
-    }, []);
+    }, [sportKey]);
 
     useEffect(() => { load(); }, [load]);
 
@@ -238,7 +239,7 @@ export const NASCARRacePanel: React.FC<NASCARRacePanelProps> = ({ onSelectGame }
                         {/* Driver */}
                         <div className="flex items-center gap-2 min-w-0">
                             {driver.headshot ? (
-                                <img src={driver.headshot} alt={driver.shortName} className="w-8 h-8 rounded-full object-cover border border-neutral-700 shrink-0 bg-neutral-800" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                <img src={driver.headshot} alt={driver.shortName} className="w-8 h-8 rounded-full object-cover shrink-0 bg-neutral-800 border border-purple-500" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             ) : (
                                 <div className="w-8 h-8 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
                                     <span className="text-[9px] font-black text-slate-400">{driver.number}</span>

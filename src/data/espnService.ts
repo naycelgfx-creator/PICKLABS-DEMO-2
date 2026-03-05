@@ -37,10 +37,16 @@ export interface ESPNRosterAthlete extends ESPNAthlete {
 // site.api.espn.com is publicly accessible with CORS headers
 
 const ESPN_SITE_ROSTER: Record<string, string> = {
-    NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{id}/roster',
-    NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{id}/roster',
-    MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/{id}/roster',
-    NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/{id}/roster',
+    NBA: 'basketball/nba',
+    NFL: 'football/nfl',
+    MLB: 'baseball/mlb',
+    NHL: 'hockey/nhl',
+    NCAAM: 'basketball/mens-college-basketball',
+    NCAAB: 'baseball/college-baseball',
+    NCAAW: 'basketball/womens-college-basketball',
+    CFB: 'football/college-football',
+    'Soccer.EPL': 'soccer/eng.1',
+    'Soccer.MLS': 'soccer/usa.1',
 };
 
 const ESPN_HEADSHOT_SPORT: Record<string, string> = {
@@ -147,20 +153,30 @@ const resolveTeamId = (teamName: string, sport: string): number | null => {
     // Exact match
     if (teamIds[teamName]) return teamIds[teamName];
 
-    // Case-insensitive partial match
+    // Case-insensitive exact match
     const lower = teamName.toLowerCase();
-    const key = Object.keys(teamIds).find(k =>
-        lower.includes(k.toLowerCase()) || k.toLowerCase().includes(lower.split(' ').pop() ?? '')
-    );
-    return key ? teamIds[key] : null;
+    const exactKey = Object.keys(teamIds).find(k => k.toLowerCase() === lower);
+    if (exactKey) return teamIds[exactKey];
+
+    // Case-insensitive ends-with match (e.g., "Charlotte Hornets" -> "Hornets")
+    const endsWithKey = Object.keys(teamIds).find(k => lower.endsWith(k.toLowerCase()));
+    if (endsWithKey) return teamIds[endsWithKey];
+
+    // Fallback: Case-insensitive partial match with word boundaries to avoid 'Hornets' matching 'Nets'
+    const partialKey = Object.keys(teamIds).find(k => {
+        const regex = new RegExp(`\\b${k.toLowerCase()}\\b`, 'i');
+        return regex.test(lower);
+    });
+
+    return partialKey ? teamIds[partialKey] : null;
 };
 
 // ─── PRIMARY: site.api ESPN roster (CORS-friendly) ────────────────────────────
 const fetchRosterViaSiteAPI = async (teamId: number, sport: string): Promise<ESPNRosterAthlete[]> => {
-    const urlTemplate = ESPN_SITE_ROSTER[sport];
-    if (!urlTemplate) return [];
+    const league = ESPN_SITE_ROSTER[sport];
+    if (!league) return [];
 
-    const url = urlTemplate.replace('{id}', String(teamId));
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${league}/teams/${teamId}/roster`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`ESPN site API ${res.status}`);
     const data = await res.json();
@@ -170,15 +186,18 @@ const fetchRosterViaSiteAPI = async (teamId: number, sport: string): Promise<ESP
     const allAthletes: Record<string, any>[] = [];
 
     if (Array.isArray(data.athletes)) {
-        // Format: [{ position: "...", items: [athlete, ...] }]
-        for (const group of data.athletes) {
-            if (Array.isArray(group.items)) {
-                for (const athlete of group.items) {
+        for (const entry of data.athletes) {
+            // New ESPN format: each entry IS a direct athlete object (has fullName)
+            if (entry.fullName || entry.displayName) {
+                if (entry.id) allAthletes.push(entry);
+            } else if (Array.isArray(entry.items)) {
+                // Old grouped format: { position: "...", items: [athlete, ...] }
+                for (const athlete of entry.items) {
                     if (athlete.id) allAthletes.push(athlete);
                 }
-            } else if (group.id) {
-                // Direct athlete object
-                allAthletes.push(group);
+            } else if (entry.id) {
+                // Fallback: direct object without fullName
+                allAthletes.push(entry);
             }
         }
     }
@@ -228,7 +247,6 @@ export const getUFCFighters = async (): Promise<ESPNRosterAthlete[]> => {
     }
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getCFBRoster = async (teamId: string | number): Promise<ESPNRosterAthlete[]> => {
     const url = `https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}?enable=roster`;
     try {
@@ -267,15 +285,124 @@ export const getCFBRoster = async (teamId: string | number): Promise<ESPNRosterA
     }
 };
 
+export const getWBCRoster = async (teamId: string | number): Promise<ESPNRosterAthlete[]> => {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/baseball/wbc/teams/${teamId}?enable=roster`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        const data = await res.json();
+        const teamData = data.team || {};
+        const athletes = teamData.athletes || [];
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return athletes.map((player: any) => {
+            const id = String(player.id);
+            const headshot = player.headshot?.href || `https://a.espncdn.com/i/headshots/wbc/players/full/${id}.png`;
+            return {
+                id,
+                fullName: player.fullName,
+                shortName: player.shortName || player.fullName,
+                firstName: player.firstName || player.fullName.split(' ')[0],
+                lastName: player.lastName || player.fullName.split(' ').slice(1).join(' '),
+                position: player.position ? { abbreviation: player.position.abbreviation, displayName: player.position.displayName } : undefined,
+                jersey: player.jersey,
+                age: player.age,
+                headshot: { href: headshot, alt: player.fullName },
+                photoUrl: headshot,
+                salaryFormatted: 'N/A',
+                collegeName: teamData.displayName || 'N/A',
+                active: player.active !== false
+            };
+        });
+    } catch (e) {
+        console.error(`WBC roster fetch error for ${teamId}`, e);
+        return [];
+    }
+};
+
+export const fetchGenericAthletes = async (url: string, fallbackSportPhoto: string): Promise<ESPNRosterAthlete[]> => {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        const data = await res.json();
+
+        let athletesList = [];
+        if (Array.isArray(data.athletes)) {
+            athletesList = data.athletes;
+        } else if (data.items && Array.isArray(data.items)) {
+            athletesList = data.items;
+        } else if (data.drivers && Array.isArray(data.drivers)) {
+            athletesList = data.drivers; // NASCAR 
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return athletesList.map((entry: any) => {
+            const player = entry.athlete || entry; // Sometimes it's wrapped
+            const id = String(player.id);
+            const headshot = player.headshot?.href || `https://a.espncdn.com/i/headshots/${fallbackSportPhoto}/players/full/${id}.png`;
+            return {
+                id,
+                fullName: player.fullName || player.displayName,
+                shortName: player.shortName || player.displayName,
+                firstName: player.firstName || player.displayName?.split(' ')[0] || '',
+                lastName: player.lastName || player.displayName?.split(' ').slice(1).join(' ') || '',
+                position: player.position ? { abbreviation: player.position.abbreviation, displayName: player.position.displayName } : undefined,
+                jersey: player.jersey,
+                age: player.age,
+                headshot: { href: headshot, alt: player.displayName },
+                photoUrl: headshot,
+                salaryFormatted: 'N/A',
+                collegeName: 'N/A',
+                active: player.active !== false
+            };
+        });
+    } catch (e) {
+        console.error(`Athlete fetch error from ${url}`, e);
+        return [];
+    }
+};
+
 // ─── Generic multi-sport roster fetch ────────────────────────────────────────
 
 export const fetchESPNRosterBySport = async (teamName: string, sport: string): Promise<ESPNRosterAthlete[]> => {
     if (sport === 'UFC') {
         return getUFCFighters();
     }
-
     if (sport === 'CFB' || sport === 'NCAAF') {
         return getCFBRoster(teamName);
+    }
+    if (sport === 'WBC' || sport === 'Baseball.WBC') {
+        return getWBCRoster(teamName);
+    }
+
+    // NASCAR
+    if (sport === 'Racing.NASCAR.CUP' || sport === 'NASCAR') {
+        return fetchGenericAthletes('https://site.api.espn.com/apis/site/v2/sports/racing/nascar/cup/drivers', 'nascar');
+    }
+    if (sport === 'Racing.NASCAR.XFINITY') {
+        return fetchGenericAthletes('https://site.api.espn.com/apis/site/v2/sports/racing/nascar/xfinity/drivers', 'nascar');
+    }
+    if (sport === 'Racing.NASCAR.TRUCK') {
+        return fetchGenericAthletes('https://site.api.espn.com/apis/site/v2/sports/racing/nascar/truck/drivers', 'nascar');
+    }
+
+    // Tennis
+    if (sport === 'Tennis.ATP' || sport === 'Tennis') {
+        return fetchGenericAthletes('https://site.api.espn.com/apis/site/v2/sports/tennis/atp/athletes?limit=200', 'tennis');
+    }
+    if (sport === 'Tennis.WTA') {
+        return fetchGenericAthletes('https://site.api.espn.com/apis/site/v2/sports/tennis/wta/athletes?limit=200', 'tennis');
+    }
+
+    // Golf
+    if (sport === 'Golf.PGA' || sport === 'Golf') {
+        return fetchGenericAthletes('https://site.api.espn.com/apis/site/v2/sports/golf/pga/athletes?limit=300', 'golf');
+    }
+    if (sport === 'Golf.LIV') {
+        return fetchGenericAthletes('https://site.api.espn.com/apis/site/v2/sports/golf/liv/athletes?limit=300', 'golf');
+    }
+    if (sport === 'Golf.LPGA') {
+        return fetchGenericAthletes('https://site.api.espn.com/apis/site/v2/sports/golf/lpga/athletes?limit=300', 'golf');
     }
 
     const teamId = resolveTeamId(teamName, sport);

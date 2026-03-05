@@ -48,9 +48,10 @@ const ESPNGameCard: React.FC<{ game: ESPNGame; onSelectGame?: (game: ESPNGame) =
                     <span className="material-symbols-outlined text-[12px]">location_on</span>
                     <span className="truncate">{game.venue}{game.city ? ` · ${game.city}` : ''}</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 ml-2">
+                <div className="flex items-center gap-2 flex-wrap justify-end shrink-0 ml-2">
                     {game.broadcast && (
-                        <span className="text-[10px] text-slate-400 font-bold bg-neutral-700 px-2 py-0.5 rounded">
+                        <span className="text-[10px] text-blue-400 font-bold bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[12px]">tv</span>
                             {game.broadcast}
                         </span>
                     )}
@@ -62,7 +63,7 @@ const ESPNGameCard: React.FC<{ game: ESPNGame; onSelectGame?: (game: ESPNGame) =
             <div className="px-4 py-4">
                 {/* Away Team */}
                 <div className={`flex items-center gap-3 mb-3 ${!isFinal ? '' : game.awayTeam.winner ? '' : 'opacity-60'}`}>
-                    <div className="w-9 h-9 rounded-full bg-neutral-800 overflow-hidden border border-neutral-700 shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-neutral-800 overflow-hidden shrink-0">
                         <img
                             src={game.awayTeam.logo}
                             alt={game.awayTeam.abbreviation}
@@ -93,7 +94,7 @@ const ESPNGameCard: React.FC<{ game: ESPNGame; onSelectGame?: (game: ESPNGame) =
 
                 {/* Home Team */}
                 <div className={`flex items-center gap-3 ${!isFinal ? '' : game.homeTeam.winner ? '' : 'opacity-60'}`}>
-                    <div className="w-9 h-9 rounded-full bg-neutral-800 overflow-hidden border border-neutral-700 shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-neutral-800 overflow-hidden shrink-0">
                         <img
                             src={game.homeTeam.logo}
                             alt={game.homeTeam.abbreviation}
@@ -125,28 +126,30 @@ const ESPNGameCard: React.FC<{ game: ESPNGame; onSelectGame?: (game: ESPNGame) =
             {/* Leaders */}
             {game.leaders.length > 0 && (
                 <div className="px-4 pb-3 border-t border-neutral-800/60 pt-3">
-                    <div className="flex gap-3 overflow-x-auto">
+                    <div className="flex gap-4 overflow-x-auto no-scrollbar">
                         {game.leaders.slice(0, 3).map((leader, i) => (
-                            <div key={i} className="flex items-center gap-2 shrink-0">
-                                {leader.headshot && (
-                                    <div className="w-7 h-7 rounded-full bg-neutral-800 overflow-hidden border border-neutral-700">
-                                        <img
-                                            src={leader.headshot}
-                                            alt={leader.shortName}
-                                            className="w-full h-full object-cover"
-                                            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                        />
+                            <React.Fragment key={i}>
+                                <div className="flex items-center gap-2.5 shrink-0">
+                                    {leader.headshot && (
+                                        <div className="w-10 h-10 rounded-full bg-neutral-800 overflow-hidden border border-purple-500 shrink-0 shadow-lg">
+                                            <img
+                                                src={leader.headshot}
+                                                alt={leader.shortName}
+                                                className="w-full h-full object-cover"
+                                                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col justify-center">
+                                        <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none mb-1">{leader.category}</div>
+                                        <div className="text-sm font-bold text-slate-200 leading-none mb-0.5">{leader.shortName}</div>
+                                        <div className="text-xl font-black text-primary leading-none drop-shadow-sm">{leader.displayValue}</div>
                                     </div>
-                                )}
-                                <div>
-                                    <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider leading-none">{leader.category}</div>
-                                    <div className="text-xs font-bold text-text-muted leading-tight">{leader.shortName}</div>
-                                    <div className="text-[11px] font-black text-primary leading-none">{leader.displayValue}</div>
                                 </div>
                                 {i < game.leaders.length - 1 && i < 2 && (
-                                    <div className="w-px h-8 bg-neutral-800 ml-1"></div>
+                                    <div className="w-px h-10 bg-neutral-800/80 my-auto shrink-0"></div>
                                 )}
-                            </div>
+                            </React.Fragment>
                         ))}
                     </div>
                 </div>
@@ -187,7 +190,7 @@ const ESPNGameRow: React.FC<{ game: ESPNGame; onSelectGame?: (g: ESPNGame) => vo
 
             {/* Away team */}
             <div className="flex items-center gap-2 flex-1 min-w-0">
-                <img src={game.awayTeam.logo} alt={game.awayTeam.abbreviation} className="w-7 h-7 object-contain rounded-full bg-neutral-800 p-0.5 border border-neutral-700" onError={e => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${game.awayTeam.abbreviation}&background=1a1a2e&color=fff&rounded=true`; }} />
+                <img src={game.awayTeam.logo} alt={game.awayTeam.abbreviation} className="w-7 h-7 object-contain" onError={e => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${game.awayTeam.abbreviation}&background=1a1a2e&color=fff&rounded=true`; }} />
                 <span className={`text-sm font-bold truncate ${isFinal && !game.awayTeam.winner ? 'text-text-muted' : 'text-text-main'}`}>{game.awayTeam.abbreviation}</span>
                 <span className={`text-lg font-black tabular-nums ml-auto ${game.awayTeam.winner ? 'text-text-main' : 'text-text-muted'}`}>{game.awayTeam.score || '–'}</span>
             </div>
@@ -198,13 +201,18 @@ const ESPNGameRow: React.FC<{ game: ESPNGame; onSelectGame?: (g: ESPNGame) => vo
             <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className={`text-lg font-black tabular-nums mr-auto ${game.homeTeam.winner ? 'text-text-main' : 'text-text-muted'}`}>{game.homeTeam.score || '–'}</span>
                 <span className={`text-sm font-bold truncate ${isFinal && !game.homeTeam.winner ? 'text-text-muted' : 'text-text-main'}`}>{game.homeTeam.abbreviation}</span>
-                <img src={game.homeTeam.logo} alt={game.homeTeam.abbreviation} className="w-7 h-7 object-contain rounded-full bg-neutral-800 p-0.5 border border-neutral-700" onError={e => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${game.homeTeam.abbreviation}&background=1a1a2e&color=fff&rounded=true`; }} />
+                <img src={game.homeTeam.logo} alt={game.homeTeam.abbreviation} className="w-7 h-7 object-contain" onError={e => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${game.homeTeam.abbreviation}&background=1a1a2e&color=fff&rounded=true`; }} />
             </div>
 
-            {/* Broadcast */}
-            {game.broadcast && (
-                <span className="text-[10px] text-slate-500 font-bold bg-neutral-800 px-2 py-0.5 rounded shrink-0 hidden sm:block">{game.broadcast}</span>
-            )}
+            <div className="flex items-center justify-between mt-3 flex-wrap">
+                <StatusBadge game={game} />
+                {game.broadcast && (
+                    <span className="text-[10px] text-blue-400 font-bold bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[10px]">tv</span>
+                        {game.broadcast}
+                    </span>
+                )}
+            </div>
         </div>
     );
 };
