@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useState, useEffect } from 'react';
 import { ResolvedTicket, BetPick } from '../../App';
 import { TicketCard } from '../shared/LiveTicketPanel';

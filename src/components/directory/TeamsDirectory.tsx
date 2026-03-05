@@ -165,6 +165,7 @@ interface ESPNTeam {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseESPNTeams(data: any): ESPNTeam[] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let rawTeams: any[] = [];
 
     if (data?.sports?.[0]?.leagues?.[0]?.teams) {
@@ -177,9 +178,11 @@ function parseESPNTeams(data: any): ESPNTeam[] {
 
     if (!Array.isArray(rawTeams)) return [];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return rawTeams.map((t: any) => {
         const team = t?.team || t || {};
         const logos = team.logos || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const logo = logos[0]?.href || logos.find((l: any) => l?.href)?.href || '';
 
         return {

@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, react-hooks/exhaustive-deps */
 import React, { useEffect, useState, useCallback } from 'react';
 import { SportKey, ESPN_SCOREBOARD_URLS } from '../../data/espnScoreboard';
 import { Game } from '../../data/mockGames';

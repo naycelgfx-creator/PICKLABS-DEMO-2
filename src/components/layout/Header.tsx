@@ -408,19 +408,44 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                         </button>
                                     </div>
 
-                                    {/* Admin Only: Analytics */}
+                                    {/* Admin Only: Analytics & Master Panel */}
                                     {user?.email && isAdminEmail(user.email) && (
-                                        <button
-                                            onClick={() => {
-                                                setCurrentView('admin-analytics');
-                                                setIsSettingsOpen(false);
-                                            }}
-                                            className="w-full flex items-center gap-3 px-4 py-3 border-b border-border-muted hover:bg-primary/10 transition-colors text-left text-primary"
-                                        >
-                                            <span className="material-symbols-outlined text-[16px]">monitoring</span>
-                                            <span className="text-xs font-bold uppercase tracking-widest">Admin Analytics</span>
-                                        </button>
+                                        <>
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentView('admin-analytics');
+                                                    setIsSettingsOpen(false);
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 border-b border-border-muted hover:bg-primary/10 transition-colors text-left text-primary"
+                                            >
+                                                <span className="material-symbols-outlined text-[16px]">monitoring</span>
+                                                <span className="text-xs font-bold uppercase tracking-widest">Admin Analytics</span>
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentView('admin-panel');
+                                                    setIsSettingsOpen(false);
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 border-b border-border-muted hover:bg-red-500/10 transition-colors text-left text-red-500"
+                                            >
+                                                <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+                                                <span className="text-xs font-bold uppercase tracking-widest">Master Admin Panel</span>
+                                            </button>
+                                        </>
                                     )}
+
+                                    {/* Account Settings / Portal */}
+                                    <button
+                                        onClick={() => {
+                                            setCurrentView('account-settings');
+                                            setIsSettingsOpen(false);
+                                        }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 border-b border-border-muted hover:bg-white/5 transition-colors text-left"
+                                    >
+                                        <span className="material-symbols-outlined text-[16px] text-accent-blue">manage_accounts</span>
+                                        <span className="text-xs font-bold text-text-main">Account Portal</span>
+                                    </button>
 
                                     {/* Actions */}
                                     <button
@@ -725,6 +750,12 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                     <div className={`absolute top-px h-3 w-3 rounded-full transition-all duration-300 ${isLiveBetsActive ? 'translate-x-4 bg-primary' : 'translate-x-px bg-slate-600'}`} />
                                 </div>
                             </button>
+
+                            <button onClick={() => { setCurrentView('account-settings'); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-2 px-4 py-3 border-b border-border-muted active:bg-white/5 text-accent-blue">
+                                <span className="material-symbols-outlined text-sm">manage_accounts</span>
+                                <span className="text-[11px] font-bold">Account Portal</span>
+                            </button>
+
                             <button onClick={() => alert("Bug Reporter opening...")} className="w-full flex items-center gap-2 px-4 py-3 border-b border-border-muted active:bg-white/5 text-orange-400">
                                 <span className="material-symbols-outlined text-sm">bug_report</span>
                                 <span className="text-[11px] font-bold">Report Bug</span>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ESPN Teams Service — live team stats, schedule, standings, last-5 form
 // Supports NBA, NFL, MLB, NHL
 

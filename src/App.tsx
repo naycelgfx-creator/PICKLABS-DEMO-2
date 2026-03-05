@@ -17,12 +17,16 @@ import { LoginPageView } from './components/auth/LoginPageView';
 import { SportsbookView } from './components/sportsbook/SportsbookView';
 import { HolographicBoardView } from './components/holographic-board/HolographicBoardView';
 import { AdminAnalyticsView } from './components/admin/AdminAnalyticsView';
+import { AdminPanel } from './components/admin/AdminPanel';
 import { PrecisionHubView } from './components/precision-hub/PrecisionHubView';
+import { AccountSettingsView } from './components/account/AccountSettingsView';
 import { RookieTour } from './components/ui/RookieTour';
 import { PlayerDirectory } from './components/directory/PlayerDirectory';
 import { APP_SPORT_TO_ESPN, fetchESPNScoreboardByDate, ESPNGame, SportKey } from './data/espnScoreboard';
 import { generateAIPrediction } from './data/espnTeams';
-import { getCurrentUser, isAdminEmail } from './data/PickLabsAuthDB';
+import { CheckoutView } from './components/checkout/CheckoutView';
+import { getCurrentUser, isAdminEmail, logout, TierKey, DurationKey } from './data/PickLabsAuthDB';
+import { clearAuth } from './utils/auth';
 import { useRookieMode } from './contexts/RookieModeContext';
 
 export interface BetPick {
@@ -96,6 +100,18 @@ function App() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [hasSimulated, setHasSimulated] = useState(false);
   const [isAIPickLoading, setIsAIPickLoading] = useState(false);
+  // Checkout state — set when pricing card is clicked
+  const [checkoutTier, setCheckoutTier] = useState<TierKey>('pro');
+  const [checkoutDuration, setCheckoutDuration] = useState<DurationKey>('month');
+
+  /** Navigate to checkout with a specific tier and duration */
+  const navigateToCheckout = (tier: TierKey, duration: DurationKey = 'month') => {
+    setCheckoutTier(tier);
+    setCheckoutDuration(duration);
+    setCurrentViewRaw('checkout');
+  };
+  // Expose via window so AccountSettingsView can call it without prop-drilling
+  (window as unknown as Record<string, unknown>).__pickLabsCheckout = navigateToCheckout;
 
   // Bankroll Handlers
   const handlePlaceTicket = (ticket: BetPick[], totalStake: number) => {
@@ -550,6 +566,10 @@ function App() {
             <HolographicBoardView betSlip={betSlip} activeTickets={activeTickets} />
           )}
 
+          {currentView === 'admin-panel' && getCurrentUser()?.email && isAdminEmail(getCurrentUser()?.email || '') && (
+            <AdminPanel currentUserEmail={getCurrentUser()?.email || ''} onClose={() => setCurrentView('live-board')} />
+          )}
+
           {currentView === 'admin-analytics' && (
             <AdminAnalyticsView />
           )}
@@ -567,6 +587,21 @@ function App() {
               onAddBet={handeAddBet}
               onPlaceTicket={handlePlaceTicket}
               onResolveTicket={handleResolveTicket}
+            />
+          )}
+
+          {currentView === 'account-settings' && (
+            <AccountSettingsView
+              onNavigate={(view) => setCurrentView(view as ViewType)}
+              onLogout={() => { clearAuth(); logout(); setCurrentView('login-page'); }}
+            />
+          )}
+
+          {currentView === 'checkout' && (
+            <CheckoutView
+              tier={checkoutTier}
+              duration={checkoutDuration}
+              onNavigate={(view) => setCurrentView(view as ViewType)}
             />
           )}
         </main>

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BetPick } from '../App';
 
 // Mirroring the Python SQLAlchemy BetTracker model

@@ -102,7 +102,7 @@ export const AIDashboardView: React.FC = () => {
                             setButtonText('✨ AI Pick My Bets ⚡️');
                             setIsSuccess(false);
                         }, 3000);
-                    } catch (error) {
+                    } catch {
                         setIsCrunching(false);
                         setIsError(true);
                         setButtonText('❌ Connection Error. Try Again.');

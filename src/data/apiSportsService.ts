@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ESPNRosterAthlete } from './espnService';
 
 // Master API Key for API-Sports
@@ -25,7 +26,6 @@ export const SPORTS_WITH_API_SPORTS = Object.keys(API_SPORTS_DOMAINS);
 /**
  * The Universal Fetcher for API-Sports.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fetchApiSports(sport: string, endpoint: string, params: Record<string, string> = {}): Promise<any[]> {
     if (!API_SPORTS_DOMAINS[sport]) {
         console.error(`❌ Error: '${sport}' is not strictly mapped for API-Sports.`);

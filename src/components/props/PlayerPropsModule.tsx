@@ -402,7 +402,6 @@ const UniversalPropChart: React.FC<UniversalPropChartProps> = ({ logs, line, pro
                 return (
                     <ResponsiveContainer width="100%" height={260}>
                         <PieChart>
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                             <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90} label>
                                 {pieData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.fill} stroke="#0d1117" strokeWidth={4} />

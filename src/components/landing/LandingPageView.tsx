@@ -343,7 +343,6 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                             <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} variant="green" />
                             <div className="flex items-center gap-1 mb-4">
                                 {[...Array(review.rating)].map((_, i) => (
-                                    // eslint-disable-next-line react/forbid-dom-props
                                     <span key={i} className="material-symbols-outlined text-xs text-yellow-500 fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                                 ))}
                             </div>

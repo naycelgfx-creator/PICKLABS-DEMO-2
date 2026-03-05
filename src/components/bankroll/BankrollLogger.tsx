@@ -86,6 +86,7 @@ export const BankrollLogger: React.FC<BankrollLoggerProps> = ({ onSuccess }) => 
                 <label style={{ color: '#06b6d4', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>Result</label>
                 <select
                     value={status}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onChange={(e) => setStatus(e.target.value as any)}
                     style={{ width: '100%', padding: '12px', margin: '8px 0 25px 0', background: '#09090b', border: '1px solid #27272a', color: 'white', borderRadius: '6px' }}
                 >

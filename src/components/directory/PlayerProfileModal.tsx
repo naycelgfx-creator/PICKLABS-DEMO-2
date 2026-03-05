@@ -17,7 +17,6 @@ const mostRecent = (entries: any[]): { stats: string[]; season?: { displayName?:
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const parseStats = (categories: any[], sport: string, posAbbr: string): ParsedStats => {
     if (!categories.length) return { items: [], seasonLabel: '' };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const vals = (i: number): string[] => mostRecent(categories[i]?.statistics ?? []).stats ?? [];
     const season = (i: number): string => mostRecent(categories[i]?.statistics ?? []).season?.displayName ?? '';
 

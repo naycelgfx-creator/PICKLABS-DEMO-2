@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     getAllUsers, DBUser,
     adminUpgrade, adminDowngrade, adminDelete, adminToggleActive,
-    applyVIPCode, VALID_UPGRADE_CODES,
+    applyVIPCode, generateVIPCode,
     isAdminEmail, signup,
+    TierKey, DurationKey,
+    getAllPendingPayments, approvePendingPayment, rejectPendingPayment, PendingPayment,
 } from '../../data/PickLabsAuthDB';
 
 // ─── AdminPanel ───────────────────────────────────────────────────────────────
@@ -20,11 +22,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserEmail, onClos
     const [isUnlocked, setIsUnlocked] = useState(isAdminEmail(currentUserEmail));
     const [error, setError] = useState('');
     const [toast, setToast] = useState<string | null>(null);
+    // VIP Code Generator state
+    const [genTier, setGenTier] = useState<TierKey>('pro');
+    const [genDuration, setGenDuration] = useState<DurationKey>('month');
+    const [lastCode, setLastCode] = useState<string | null>(null);
+    // Payment queue
+    const [payments, setPayments] = useState<PendingPayment[]>([]);
+    const [showAll, setShowAll] = useState(false);
 
     // Port of: ADMIN_PASSWORD = "picklabs_master_2026"
     const ADMIN_PASSWORD = 'picklabs_master_2026';
 
-    const refresh = useCallback(() => setUsers(getAllUsers()), []);
+    const refresh = useCallback(() => {
+        setUsers(getAllUsers());
+        setPayments(getAllPendingPayments());
+    }, []);
     useEffect(() => { if (isUnlocked) refresh(); }, [isUnlocked, refresh]);
 
     const showToast = (msg: string) => {
@@ -168,26 +180,172 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserEmail, onClos
                     </div>
                 </div>
 
-                {/* VIP Code panel */}
-                <div className="bg-[#121212] border border-border rounded-2xl p-5">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-3">
-                        Active VIP Codes — Give out when people CashApp you
+                {/* VIP Code Generator */}
+                <div className="bg-[#121212] border border-amber-500/20 rounded-2xl p-5 space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[14px]">confirmation_number</span>
+                        VIP Code Generator
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                        {VALID_UPGRADE_CODES.map(code => (
-                            <span
-                                key={code}
-                                className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-[10px] font-black text-amber-300 tracking-wide font-mono"
-                            >
-                                {code}
-                            </span>
-                        ))}
+                    <div className="flex flex-wrap gap-3 items-end">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[9px] text-text-muted uppercase tracking-widest">Tier</label>
+                            <div className="flex gap-1">
+                                {(['basic', 'premium', 'pro'] as TierKey[]).map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setGenTier(t)}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${genTier === t
+                                            ? t === 'pro' ? 'bg-primary/20 border-primary/60 text-primary'
+                                                : t === 'premium' ? 'bg-purple-500/20 border-purple-500/60 text-purple-400'
+                                                    : 'bg-white/20 border-white/40 text-white'
+                                            : 'border-border-muted text-text-muted hover:border-white/20'}`}
+                                    >
+                                        {t === 'pro' ? '⚡ Pro' : t === 'premium' ? '💎 Premium' : '🔹 Basic'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[9px] text-text-muted uppercase tracking-widest">Duration</label>
+                            <div className="flex gap-1">
+                                {(['month', 'year'] as DurationKey[]).map(d => (
+                                    <button
+                                        key={d}
+                                        onClick={() => setGenDuration(d)}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${genDuration === d ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'border-border-muted text-text-muted hover:border-amber-500/30'}`}
+                                    >
+                                        {d === 'month' ? '1 Month' : '1 Year'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => {
+                                const code = generateVIPCode('admin', genTier, genDuration);
+                                setLastCode(code);
+                                showToast(`✅ Code generated: ${code}`);
+                            }}
+                            className="px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black uppercase tracking-widest hover:bg-amber-500/30 transition-all"
+                        >
+                            Generate Code
+                        </button>
                     </div>
-                    <p className="text-[9px] text-text-muted mt-2">
-                        To add codes: edit <code className="text-amber-400">VALID_UPGRADE_CODES</code> in{' '}
-                        <code className="text-white/50">src/data/PickLabsAuthDB.ts</code>
+                    {lastCode && (
+                        <div className="flex items-center gap-3 bg-black/50 rounded-xl border border-amber-500/20 p-3">
+                            <span className="font-mono text-amber-300 text-sm font-black tracking-[2px] flex-1">{lastCode}</span>
+                            <button
+                                onClick={() => { navigator.clipboard.writeText(lastCode); showToast('📋 Code copied!'); }}
+                                className="text-text-muted hover:text-amber-400 transition-colors"
+                                title="Copy"
+                            >
+                                <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                            </button>
+                        </div>
+                    )}
+                    <p className="text-[9px] text-text-muted">
+                        Codes are stored in localStorage under <code className="text-amber-400">picklabs_vip_codes</code>. Send the generated code to the user after they CashApp you.
                     </p>
                 </div>
+
+                {/* Payment Queue */}
+                {(() => {
+                    const pendingPayments = showAll ? payments : payments.filter(p => p.status === 'pending');
+                    const pendingCount = payments.filter(p => p.status === 'pending').length;
+                    return (
+                        <div className="bg-[#121212] border border-emerald-500/20 rounded-2xl p-5 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[14px]">payments</span>
+                                    CashApp Payment Queue
+                                    {pendingCount > 0 && (
+                                        <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[9px] font-black px-2 py-0.5 rounded-full">
+                                            {pendingCount} PENDING
+                                        </span>
+                                    )}
+                                </p>
+                                <button
+                                    onClick={() => setShowAll(p => !p)}
+                                    className="text-[9px] text-text-muted hover:text-white transition-colors uppercase tracking-widest"
+                                >
+                                    {showAll ? 'Show Pending Only' : 'Show All'}
+                                </button>
+                            </div>
+
+                            {pendingPayments.length === 0 ? (
+                                <p className="text-[11px] text-text-muted text-center py-4">
+                                    {showAll ? 'No payment records yet.' : '✅ No pending payments.'}
+                                </p>
+                            ) : (
+                                <div className="overflow-x-auto rounded-xl border border-border mt-3">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="border-b border-border bg-[#1e1e1e]">
+                                                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-text-muted">Date Submitted</th>
+                                                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-text-muted">User ID</th>
+                                                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-text-muted">Requested Tier</th>
+                                                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-text-muted">Cash App $Cashtag</th>
+                                                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-text-muted text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {pendingPayments.map(pmt => (
+                                                <tr key={pmt.id} className={`border-b border-border/50 transition-all ${pmt.status === 'approved' ? 'bg-emerald-500/5' : pmt.status === 'rejected' ? 'bg-red-500/5 opacity-60' : 'bg-neutral-900 hover:bg-white/[0.02]'}`}>
+                                                    <td className="px-4 py-3 text-[10px] text-text-muted whitespace-nowrap">
+                                                        {new Date(pmt.submittedAt).toLocaleDateString()} {new Date(pmt.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-[11px] font-bold text-white">
+                                                        {pmt.userEmail}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${pmt.tier === 'pro' ? 'bg-primary/10 text-primary border border-primary/20' : pmt.tier === 'premium_plus' ? 'bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20' : pmt.tier === 'premium' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-white/10 text-white/80 border border-white/20'}`}>
+                                                            {pmt.tier === 'pro' ? '⚡ Pro' : pmt.tier === 'premium_plus' ? '⭐ Premium+' : pmt.tier === 'premium' ? '💎 Premium' : '🔹 Basic'}
+                                                            <span className="opacity-50 ml-1 text-[8px]">({pmt.duration})</span>
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-[12px] font-mono font-black text-primary">
+                                                        {pmt.cashappCashtag}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            {pmt.status === 'pending' ? (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const res = approvePendingPayment(pmt.id, 'admin');
+                                                                            showToast(res.message);
+                                                                            refresh();
+                                                                        }}
+                                                                        className="px-4 py-2 rounded-lg bg-emerald-500 border border-emerald-400 text-black text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                                                                    >
+                                                                        Approve
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const res = rejectPendingPayment(pmt.id);
+                                                                            showToast(res.message);
+                                                                            refresh();
+                                                                        }}
+                                                                        className="px-4 py-2 rounded-lg bg-red-600 border border-red-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-[0_0_15px_rgba(220,38,38,0.3)]"
+                                                                    >
+                                                                        Reject
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <span className={`text-[10px] font-black uppercase tracking-widest ${pmt.status === 'approved' ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                                    {pmt.status}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 {/* Users table — port of Flask HTML <table> */}
                 <div className="bg-[#121212] border border-border rounded-2xl overflow-hidden">
@@ -280,7 +438,9 @@ export const VIPUpgradeModal: React.FC<VIPUpgradeModalProps> = ({ currentEmail, 
         setLoading(true);
 
         // Fire Google Analytics Event for Paywall Conversion Attempt
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (typeof window !== 'undefined' && (window as any).gtag) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (window as any).gtag('event', 'clicked_upgrade_paywall', {
                 'event_category': 'monetization',
                 'event_label': 'Dashboard Paywall Button',

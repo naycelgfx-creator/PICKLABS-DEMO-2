@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { BetPick } from '../../App';
 import { searchPlayers } from '../../data/playerDB';

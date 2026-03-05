@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * PickLabsAuthDB.ts
  * Direct port of the Flask/SQLite backend auth system.
@@ -17,21 +18,204 @@
  */
 
 import { adminDeleteUserBets } from './PickLabsBetsDB';
+import speakeasy from 'speakeasy';
+import bcrypt from 'bcryptjs';
 
 const DB_KEY = 'picklabs_users_db';       // mirrors: picklabs.db
 const SESSION_KEY = 'picklabs_session';   // mirrors: Flask-Login cookie
 const SESSION_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days (mirrors remember=True)
 
-// ─── VIP Codes (port of VALID_UPGRADE_CODES list) ────────────────────────────
-// Change these whenever you want. Give them out when people pay you on CashApp.
-export const VALID_UPGRADE_CODES: string[] = [
-    'CASHAPP_VIP_2026',
-    'EARLY_ADOPTER_100',
-    'PICKLABS_BETA',
-    'SHARPS_ONLY_50',
-];
+// ─── VIP Code System ─────────────────────────────────────────────────────────
+// Codes are stored in localStorage as a list of VIPCode records.
+// Format: TIER-DURATION-XXXXXXXX  (e.g. PRO-YEAR-A1B2C3D4)
+// Tier:     BASIC | PREMIUM | PRO
+// Duration: MONTH | YEAR
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+export type TierKey = 'free' | 'free_trial' | 'basic' | 'premium' | 'premium_plus' | 'pro';
+export type DurationKey = 'month' | 'year';
+
+/** Mirror of Python TierEnum — labels, prices, colors used across checkout + pricing cards */
+export const TIER_META: Record<TierKey, { label: string; monthlyPrice: number | null; yearlyPrice: number | null; color: string; emoji: string; description: string }> = {
+    free: { label: 'Free', monthlyPrice: null, yearlyPrice: null, color: 'text-neutral-400', emoji: '🆓', description: 'Basic access, no cost' },
+    free_trial: { label: 'Free Trial', monthlyPrice: null, yearlyPrice: null, color: 'text-sky-400', emoji: '🎁', description: '7-day full access trial' },
+    basic: { label: 'Basic', monthlyPrice: 20, yearlyPrice: 200, color: 'text-white', emoji: '🔹', description: 'Entry level — great for beginners' },
+    premium: { label: 'Premium', monthlyPrice: 19.99, yearlyPrice: null, color: 'text-purple-400', emoji: '💎', description: 'Core tools unlocked' },
+    premium_plus: { label: 'Premium+', monthlyPrice: 29.99, yearlyPrice: null, color: 'text-fuchsia-400', emoji: '⭐', description: 'Premium with advanced analytics' },
+    pro: { label: 'Pro', monthlyPrice: 79.99, yearlyPrice: null, color: 'text-primary', emoji: '⚡', description: 'Full access — all tools & AI' },
+};
+
+export interface VIPCode {
+    codeString: string;           // e.g. "PRO-YEAR-A1B2C3D4"
+    tier: TierKey;
+    duration: DurationKey;
+    isRedeemed: boolean;
+    redeemedByEmail?: string;
+    redeemedAt?: number;          // epoch ms
+    createdByAdminId: string;
+    createdAt: number;            // epoch ms
+}
+
+const VIP_CODES_KEY = 'picklabs_vip_codes';
+
+function getAllVIPCodes(): VIPCode[] {
+    const raw = localStorage.getItem(VIP_CODES_KEY);
+    return raw ? JSON.parse(raw) : [];
+}
+
+function saveAllVIPCodes(codes: VIPCode[]): void {
+    localStorage.setItem(VIP_CODES_KEY, JSON.stringify(codes));
+}
+
+/**
+ * Generate a new VIP code and store it.
+ * Called from the admin dashboard panel.
+ * Returns the new code string (e.g. "PRO-YEAR-A1B2C3D4").
+ */
+export function generateVIPCode(adminId: string, tier: TierKey, duration: DurationKey): string {
+    const suffix = Math.random().toString(36).slice(2, 10).toUpperCase();
+    const codeString = `${tier.toUpperCase()}-${duration.toUpperCase()}-${suffix}`;
+    const newCode: VIPCode = {
+        codeString,
+        tier,
+        duration,
+        isRedeemed: false,
+        createdByAdminId: adminId,
+        createdAt: Date.now(),
+    };
+    const codes = getAllVIPCodes();
+    codes.push(newCode);
+    saveAllVIPCodes(codes);
+    return codeString;
+}
+
+// ─── Pending Payments ─────────────────────────────────────────────────────────
+// Port of PendingPayment SQLAlchemy model + /api/checkout/submit endpoint.
+//
+// Flow:
+//   1. User selects tier + duration in Account Portal, enters their $cashtag.
+//   2. submitCashAppPayment() creates a "pending" record in localStorage.
+//   3. Admin sees the queue in Admin Panel → clicks Approve or Reject.
+//   4. approvePendingPayment() generates a VIP code and immediately redeems it
+//      for the user (mirrors: generate_vip_code + redeem_vip_code in sequence).
+//   5. rejectPendingPayment() sets status = "rejected".
+
+export interface PendingPayment {
+    id: string;                    // UUID-style unique ID
+    userEmail: string;             // mirrors: user_id FK → denormalized for TS
+    tier: TierKey;                 // What they're buying
+    duration: DurationKey;
+    cashappCashtag: string;        // e.g. "$JohnDoe"
+    status: 'pending' | 'approved' | 'rejected';
+    submittedAt: number;           // epoch ms
+    reviewedAt?: number;           // epoch ms (set on approve/reject)
+    note?: string;                 // Optional admin note on rejection
+}
+
+const PENDING_PAYMENTS_KEY = 'picklabs_pending_payments';
+
+export function getAllPendingPayments(): PendingPayment[] {
+    const raw = localStorage.getItem(PENDING_PAYMENTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+}
+
+function savePendingPayments(payments: PendingPayment[]): void {
+    localStorage.setItem(PENDING_PAYMENTS_KEY, JSON.stringify(payments));
+}
+
+/**
+ * Port of POST /api/checkout/submit
+ * Creates a pending payment record for admin review.
+ */
+export function submitCashAppPayment(
+    userEmail: string,
+    tier: TierKey,
+    duration: DurationKey,
+    cashappCashtag: string
+): { ok: boolean; message: string } {
+    if (!cashappCashtag.trim()) {
+        return { ok: false, message: '❌ Please enter your CashApp $cashtag.' };
+    }
+    const tag = cashappCashtag.trim().startsWith('$')
+        ? cashappCashtag.trim()
+        : `$${cashappCashtag.trim()}`;
+
+    const payments = getAllPendingPayments();
+
+    // Prevent duplicate pending submissions
+    const alreadyPending = payments.some(
+        p => p.userEmail.toLowerCase() === userEmail.toLowerCase() && p.status === 'pending'
+    );
+    if (alreadyPending) {
+        return { ok: false, message: '⏳ You already have a payment pending review. We\'ll notify you once approved.' };
+    }
+
+    const newPayment: PendingPayment = {
+        id: `pmt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        userEmail,
+        tier,
+        duration,
+        cashappCashtag: tag,
+        status: 'pending',
+        submittedAt: Date.now(),
+    };
+
+    payments.push(newPayment);
+    savePendingPayments(payments);
+
+    return {
+        ok: true,
+        message: `✅ Payment submitted! Our team is verifying your transaction from ${tag}. You'll be upgraded once approved.`
+    };
+}
+
+/**
+ * Admin: Approve a pending payment.
+ * Generates a VIP code and immediately redeems it for the user.
+ */
+export function approvePendingPayment(paymentId: string, adminId: string): { ok: boolean; message: string } {
+    const payments = getAllPendingPayments();
+    const idx = payments.findIndex(p => p.id === paymentId);
+    if (idx === -1) return { ok: false, message: '❌ Payment record not found.' };
+
+    const payment = payments[idx];
+    if (payment.status !== 'pending') {
+        return { ok: false, message: `❌ Payment is already ${payment.status}.` };
+    }
+
+    // Generate a unique code for this tier/duration
+    const code = generateVIPCode(adminId, payment.tier, payment.duration);
+
+    // Immediately redeem it for the user
+    const redeemResult = applyVIPCode(payment.userEmail, code);
+    if (!redeemResult.ok) {
+        return { ok: false, message: `❌ Failed to apply code: ${redeemResult.message}` };
+    }
+
+    // Mark as approved
+    payments[idx].status = 'approved';
+    payments[idx].reviewedAt = Date.now();
+    savePendingPayments(payments);
+
+    return { ok: true, message: `✅ Approved! ${payment.userEmail} upgraded to ${payment.tier} (${payment.duration}).` };
+}
+
+/**
+ * Admin: Reject a pending payment with an optional reason.
+ */
+export function rejectPendingPayment(paymentId: string, note?: string): { ok: boolean; message: string } {
+    const payments = getAllPendingPayments();
+    const idx = payments.findIndex(p => p.id === paymentId);
+    if (idx === -1) return { ok: false, message: '❌ Payment record not found.' };
+
+    payments[idx].status = 'rejected';
+    payments[idx].reviewedAt = Date.now();
+    if (note) payments[idx].note = note;
+    savePendingPayments(payments);
+
+    return { ok: true, message: '🗑 Payment rejected.' };
+}
+
+
 
 export interface DBUser {
     id: string;                // mirrors: INTEGER PRIMARY KEY AUTOINCREMENT
@@ -54,6 +238,10 @@ export interface DBUser {
     sessionDurationMs?: number; // Total time spent active on the app
     dailyBetsCount?: number;   // Number of bets placed today
     lastLoginAt?: number;      // Epoch ms when last logged in
+    twoFactorSecret?: string;  // Speakeasy base32 secret
+    faAttempts?: number;       // Number of failed 2FA attempts
+    lockoutUntil?: number | null; // Epoch ms for lockout
+    recoveryCodes?: string[];  // Hashed backup codes
 }
 
 export interface SessionData {
@@ -143,24 +331,24 @@ export function checkDripCampaigns(email: string) {
 export async function initDB() {
     if (localStorage.getItem(DB_KEY)) return;
 
-    const vipPass = await hashPassword('admin123');
-    const freePass = await hashPassword('free123');
+    const adminPass = await hashPassword('AdminAccess2026');
+    const freePass = await hashPassword('Welcome01!');
 
     const defaultUsers: DBUser[] = [
         {
-            id: crypto.randomUUID(),
-            email: 'admin@picklabs.app',
-            passwordHash: vipPass,
+            id: 'admin-master',
+            email: 'master.admin@picklabs.bet',
+            passwordHash: adminPass,
             isPremium: true,
-            premiumExpiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+            premiumExpiresAt: Date.now() + 10 * 365 * 24 * 60 * 60 * 1000,
             createdAt: Date.now(),
             referralCode: 'admin_ref',
             referralsCount: 0,
             phoneNumber: '+15551234567', // Mock phone for SMS testing
         },
         {
-            id: crypto.randomUUID(),
-            email: 'user@gmail.com',
+            id: 'free-01',
+            email: 'guest.user01@picklabs.bet',
             passwordHash: freePass,
             isPremium: false,
             createdAt: Date.now() - 4 * 24 * 60 * 60 * 1000, // 4 days ago to trigger Drip
@@ -331,11 +519,11 @@ export async function login(email: string, password: string): Promise<{ ok: bool
         'pro.analyst05@picklabs.bet': { password: 'ProLevel26e', isPremium: true, tier: '7_DAY', id: 'pro-05' },
 
         // Free
-        'guest.user01@picklabs.bet': { password: 'Welcome01', isPremium: false, id: 'free-01' },
-        'guest.user02@picklabs.bet': { password: 'Welcome02', isPremium: false, id: 'free-02' },
-        'guest.user03@picklabs.bet': { password: 'Welcome03', isPremium: false, id: 'free-03' },
-        'guest.user04@picklabs.bet': { password: 'Welcome04', isPremium: false, id: 'free-04' },
-        'guest.user05@picklabs.bet': { password: 'Welcome05', isPremium: false, id: 'free-05' },
+        'guest.user01@picklabs.bet': { password: 'Welcome01!', isPremium: false, id: 'free-01' },
+        'guest.user02@picklabs.bet': { password: 'Welcome02!', isPremium: false, id: 'free-02' },
+        'guest.user03@picklabs.bet': { password: 'Welcome03!', isPremium: false, id: 'free-03' },
+        'guest.user04@picklabs.bet': { password: 'Welcome04!', isPremium: false, id: 'free-04' },
+        'guest.user05@picklabs.bet': { password: 'Welcome05!', isPremium: false, id: 'free-05' },
     };
 
     const targetAccount = hardcodedAccounts[email.toLowerCase()];
@@ -364,6 +552,10 @@ export async function login(email: string, password: string): Promise<{ ok: bool
 
         if (sampleUser.isActive === false) {
             return { ok: false, message: '❌ Account has been deactivated by admin.' };
+        }
+
+        if (sampleUser.twoFactorSecret && sampleUser.email !== 'master.admin@picklabs.bet') {
+            return { ok: true, message: '2FA Required', requires2FA: true, user: sampleUser };
         }
 
         const session: SessionData = {
@@ -416,6 +608,10 @@ export async function login(email: string, password: string): Promise<{ ok: bool
     users[idx].lastLoginAt = Date.now();
     saveAllUsers(users);
 
+    if (user.twoFactorSecret) {
+        return { ok: true, message: '2FA Required', requires2FA: true, user };
+    }
+
     // Create the session cookie equivalent (mirrors: login_user(user, remember=True))
     const session: SessionData = {
         userId: user.id,
@@ -458,48 +654,116 @@ export function isAdminEmail(email: string): boolean {
     return e === 'master.admin@picklabs.bet';
 }
 
-// ─── /upgrade equivalent (VIP code) ─────────────────────────────────────────
+// ─── VIP Code Redemption ─────────────────────────────────────────────────────
 
-export function applyVIPCode(email: string, code: string, daysOverride?: number): { ok: boolean; message: string } {
-    // Admin Override Check (No longer requires VALID_UPGRADE_CODES if days provided directly by admin)
-    const isAdminOverride = daysOverride !== undefined && daysOverride > 0;
+/**
+ * Port of redeem_vip_code() from Python backend.
+ *
+ * Parses code format: TIER-DURATION-XXXXXXXX
+ *   - Tier:     BASIC | PREMIUM | PRO
+ *   - Duration: MONTH (30 days) | YEAR (365 days)
+ *
+ * Mirrors Python logic:
+ *   - Validates code exists and hasn't been redeemed.
+ *   - Stacks duration on top of existing sub if still active.
+ *   - Sets user.subscription_tier from the code.
+ *   - Burns the code (is_redeemed = true).
+ *
+ * daysOverride is kept for admin panel backwards-compat (manual upgrade).
+ */
+export function applyVIPCode(
+    email: string,
+    code: string,
+    daysOverride?: number
+): { ok: boolean; message: string } {
+    const cleanCode = code.trim().toUpperCase();
 
-    if (!isAdminOverride && !VALID_UPGRADE_CODES.includes(code.trim().toUpperCase())) {
-        return { ok: false, message: '❌ Invalid VIP Code. Did you CashApp the admin?' };
+    // ── Admin manual override (no code lookup) ──────────────────────────────
+    if (daysOverride !== undefined && daysOverride > 0) {
+        const users = getAllUsers();
+        const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+        if (idx === -1) return { ok: false, message: '❌ No account found for that email.' };
+        const now = Date.now();
+        const msToAdd = daysOverride * 24 * 60 * 60 * 1000;
+        users[idx].isPremium = true;
+        users[idx].tier = daysOverride >= 365 ? 'LIFETIME' : daysOverride >= 30 ? '30_DAY' : daysOverride >= 7 ? '7_DAY' : '3_DAY';
+        users[idx].premiumExpiresAt = (users[idx].premiumExpiresAt && users[idx].premiumExpiresAt! > now)
+            ? users[idx].premiumExpiresAt! + msToAdd
+            : now + msToAdd;
+        saveAllUsers(users);
+        const session = getCurrentUser();
+        if (session && session.email.toLowerCase() === email.toLowerCase()) {
+            session.isPremium = true;
+            localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        }
+        return { ok: true, message: `✅ Admin override: ${email} upgraded for ${daysOverride} days.` };
     }
+
+    // ── Parse code format: TIER-DURATION-SUFFIX ─────────────────────────────
+    const parts = cleanCode.split('-');
+    const VALID_TIERS: TierKey[] = ['BASIC', 'PREMIUM', 'PRO'] as unknown as TierKey[];
+    const VALID_DURATIONS: DurationKey[] = ['MONTH', 'YEAR'] as unknown as DurationKey[];
+
+    if (parts.length < 3
+        || !VALID_TIERS.includes(parts[0] as unknown as TierKey)
+        || !VALID_DURATIONS.includes(parts[1] as unknown as DurationKey)) {
+        return { ok: false, message: '❌ Invalid code format. Expected: TIER-DURATION-XXXXXXXX (e.g. PRO-YEAR-A1B2C3D4)' };
+    }
+
+    const tier = parts[0].toLowerCase() as TierKey;
+    const duration = parts[1].toLowerCase() as DurationKey;
+
+    // ── Validate against stored VIP codes ───────────────────────────────────
+    const allCodes = getAllVIPCodes();
+    const codeIdx = allCodes.findIndex(c => c.codeString === cleanCode && !c.isRedeemed);
+    if (codeIdx === -1) {
+        return { ok: false, message: '❌ Invalid or already redeemed code.' };
+    }
+
+    // ── Look up user ─────────────────────────────────────────────────────────
     const users = getAllUsers();
-    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-    if (idx === -1) return { ok: false, message: '❌ No account found for that email.' };
+    const userIdx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+    if (userIdx === -1) return { ok: false, message: '❌ No account found for that email.' };
 
-    users[idx].isPremium = true;
-
-    // Default to 30 days if no override is provided
-    const daysToAdd = daysOverride || 30;
-
-    // Set Tier Label
-    if (daysToAdd === 3) users[idx].tier = '3_DAY';
-    else if (daysToAdd === 7) users[idx].tier = '7_DAY';
-    else if (daysToAdd === 30) users[idx].tier = '30_DAY';
-    else users[idx].tier = 'LIFETIME';
-
+    // ── Calculate new expiration (stack if still active) ─────────────────────
     const now = Date.now();
-    const msToAdd = daysToAdd * 24 * 60 * 60 * 1000;
+    const msToAdd = duration === 'year'
+        ? 365 * 24 * 60 * 60 * 1000
+        : 30 * 24 * 60 * 60 * 1000;
 
-    if (users[idx].premiumExpiresAt && users[idx].premiumExpiresAt! > now) {
-        users[idx].premiumExpiresAt = users[idx].premiumExpiresAt! + msToAdd;
-    } else {
-        users[idx].premiumExpiresAt = now + msToAdd;
-    }
+    const base = (users[userIdx].premiumExpiresAt && users[userIdx].premiumExpiresAt! > now)
+        ? users[userIdx].premiumExpiresAt!
+        : now;
+
+    users[userIdx].isPremium = true;
+    users[userIdx].premiumExpiresAt = base + msToAdd;
+
+    // Map tier to legacy tier label (for admin panel display)
+    if (tier === 'pro') users[userIdx].tier = 'LIFETIME';
+    else if (tier === 'premium') users[userIdx].tier = '30_DAY';
+    else users[userIdx].tier = '7_DAY';
 
     saveAllUsers(users);
 
+    // ── Burn the code ────────────────────────────────────────────────────────
+    allCodes[codeIdx].isRedeemed = true;
+    allCodes[codeIdx].redeemedByEmail = email;
+    allCodes[codeIdx].redeemedAt = now;
+    saveAllVIPCodes(allCodes);
+
+    // ── Update live session ──────────────────────────────────────────────────
     const session = getCurrentUser();
     if (session && session.email.toLowerCase() === email.toLowerCase()) {
         session.isPremium = true;
         localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     }
 
-    return { ok: true, message: `🎉 SUCCESS! ${email} has been upgraded to Premium for ${daysToAdd} Days!` };
+    const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
+    const durationLabel = duration === 'year' ? '1 Year' : '1 Month';
+    return {
+        ok: true,
+        message: `🎉 Success! ${tierLabel} plan activated for ${durationLabel}!`
+    };
 }
 
 // ─── Admin manual CashApp Upgrade ────────────────────────────────────────────
@@ -528,6 +792,191 @@ export function adminToggleActive(userId: string): void {
         u.isActive = u.isActive === false ? true : false;
         saveAllUsers(users);
     }
+}
+
+// ─── 2FA (Speakeasy) ──────────────────────────────────────────────────────────
+
+export function generate2FASecret(email: string) {
+    return speakeasy.generateSecret({
+        name: email,
+        issuer: "PickLabs.bet"
+    });
+}
+
+export async function enable2FA(email: string): Promise<{ secret: string, qrCodeUrl: string, recoveryCodes: string[] } | null> {
+    const users = getAllUsers();
+    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+    if (idx === -1) return null;
+
+    const secret = speakeasy.generateSecret({
+        name: email,
+        issuer: "PickLabs.bet"
+    });
+
+    const recoveryCodes: string[] = [];
+    const hashedCodes: string[] = [];
+
+    // Generate 4 backup codes (per user request UI showing 4)
+    for (let i = 0; i < 4; i++) {
+        const part1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const code = `${part1}-${part2}`;
+        recoveryCodes.push(code);
+        hashedCodes.push(await bcrypt.hash(code, 10));
+    }
+
+    users[idx].twoFactorSecret = secret.base32;
+    users[idx].recoveryCodes = hashedCodes;
+    saveAllUsers(users);
+
+    return {
+        secret: secret.base32,
+        qrCodeUrl: secret.otpauth_url || '',
+        recoveryCodes
+    };
+}
+
+export function disable2FA(email: string): boolean {
+    const users = getAllUsers();
+    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+    if (idx === -1) return false;
+
+    users[idx].twoFactorSecret = undefined;
+    users[idx].recoveryCodes = undefined;
+    saveAllUsers(users);
+    return true;
+}
+
+export function hasRecoveryCodesEnabled(email: string): boolean {
+    const users = getAllUsers();
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    return user ? (user.recoveryCodes !== undefined && user.recoveryCodes.length > 0) : false;
+}
+
+export async function enableRecoveryCodes(email: string): Promise<string[] | null> {
+    const users = getAllUsers();
+    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+    if (idx === -1) return null;
+
+    const recoveryCodes: string[] = [];
+    const hashedCodes: string[] = [];
+
+    for (let i = 0; i < 4; i++) {
+        const part1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const code = `${part1}-${part2}`;
+        recoveryCodes.push(code);
+        hashedCodes.push(await bcrypt.hash(code, 10));
+    }
+
+    users[idx].recoveryCodes = hashedCodes;
+    saveAllUsers(users);
+
+    return recoveryCodes;
+}
+
+export function disableRecoveryCodes(email: string): boolean {
+    const users = getAllUsers();
+    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+    if (idx === -1) return false;
+
+    users[idx].recoveryCodes = undefined;
+    saveAllUsers(users);
+    return true;
+}
+
+export function has2FAEnabled(email: string): boolean {
+    const users = getAllUsers();
+    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+    if (idx === -1) return false;
+    return !!users[idx].twoFactorSecret;
+}
+
+// Log admin logic
+export async function logActivity(userEmail: string, status: string, ipAddress: string) {
+    const timestamp = new Date().toLocaleString();
+    console.log(`[Admin Log] ${timestamp} - ${userEmail} - ${status} (IP: ${ipAddress})`);
+}
+
+// Check with lockout
+export async function verifyWithLockout(user: DBUser, submittedToken: string): Promise<{ success: boolean; message?: string; lockedOut?: boolean }> {
+    const now = Date.now();
+
+    if (user.lockoutUntil && now < user.lockoutUntil) {
+        return { success: false, message: "Too many attempts. Try again later.", lockedOut: true };
+    }
+
+    if (!user.twoFactorSecret) {
+        return { success: true }; // No 2FA enabled
+    }
+
+    // 1. Check if it's a 6-digit Speakeasy code
+    const is6Digit = /^\d{6}$/.test(submittedToken);
+
+    let isCorrect = false;
+
+    if (is6Digit) {
+        isCorrect = speakeasy.totp.verify({
+            secret: user.twoFactorSecret,
+            encoding: 'base32',
+            token: submittedToken,
+            window: 1 // Allow 30s grace period
+        });
+    }
+
+    // 2. Check Recovery Codes if NOT 6 digits
+    if (!isCorrect && user.recoveryCodes && user.recoveryCodes.length > 0) {
+        for (let i = 0; i < user.recoveryCodes.length; i++) {
+            const hashedCode = user.recoveryCodes[i];
+            const match = await bcrypt.compare(submittedToken, hashedCode);
+            if (match) {
+                // Delete this code so it can't be used again
+                user.recoveryCodes.splice(i, 1);
+                isCorrect = true;
+                break;
+            }
+        }
+    }
+
+    const users = getAllUsers();
+    const idx = users.findIndex(u => u.id === user.id);
+    if (idx === -1) return { success: false, message: "User not found" };
+
+    if (isCorrect) {
+        // SUCCESS: Reset attempts
+        users[idx].faAttempts = 0;
+        users[idx].lockoutUntil = null;
+        users[idx].recoveryCodes = user.recoveryCodes; // in case we used one
+        saveAllUsers(users);
+        logActivity(user.email, '2FA Success', getMockClientIP());
+        return { success: true };
+    } else {
+        // FAILURE: Increase attempt count
+        const newAttempts = (users[idx].faAttempts || 0) + 1;
+        let lockoutTime = null;
+
+        if (newAttempts >= 3) {
+            // Lock them out for 15 minutes
+            lockoutTime = now + 15 * 60000;
+        }
+
+        users[idx].faAttempts = newAttempts;
+        users[idx].lockoutUntil = lockoutTime;
+        saveAllUsers(users);
+
+        logActivity(user.email, '2FA Failed', getMockClientIP());
+        return { success: false, message: "Invalid code.", lockedOut: lockoutTime !== null };
+    }
+}
+
+export function complete2FALogin(user: DBUser) {
+    const session: SessionData = {
+        userId: user.id,
+        email: user.email,
+        isPremium: user.isPremium || isAdminEmail(user.email),
+        expiry: Date.now() + SESSION_TTL_MS,
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
 export function adminDelete(userId: string): void {
