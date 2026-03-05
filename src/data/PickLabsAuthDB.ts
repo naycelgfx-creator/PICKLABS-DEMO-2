@@ -304,57 +304,43 @@ export async function resetPassword(email: string, newPassword: string): Promise
 }
 
 export async function login(email: string, password: string): Promise<{ ok: boolean; message: string; requires2FA?: boolean; user?: DBUser }> {
-    // --- Hardcoded Admin Bypass ---
-    if (email.toLowerCase() === 'admin@picklabs.bet' && password === 'admin12345') {
-        const adminUser: DBUser = {
-            id: 'root-admin',
-            email: 'admin@picklabs.bet',
-            passwordHash: 'bypassed',
-            isPremium: true,
-            createdAt: Date.now(),
-            referralCode: 'admin_root',
-            referralsCount: 0
-        };
+    // --- Hardcoded Accounts Bypass ---
+    const hardcodedAccounts: Record<string, { password: string, isPremium: boolean, tier?: string, id: string }> = {
+        // Admin
+        'master.admin@picklabs.bet': { password: 'AdminAccess2026', isPremium: true, tier: 'LIFETIME', id: 'admin-master' },
 
-        const currentUsers = getAllUsers();
-        let existingAdmin = currentUsers.find(u => u.email.toLowerCase() === adminUser.email);
-        if (!existingAdmin) {
-            currentUsers.push(adminUser);
-            saveAllUsers(currentUsers);
-            existingAdmin = adminUser;
-        } else {
-            // Update login time
-            existingAdmin.lastLoginAt = Date.now();
-            saveAllUsers(currentUsers);
-        }
+        // Premium Plus
+        'plus.member01@picklabs.bet': { password: 'PlusPass01!', isPremium: true, tier: 'LIFETIME', id: 'plus-01' },
+        'plus.member02@picklabs.bet': { password: 'PlusPass02!', isPremium: true, tier: 'LIFETIME', id: 'plus-02' },
+        'plus.member03@picklabs.bet': { password: 'PlusPass03!', isPremium: true, tier: 'LIFETIME', id: 'plus-03' },
+        'plus.member04@picklabs.bet': { password: 'PlusPass04!', isPremium: true, tier: 'LIFETIME', id: 'plus-04' },
+        'plus.member05@picklabs.bet': { password: 'PlusPass05!', isPremium: true, tier: 'LIFETIME', id: 'plus-05' },
 
-        const session: SessionData = {
-            userId: adminUser.id,
-            email: adminUser.email,
-            isPremium: adminUser.isPremium,
-            expiry: Date.now() + SESSION_TTL_MS,
-        };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        // Premium
+        'premium.user01@picklabs.bet': { password: 'GoldTier01', isPremium: true, tier: '30_DAY', id: 'premium-01' },
+        'premium.user02@picklabs.bet': { password: 'GoldTier02', isPremium: true, tier: '30_DAY', id: 'premium-02' },
+        'premium.user03@picklabs.bet': { password: 'GoldTier03', isPremium: true, tier: '30_DAY', id: 'premium-03' },
+        'premium.user04@picklabs.bet': { password: 'GoldTier04', isPremium: true, tier: '30_DAY', id: 'premium-04' },
+        'premium.user05@picklabs.bet': { password: 'GoldTier05', isPremium: true, tier: '30_DAY', id: 'premium-05' },
 
-        return { ok: true, message: 'Admin Access Granted.', user: adminUser };
-    }
+        // Pro
+        'pro.analyst01@picklabs.bet': { password: 'ProLevel26a', isPremium: true, tier: '7_DAY', id: 'pro-01' },
+        'pro.analyst02@picklabs.bet': { password: 'ProLevel26b', isPremium: true, tier: '7_DAY', id: 'pro-02' },
+        'pro.analyst03@picklabs.bet': { password: 'ProLevel26c', isPremium: true, tier: '7_DAY', id: 'pro-03' },
+        'pro.analyst04@picklabs.bet': { password: 'ProLevel26d', isPremium: true, tier: '7_DAY', id: 'pro-04' },
+        'pro.analyst05@picklabs.bet': { password: 'ProLevel26e', isPremium: true, tier: '7_DAY', id: 'pro-05' },
 
-    // --- Sample Accounts Bypass ---
-    const sampleAccounts: Record<string, { isPremium: boolean, id: string }> = {
-        'sampleadmin@picklabs.bet': { isPremium: true, id: 'sample-admin' },
-        'samplepremium@picklabs.bet': { isPremium: true, id: 'sample-premium' },
-        'samplebasic@picklabs.bet': { isPremium: false, id: 'sample-basic' },
-        'samplenew@picklabs.bet': { isPremium: false, id: 'sample-new' },
-        // User Requested Test Accounts:
-        'premiumplus@picklabs.com': { isPremium: true, id: 'test-premiumplus' },
-        'pro@picklabs.com': { isPremium: true, id: 'test-pro' },
-        'free@picklabs.com': { isPremium: false, id: 'test-free' },
-        'admin@picklabs.com': { isPremium: true, id: 'test-admin' },
-        'admin@picklabs.app': { isPremium: true, id: 'test-admin-app' }
+        // Free
+        'guest.user01@picklabs.bet': { password: 'Welcome01', isPremium: false, id: 'free-01' },
+        'guest.user02@picklabs.bet': { password: 'Welcome02', isPremium: false, id: 'free-02' },
+        'guest.user03@picklabs.bet': { password: 'Welcome03', isPremium: false, id: 'free-03' },
+        'guest.user04@picklabs.bet': { password: 'Welcome04', isPremium: false, id: 'free-04' },
+        'guest.user05@picklabs.bet': { password: 'Welcome05', isPremium: false, id: 'free-05' },
     };
 
-    if (sampleAccounts[email.toLowerCase()] && (password === 'sample123' || password === 'test123')) {
-        const config = sampleAccounts[email.toLowerCase()];
+    const targetAccount = hardcodedAccounts[email.toLowerCase()];
+    if (targetAccount && password === targetAccount.password) {
+        const config = targetAccount;
 
         // Find existing sample user to check if deactivated
         const currentUsers = getAllUsers();
@@ -366,7 +352,8 @@ export async function login(email: string, password: string): Promise<{ ok: bool
                 email: email.toLowerCase(),
                 passwordHash: 'bypassed',
                 isPremium: config.isPremium,
-                createdAt: email.toLowerCase() === 'samplenew@picklabs.bet' ? Date.now() : Date.now() - 10 * 24 * 60 * 60 * 1000,
+                tier: config.tier as any,
+                createdAt: Date.now() - 10 * 24 * 60 * 60 * 1000,
                 referralCode: config.id + '_ref',
                 referralsCount: 0,
                 isActive: true
@@ -382,12 +369,12 @@ export async function login(email: string, password: string): Promise<{ ok: bool
         const session: SessionData = {
             userId: sampleUser.id,
             email: sampleUser.email,
-            isPremium: sampleUser.isPremium,
+            isPremium: sampleUser.isPremium || isAdminEmail(sampleUser.email),
             expiry: Date.now() + SESSION_TTL_MS,
         };
         localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 
-        return { ok: true, message: `Sample ${config.isPremium ? 'Premium' : 'Free'} Access Granted.`, user: sampleUser };
+        return { ok: true, message: `Access Granted.`, user: sampleUser };
     }
     // ------------------------------
 
@@ -468,11 +455,7 @@ export function getCurrentUser(): SessionData | null {
 export function isAdminEmail(email: string): boolean {
     if (!email) return false;
     const e = email.toLowerCase();
-    return e === 'admin@picklabs.bet' ||
-        e === 'admin@picklabs.app' ||
-        e === 'admin@picklabs.com' ||
-        e === 'admin@picklabs.ai' ||
-        e === 'sampleadmin@picklabs.bet';
+    return e === 'master.admin@picklabs.bet';
 }
 
 // ─── /upgrade equivalent (VIP code) ─────────────────────────────────────────
