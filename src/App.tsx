@@ -5,6 +5,15 @@ import { SimulationOverlay } from './components/ui/SimulationOverlay';
 import { LiveBoard } from './components/live-board/LiveBoard';
 import { Game } from './data/mockGames';
 
+import { RookieTour } from './components/ui/RookieTour';
+import { APP_SPORT_TO_ESPN, fetchESPNScoreboardByDate, ESPNGame, SportKey } from './data/espnScoreboard';
+import { generateAIPrediction } from './data/espnTeams';
+import { getCurrentUser, isAdminEmail, logout } from './data/PickLabsAuthDB';
+import { clearAuth } from './utils/auth';
+import { useRookieMode } from './contexts/RookieModeContext';
+import { PremiumLockView, ViewType } from './components/shared/PremiumLockView';
+import { PremiumUpgradeModal } from './components/shared/PremiumUpgradeModal';
+
 const SharpToolsView = lazy(() => import('./components/sharp-tools/SharpToolsView').then(m => ({ default: m.SharpToolsView })));
 const BankrollView = lazy(() => import('./components/bankroll/BankrollView').then(m => ({ default: m.BankrollView })));
 const MatchupTerminalView = lazy(() => import('./components/dashboard/MatchupTerminalView').then(m => ({ default: m.MatchupTerminalView })));
@@ -22,17 +31,10 @@ const AdminAnalyticsView = lazy(() => import('./components/admin/AdminAnalyticsV
 const AdminPanel = lazy(() => import('./components/admin/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const PrecisionHubView = lazy(() => import('./components/precision-hub/PrecisionHubView').then(m => ({ default: m.PrecisionHubView })));
 const AccountSettingsView = lazy(() => import('./components/account/AccountSettingsView').then(m => ({ default: m.AccountSettingsView })));
-import { RookieTour } from './components/ui/RookieTour';
 const PlayerDirectory = lazy(() => import('./components/directory/PlayerDirectory').then(m => ({ default: m.PlayerDirectory })));
-import { APP_SPORT_TO_ESPN, fetchESPNScoreboardByDate, ESPNGame, SportKey } from './data/espnScoreboard';
-import { generateAIPrediction } from './data/espnTeams';
 const PricingPageView = lazy(() => import('./components/onboarding/PricingPageView').then(m => ({ default: m.PricingPageView })));
 const SportSelectionView = lazy(() => import('./components/onboarding/SportSelectionView').then(m => ({ default: m.SportSelectionView })));
 const TeamSelectionView = lazy(() => import('./components/onboarding/TeamSelectionView').then(m => ({ default: m.TeamSelectionView })));
-
-import { getCurrentUser, isAdminEmail, logout } from './data/PickLabsAuthDB';
-import { clearAuth } from './utils/auth';
-import { useRookieMode } from './contexts/RookieModeContext';
 
 export interface BetPick {
   id: string;
@@ -55,9 +57,6 @@ export interface ResolvedTicket {
   payout: number;
   dateStr: string;
 }
-
-import { PremiumLockView, ViewType } from './components/shared/PremiumLockView';
-import { PremiumUpgradeModal } from './components/shared/PremiumUpgradeModal';
 
 // ─── Premium Lock Helper View ─────────────────────────────────────────────────
 // Extracted to src/components/shared/PremiumLockView.tsx
