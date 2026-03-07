@@ -96,9 +96,10 @@ const SPORT_ICON_MATERIAL: Record<string, string> = {
 interface SportsNavProps {
     activeSport: string;
     onSelectSport: (sport: string) => void;
+    activeSports?: Record<string, boolean>;
 }
 
-export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport }) => {
+export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport, activeSports }) => {
     return (
         <div className="bg-white dark:bg-neutral-900/40 border-b border-border-muted z-40 w-full overflow-hidden">
             <div className="max-w-[1536px] mx-auto px-2 sm:px-6 py-3 sm:py-4">
@@ -108,11 +109,19 @@ export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport
                         const primarySrc = entry?.primary;
                         const fallbackSrc = entry?.fallback;
                         const materialIcon = SPORT_ICON_MATERIAL[sport] ?? 'sports';
+
+                        // Default to active if the status hasn't loaded or isn't provided
+                        const isInactive = activeSports ? activeSports[sport] === false : false;
+
                         return (
                             <div
                                 key={sport}
-                                className={`sport-chip shrink-0 snap-start flex-1 flex flex-col items-center justify-center text-center gap-1.5 p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer border hover:-translate-y-1 hover:shadow-lg ${activeSport === sport ? 'bg-neutral-800 border-primary shadow-[0_0_15px_rgba(13,242,13,0.15)] text-white' : 'bg-[#111] border-neutral-800 text-slate-400 hover:text-white hover:bg-neutral-800 hover:border-neutral-700'} aspect-square min-w-[76px] sm:min-w-[85px] max-w-[90px] sm:max-w-[110px]`}
+                                className={`sport-chip shrink-0 snap-start flex-1 flex flex-col items-center justify-center text-center gap-1.5 p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer border hover:-translate-y-1 hover:shadow-lg hover:grayscale-0 hover:opacity-100 ${activeSport === sport
+                                        ? 'bg-neutral-800 border-primary shadow-[0_0_15px_rgba(13,242,13,0.15)] text-white grayscale-0 opacity-100'
+                                        : 'bg-[#111] border-neutral-800 text-slate-400 hover:text-white hover:bg-neutral-800 hover:border-neutral-700'
+                                    } ${isInactive && activeSport !== sport ? 'grayscale opacity-30' : ''} aspect-square min-w-[76px] sm:min-w-[85px] max-w-[90px] sm:max-w-[110px]`}
                                 onClick={() => onSelectSport(sport)}
+                                title={isInactive ? 'No games scheduled' : ''}
                             >
                                 <span className="relative flex items-center justify-center w-full min-h-[32px] max-h-[44px] sm:max-h-[50px] mb-0.5">
                                     <img

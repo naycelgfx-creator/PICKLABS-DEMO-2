@@ -29,12 +29,8 @@ export const FreeModeQuotaMeter: React.FC = () => {
         return null; // Premium users don't see the quota meter
     }
 
-    // 20 physical squares
-    const totalSquares = 20;
-    const squares = Array.from({ length: totalSquares }, (_, i) => i < quotaRemaining);
-
     return (
-        <div className="relative flex flex-col items-center gap-1 xl:mt-0 mt-3 mr-2">
+        <div className="relative w-full mt-2">
             {/* The Notification Toast */}
             {toastMessage && (
                 <div className="absolute -bottom-12 right-0 bg-neutral-900 border border-amber-500 shadow-[0_4px_20px_rgba(245,158,11,0.2)] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-lg animate-slide-up z-50 whitespace-nowrap">
@@ -44,20 +40,20 @@ export const FreeModeQuotaMeter: React.FC = () => {
             )}
 
             {/* The Visual Meter */}
-            <div className="flex flex-col items-end">
-                <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold mb-1">
-                    Free AI Tokens
-                </span>
-                <div className="flex gap-[2px]">
-                    {squares.map((isAvailable, index) => (
-                        <div
-                            key={index}
-                            className={`h-3 w-[6px] rounded-[1px] transition-all duration-300 ${isAvailable
-                                ? 'bg-amber-400 border border-amber-300 shadow-[0_0_5px_rgba(251,191,36,0.3)]'
-                                : 'bg-neutral-800 border items-end border-neutral-700 animate-fade-out scale-90'
-                                }`}
-                        />
-                    ))}
+            <div className="flex flex-col gap-1.5 p-2 bg-black/20 rounded-lg border border-white/5">
+                <div className="flex justify-between items-center">
+                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                        AI Tokens Remaining
+                    </span>
+                    <span className="text-[10px] font-black text-amber-400">
+                        {quotaRemaining} / 20
+                    </span>
+                </div>
+                <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-amber-400 transition-all duration-500 shadow-[0_0_10px_rgba(251,191,36,0.5)]"
+                        style={{ width: `${(quotaRemaining / 20) * 100}%` }}
+                    />
                 </div>
             </div>
         </div>

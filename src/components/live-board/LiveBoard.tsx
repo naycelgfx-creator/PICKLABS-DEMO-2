@@ -19,6 +19,8 @@ import { generateAIPrediction, fetchTeamLastFive } from '../../data/espnTeams';
 import { RookieGuideBanner } from '../shared/RookieGuideBanner';
 import { useRookieMode } from '../../contexts/RookieModeContext';
 import { getCurrentUser, isAdminEmail } from '../../data/PickLabsAuthDB';
+import { useActiveSports } from '../../hooks/useActiveSports';
+import { PickLabsAnalysisModal } from './PickLabsAnalysisModal';
 
 // Removed LockedPremiumCard as it's replaced by LockedGameCard
 
@@ -166,6 +168,9 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
     const today = (() => { const d = new Date(); const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${day}`; })();
     const [selectedDate, setSelectedDate] = useState<string>(today);
     const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+    const [analysisModalGame, setAnalysisModalGame] = useState<Game | null>(null);
+
+    const { activeSports } = useActiveSports(selectedDate);
 
     const toggleSection = (label: string) => {
         setCollapsedSections(prev => ({ ...prev, [label]: !prev[label] }));
@@ -310,7 +315,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
 
     return (
         <>
-            <SportsNav activeSport={activeSport} onSelectSport={(sport) => {
+            <SportsNav activeSport={activeSport} activeSports={activeSports} onSelectSport={(sport) => {
                 setActiveSport(sport);
                 const espnKey = sport === 'Soccer' ? activeSoccerLeague
                     : sport === 'Tennis' ? activeTennisTour
@@ -616,8 +621,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                                                                     publicBettingOpen={showPublicBets}
                                                                     onPublicBettingToggle={() => setShowPublicBets(p => !p)}
                                                                     onSelectGame={() => {
-                                                                        onSelectGame(game);
-                                                                        setCurrentView('matchup-terminal');
+                                                                        setAnalysisModalGame(game);
                                                                     }}
                                                                     onAddBet={onAddBet}
                                                                 />
@@ -649,6 +653,16 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                 </div>
                 {showBetSlip && <BetSlip betSlip={betSlip} setBetSlip={setBetSlip} activeTickets={activeTickets} setActiveTickets={setActiveTickets} onPlaceTicket={onPlaceTicket} onClose={() => setShowBetSlip(false)} />}
             </main>
+            {analysisModalGame && (
+                <PickLabsAnalysisModal
+                    game={analysisModalGame}
+                    onClose={() => setAnalysisModalGame(null)}
+                    onAddBet={(bet) => {
+                        onAddBet(bet);
+                        setAnalysisModalGame(null);
+                    }}
+                />
+            )}
         </>
     );
 };

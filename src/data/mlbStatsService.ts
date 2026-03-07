@@ -145,3 +145,109 @@ export async function getWBCSchedule(dateStr: string): Promise<WBCGame[]> {
         return [];
     }
 }
+
+// ─── Regular MLB Stats API Integrations ──────────────────────────────────────
+
+export const MLB_SPORT_ID = 1; // Major League Baseball
+
+export interface MLBGame {
+    gamePk: number;
+    gameDate: string;
+    status: {
+        abstractGameState: string;
+        codedGameState: string;
+        detailedState: string;
+        statusCode: string;
+        startTimeTBD: boolean;
+        abstractGameCode: string;
+    };
+    teams: {
+        away: {
+            leagueRecord: { wins: number; losses: number; pct: string };
+            score?: number;
+            team: { id: number; name: string; link: string };
+            isWinner?: boolean;
+            splitSquad: boolean;
+            seriesNumber: number;
+        };
+        home: {
+            leagueRecord: { wins: number; losses: number; pct: string };
+            score?: number;
+            team: { id: number; name: string; link: string };
+            isWinner?: boolean;
+            splitSquad: boolean;
+            seriesNumber: number;
+        };
+    };
+    venue: { id: number; name: string; link: string };
+}
+
+/**
+ * Fetch MLB schedule (supports sportId, leagueId, season, date filters)
+ */
+export async function getMLBSchedule(season: number, leagueId?: number, dateStr?: string): Promise<MLBGame[]> {
+    try {
+        let url = `https://statsapi.mlb.com/api/v1/schedule?sportId=${MLB_SPORT_ID}&season=${season}`;
+        if (leagueId) {
+            url += `&leagueId=${leagueId}`;
+        }
+        if (dateStr) {
+            // format date to YYYY-MM-DD if it's YYYYMMDD
+            let formattedDate = dateStr;
+            if (dateStr.length === 8 && !dateStr.includes('-')) {
+                formattedDate = `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+            }
+            url += `&date=${formattedDate}`;
+        }
+
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        const data = await res.json();
+
+        const games: MLBGame[] = [];
+        for (const dateObj of (data.dates || [])) {
+            for (const game of (dateObj.games || [])) {
+                games.push(game);
+            }
+        }
+        return games;
+    } catch (e) {
+        console.error("Failed to fetch MLB schedule:", e);
+        return [];
+    }
+}
+
+/**
+ * Fetch MLB Standings
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getMLBStandings(season: number, leagueId?: number): Promise<any> {
+    try {
+        // usually 103 for AL, 104 for NL. Spring Training AL=114? Default to common MLB leagues or provided leagueId
+        const leagues = leagueId ? leagueId : '103,104';
+        const url = `https://statsapi.mlb.com/api/v1/standings?leagueId=${leagues}&season=${season}`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (e) {
+        console.error("Failed to fetch MLB standings:", e);
+        return null;
+    }
+}
+
+/**
+ * Fetch completely detailed live feed for a specific MLB gamed
+ * Includes play-by-play, boxscore, linescore, etc.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getMLBLiveFeed(gamePk: string | number): Promise<any> {
+    try {
+        const url = `https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (e) {
+        console.error(`Failed to fetch MLB live feed for gamePk ${gamePk}:`, e);
+        return null;
+    }
+}

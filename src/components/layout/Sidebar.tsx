@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ViewType } from '../../App';
+import { ViewType } from '../shared/PremiumLockView';
 
 interface SidebarProps {
     currentView: ViewType;
@@ -152,8 +152,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView })
         >
             {/* ── Logo lockup ── */}
             <div
-                className="px-4 py-4 flex items-center gap-3"
+                className="px-4 py-4 flex items-center gap-3 cursor-pointer group"
                 style={{ borderBottom: '1px solid var(--sidebar-border)' }}
+                onClick={() => setCurrentView('home' as ViewType)}
             >
                 <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-black"

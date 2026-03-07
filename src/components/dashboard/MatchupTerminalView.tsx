@@ -30,7 +30,6 @@ interface MatchupTerminalViewProps {
     game: Game;
     onAddBet: (bet: Omit<BetPick, 'id'>) => void;
     hasSimulated: boolean;
-    onRunSimulation: () => void;
     betSlip: BetPick[];
     setBetSlip: React.Dispatch<React.SetStateAction<BetPick[]>>;
 }
@@ -39,7 +38,6 @@ export const MatchupTerminalView: React.FC<MatchupTerminalViewProps> = ({
     game,
     onAddBet,
     hasSimulated,
-    onRunSimulation,
     betSlip,
     setBetSlip
 }) => {
@@ -51,15 +49,7 @@ export const MatchupTerminalView: React.FC<MatchupTerminalViewProps> = ({
             <div className={`${showBetSlip ? 'col-span-12 xl:col-span-9' : 'col-span-12'} space-y-6 transition-all duration-300`}>
                 <div className="flex flex-col items-center justify-center py-4 gap-4">
                     <div className="flex items-center gap-4 flex-wrap justify-center">
-                        <a
-                            className="group relative inline-flex items-center gap-3 px-12 py-5 bg-accent-purple rounded-full text-text-main font-black uppercase tracking-[0.2em] italic hover:scale-105 transition-transform animate-neon-pulse overflow-hidden cursor-pointer"
-                            onClick={onRunSimulation}
-                        >
-                            <span className="material-symbols-outlined text-2xl group-hover:rotate-180 transition-transform duration-500">model_training</span>
-                            {hasSimulated ? 'Re-run AI Simulations' : 'Run 10,000 AI Simulations'}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer"></div>
-                        </a>
-                        <button className="hidden md:flex px-8 py-5 border-2 border-primary/40 bg-primary/5 rounded-full text-primary font-black uppercase tracking-[0.2em] italic hover:bg-primary/10 transition-all items-center gap-3">
+                        <button className="hidden md:flex px-8 py-5 border-2 border-primary/40 bg-primary/5 rounded-[12px] text-primary font-black uppercase tracking-[0.2em] hover:bg-primary/10 transition-all items-center gap-3">
                             <span className="material-symbols-outlined">query_stats</span>
                             Show Handle Gaps
                         </button>

@@ -4,13 +4,13 @@ import { getCurrentUser, isAdminEmail } from '../../data/PickLabsAuthDB';
 
 interface PublicBettingProps {
     game: Game;
-    onMatchDetailsClick?: () => void;
+    onPickLabsAnalysisClick?: () => void;
     isOpen: boolean;
     onToggle: () => void;
     isUnlocked?: boolean;
 }
 
-export const PublicBetting: React.FC<PublicBettingProps> = ({ game, onMatchDetailsClick, isOpen, onToggle, isUnlocked = false }) => {
+export const PublicBetting: React.FC<PublicBettingProps> = ({ game, onPickLabsAnalysisClick, isOpen, onToggle, isUnlocked = false }) => {
     const isPremiumUser = getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '');
     const hasAccess = isPremiumUser || isUnlocked;
 
@@ -97,13 +97,13 @@ export const PublicBetting: React.FC<PublicBettingProps> = ({ game, onMatchDetai
                         expand_more
                     </span>
                 </div>
-                {onMatchDetailsClick && (
+                {onPickLabsAnalysisClick && (
                     <div
-                        onClick={(e) => { e.stopPropagation(); onMatchDetailsClick(); }}
+                        onClick={(e) => { e.stopPropagation(); onPickLabsAnalysisClick(); }}
                         className="flex items-center gap-1 cursor-pointer group"
                     >
                         <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest group-hover:text-white transition-colors">
-                            Match Details
+                            PickLabs Analysis
                         </span>
                         <span className="material-symbols-outlined text-text-muted text-sm group-hover:text-white transition-colors">
                             chevron_right

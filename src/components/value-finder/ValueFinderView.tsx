@@ -45,8 +45,8 @@ export const ValueFinderView: React.FC<ValueFinderViewProps> = ({ betSlip, onAdd
                 const generatedBets: ValueBet[] = [];
 
                 activeGames.forEach((game: ESPNGame, index: number) => {
-                    // Only generate up to 8 bets max to keep the view clean
-                    if (generatedBets.length >= 8) return;
+                    // Generate up to 24 bets max to provide more variety
+                    if (generatedBets.length >= 24) return;
 
                     if (game.leaders && game.leaders.length > 0) {
                         // Create a player prop value bet for a leader

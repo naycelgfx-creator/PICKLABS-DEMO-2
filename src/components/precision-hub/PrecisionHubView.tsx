@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchESPNScoreboardByDate, ESPNGame, ESPNTeamInfo, SportKey } from '../../data/espnScoreboard';
 import { generateAIPrediction } from '../../data/espnTeams';
 
+
 // ── Sport configs ─────────────────────────────────────────────────────────────
 const PRECISION_SPORTS: { key: SportKey; label: string; icon: string }[] = [
     { key: 'NBA', label: 'NBA', icon: 'sports_basketball' },
@@ -628,7 +629,7 @@ export const PrecisionHubView: React.FC = () => {
                                                                 <tr key={row.id} className="stat-grid-row border-b border-border-muted/50">
                                                                     <td className="px-4 py-3">
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <img src={row.teamLogo} alt={row.team} className="h-6 w-6 object-contain bg-white rounded-full p-[1px] border border-orange-500" onError={e => { e.currentTarget.style.opacity = '0' }} />
+                                                                            <img src={row.teamLogo} alt={row.team} className="h-7 w-7 object-contain" onError={e => { e.currentTarget.style.opacity = '0' }} />
                                                                             <span className="text-[10px] font-black text-text-muted">{row.team}</span>
                                                                         </div>
                                                                     </td>
@@ -643,8 +644,8 @@ export const PrecisionHubView: React.FC = () => {
                                                                                     }
                                                                                 </div>
                                                                                 {/* Team Logo Badge */}
-                                                                                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center bg-neutral-900 shadow-sm overflow-hidden z-10 p-[2px] border border-neutral-800">
-                                                                                    <img src={row.teamLogo} alt={row.team} className="w-full h-full object-contain" onError={e => { e.currentTarget.style.opacity = '0' }} />
+                                                                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-black rounded-full p-[2px] z-10 flex items-center justify-center shadow-sm border border-neutral-800/80">
+                                                                                    <img src={row.teamLogo} alt={row.team} className="w-full h-full object-contain drop-shadow-md" onError={e => { e.currentTarget.style.opacity = '0' }} />
                                                                                 </div>
                                                                             </div>
                                                                             <button

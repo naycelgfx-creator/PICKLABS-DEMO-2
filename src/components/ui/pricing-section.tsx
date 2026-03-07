@@ -21,7 +21,8 @@ export interface PricingTier {
     accentColor?: 'green' | 'purple' | 'blue' | 'default';
     ctaLabel?: string;
     icon: React.ReactNode;
-    onCta?: () => void;
+    onCta?: (isYearly: boolean) => void;
+    customContent?: React.ReactNode;
 }
 
 interface PricingSectionProps {
@@ -54,6 +55,7 @@ export function PricingSection({ tiers, className, title = 'Choose Your Edge', s
                         Monthly
                     </span>
                     <button
+                        aria-label="Toggle billing period"
                         onClick={() => setIsYearly(!isYearly)}
                         className={cn(
                             'relative w-12 h-6 rounded-full border transition-all duration-300',
@@ -133,7 +135,9 @@ export function PricingSection({ tiers, className, title = 'Choose Your Edge', s
                                 <div className="flex items-center justify-between mb-5">
                                     <div className={cn(
                                         'w-11 h-11 rounded-xl flex items-center justify-center',
-                                        tier.accentColor === 'purple' ? 'bg-accent-purple/10 text-accent-purple' : 'bg-primary/10 text-primary'
+                                        tier.accentColor === 'purple' ? 'bg-[#2D1B4E]/80 text-[#A855F7]' :
+                                            tier.accentColor === 'green' || tier.name === '7-Day Free Trial' ? 'bg-[#2A331E] text-primary' :
+                                                'bg-[#1A2216] text-[#4ADE80]'
                                     )}>
                                         {tier.icon}
                                     </div>
@@ -160,57 +164,69 @@ export function PricingSection({ tiers, className, title = 'Choose Your Edge', s
 
                                 {/* Features — flex-grow pushes CTA to the bottom */}
                                 <div className="space-y-3 flex-grow mb-8">
-                                    {tier.features.map((feature) => (
-                                        <div key={feature.name} className="flex gap-3">
-                                            <div className={cn(
-                                                'mt-0.5 flex-shrink-0 transition-colors duration-200',
-                                                feature.included
-                                                    ? tier.accentColor === 'purple' ? 'text-accent-purple' : 'text-primary'
-                                                    : 'text-slate-700'
-                                            )}>
-                                                <CheckIcon className="w-4 h-4" />
-                                            </div>
-                                            <div>
+                                    {tier.customContent ? (
+                                        tier.customContent
+                                    ) : (
+                                        tier.features.map((feature) => (
+                                            <div key={feature.name} className="flex gap-3">
                                                 <div className={cn(
-                                                    'text-[11px] font-bold uppercase tracking-wide',
-                                                    feature.included ? 'text-text-muted' : 'text-slate-700'
+                                                    'mt-0.5 flex-shrink-0 transition-colors duration-200',
+                                                    feature.included
+                                                        ? tier.accentColor === 'purple' ? 'text-[#A855F7]' : tier.accentColor === 'green' || tier.name === '7-Day Free Trial' ? 'text-primary' : 'text-[#4ADE80]'
+                                                        : 'text-[#222] dark:text-[#333]'
                                                 )}>
-                                                    {feature.name}
+                                                    <CheckIcon className="w-4 h-4" />
                                                 </div>
-                                                {feature.description && (
-                                                    <div className="text-[10px] text-slate-600 mt-0.5 leading-relaxed">
-                                                        {feature.description}
+                                                <div>
+                                                    <div className={cn(
+                                                        'text-[11px] font-bold uppercase tracking-wide',
+                                                        feature.included ? 'text-text-muted' : 'text-slate-700'
+                                                    )}>
+                                                        {feature.name}
                                                     </div>
-                                                )}
+                                                    {feature.description && (
+                                                        <div className="text-[10px] text-slate-600 mt-0.5 leading-relaxed">
+                                                            {feature.description}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
 
-                                {/* CTA Button — always at the bottom */}
-                                <div className="space-y-3 mt-auto">
-                                    <Button
-                                        onClick={tier.onCta}
-                                        className={cn(
-                                            'w-full h-12 text-xs font-black uppercase tracking-[0.2em] italic rounded-xl transition-all duration-300',
-                                            tier.highlight && tier.accentColor === 'purple'
-                                                ? 'bg-accent-purple text-white hover:bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02]'
-                                                : tier.highlight
-                                                    ? 'bg-primary text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(13,242,13,0.3)] hover:shadow-[0_0_25px_rgba(13,242,13,0.5)]'
-                                                    : 'border-2 border-border-muted bg-neutral-900/60 text-text-muted hover:border-primary/40 hover:text-text-main'
-                                        )}
-                                    >
-                                        <span className="flex items-center justify-center gap-2">
-                                            {tier.ctaLabel ?? 'Get Started'}
-                                            <ArrowRightIcon className="w-4 h-4" />
-                                        </span>
-                                    </Button>
-                                </div>
+                            </div>
+
+                            {/* CTA Button — always at the bottom */}
+                            <div className="space-y-3 mt-auto">
+                                <Button
+                                    onClick={() => tier.onCta?.(isYearly)}
+                                    className={cn(
+                                        'w-full h-12 text-xs font-black uppercase tracking-[0.2em] italic rounded-xl transition-all duration-300',
+                                        tier.highlight && tier.accentColor === 'purple'
+                                            ? 'bg-[#A855F7] text-white hover:bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02]'
+                                            : tier.highlight
+                                                ? 'bg-primary text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(13,242,13,0.3)] hover:shadow-[0_0_25px_rgba(13,242,13,0.5)]'
+                                                : 'border border-[#2A2A2A] bg-[#141414] text-slate-400 hover:border-[#444] hover:text-white'
+                                    )}
+                                >
+                                    <span className="flex items-center justify-center gap-2">
+                                        {tier.ctaLabel ?? 'Get Started'}
+                                        <ArrowRightIcon className="w-4 h-4" />
+                                    </span>
+                                </Button>
                             </div>
                         </div>
                     );
                 })}
             </div>
-        </div>
+
+            {/* Footer Note */}
+            <div className="text-center mt-12">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                    All paid plans can be canceled anytime. You can upgrade or downgrade your plan later.
+                </p>
+            </div>
+        </div >
     );
 }

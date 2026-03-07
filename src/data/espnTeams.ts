@@ -3,6 +3,7 @@
 // Supports NBA, NFL, MLB, NHL
 
 import { NBA_TEAM_IDS, NFL_TEAM_IDS, MLB_TEAM_IDS, NHL_TEAM_IDS } from './espnService';
+import { getAdminMathWindow } from './PickLabsAuthDB';
 
 export interface ESPNTeamInfo {
     id: number;
@@ -147,7 +148,7 @@ export const fetchESPNTeamInfo = async (teamName: string, sport: string, provide
         } catch {/* no injuries endpoint for this sport */ }
 
         return {
-            id: teamId,
+            id: Number(teamId),
             name: String(t.displayName ?? teamName),
             abbr: String(t.abbreviation ?? ''),
             logo,
@@ -241,8 +242,9 @@ export const fetchESPNTeamSchedule = async (teamName: string, sport: string): Pr
 
 export const fetchTeamLastFive = async (teamName: string, sport: string): Promise<('W' | 'L' | 'D')[]> => {
     try {
+        const windowSize = getAdminMathWindow();
         const games = await fetchESPNTeamSchedule(teamName, sport);
-        const completed = games.filter(g => g.result !== 'upcoming').slice(-5);
+        const completed = games.filter(g => g.result !== 'upcoming').slice(-windowSize);
         return completed.map(g => g.result as 'W' | 'L' | 'D');
     } catch {
         return [];
@@ -324,7 +326,7 @@ export const generateAIPrediction = (
 
     const insights = [
         `${homeWinProb}% home win probability based on season records and recent form.`,
-        `${awayWinProb > homeWinProb ? 'Away' : 'Home'} team hot — ${(Math.max(homeForm, awayForm) * 5).toFixed(0)}/5 in last five.`,
+        `${awayWinProb > homeWinProb ? 'Away' : 'Home'} team hot — ${Math.round(Math.max(homeForm, awayForm) * Math.max(homeLastFive.length, 1))}/${Math.max(homeLastFive.length, 1)} in recent matches.`,
         `Total set at ${totalAdj.toFixed(1)} — both offenses trending ${homeForm + awayForm > 1 ? 'up' : 'down'}.`,
         `Spread of ${String(spread)} reflects ${spreadPct.toFixed(1)}pt home advantage.`,
     ];

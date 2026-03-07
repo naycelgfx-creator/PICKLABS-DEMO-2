@@ -14,7 +14,7 @@ interface SGPLeg {
     line: string;
 }
 
-interface SGPBet {
+export interface SGPBet {
     id: string;
     description: string;
     odds: string;
@@ -34,7 +34,7 @@ interface SGPBet {
 }
 
 // ── Build a popular SGP from a real ESPN game ─────────────────────────────
-const generateSGP = (game: ESPNGame, idx: number): SGPBet => {
+export const generateSGP = (game: ESPNGame, idx: number): SGPBet => {
     const pred = generateAIPrediction(game.homeTeam.record, game.awayTeam.record, game.sport, [], []);
     const sport = game.sport;
     const home = game.homeTeam.displayName;
@@ -120,6 +120,11 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
     const [addedBets, setAddedBets] = useState<Set<string>>(new Set());
     const [activeSport, setActiveSport] = useState<string>('All');
     const [allGames, setAllGames] = useState<ESPNGame[]>([]);
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+    const toggleCategory = (title: string) => {
+        setExpandedCategories(prev => ({ ...prev, [title]: !prev[title] }));
+    };
 
     // Split bets by category
     const [aiPicks, setAiPicks] = useState<SGPBet[]>([]);
@@ -355,122 +360,141 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
                             { title: 'Over / Unders', subtitle: 'Game Totals', bets: totalBets, icon: 'swap_vert', color: 'text-blue-500' },
                             { title: 'Vegas Spreads', subtitle: 'Point Covers', bets: spreadBets, icon: 'compare_arrows', color: 'text-orange-500' },
                             { title: 'Player Prop Tickets', subtitle: 'Individual Leaders', bets: playerProps, icon: 'person', color: 'text-accent-purple' },
-                        ].map((category, catIdx) => (
-                            <div key={catIdx} className="flex flex-col gap-5">
-                                <div className="flex items-center gap-3 border-b border-border-muted/50 pb-2">
-                                    <span className={`material-symbols-outlined ${category.color} text-2xl`}>{category.icon}</span>
-                                    <div>
-                                        <h3 className="text-xl font-black text-text-main uppercase tracking-widest">{category.title}</h3>
-                                        <p className="text-xs text-text-muted font-bold uppercase">{category.subtitle}</p>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                    {category.bets.map(bet => (
-                                        <div
-                                            key={bet.id}
-                                            className="glass-panel p-6 border border-border-muted hover:border-orange-500/50 transition-colors flex flex-col h-full bg-neutral-900/60 relative overflow-hidden group"
-                                        >
-                                            {/* Background glow */}
-                                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-colors"></div>
+                        ].map((category, catIdx) => {
+                            const isExpanded = !!expandedCategories[category.title];
+                            // If bets array is longer than 3, show either all or slice to 3 based on 'isExpanded'
+                            const displayedBets = isExpanded ? category.bets : category.bets.slice(0, 3);
+                            const hasMore = category.bets.length > 3;
 
-                                            {/* Card Header */}
-                                            <div className="flex justify-between items-start mb-4 relative z-10">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${SPORT_COLORS[bet.sport] ?? 'bg-primary/10 text-primary border-primary/30'}`}>
-                                                            {bet.sport}
-                                                        </span>
-                                                        {bet.isLive && (
-                                                            <span className="text-[10px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded uppercase tracking-widest flex items-center gap-1">
-                                                                <span className="w-1 h-1 bg-red-400 rounded-full animate-pulse"></span>
-                                                                Live
+                            return (
+                                <div key={catIdx} className="flex flex-col gap-5">
+                                    <div className="flex items-center gap-3 border-b border-border-muted/50 pb-2">
+                                        <span className={`material-symbols-outlined ${category.color} text-2xl`}>{category.icon}</span>
+                                        <div className="flex-1 flex justify-between items-center">
+                                            <div>
+                                                <h3 className="text-xl font-black text-text-main uppercase tracking-widest">{category.title}</h3>
+                                                <p className="text-xs text-text-muted font-bold uppercase">{category.subtitle}</p>
+                                            </div>
+                                            {hasMore && (
+                                                <button
+                                                    onClick={() => toggleCategory(category.title)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-colors text-slate-400 hover:text-white text-[10px] sm:text-xs font-black uppercase tracking-wider"
+                                                >
+                                                    {isExpanded ? 'Show Less' : `Show All (${category.bets.length})`}
+                                                    <span className={`material-symbols-outlined text-[14px] transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                                                        expand_more
+                                                    </span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                        {displayedBets.map(bet => (
+                                            <div
+                                                key={bet.id}
+                                                className="glass-panel p-6 border border-border-muted hover:border-orange-500/50 transition-colors flex flex-col h-full bg-neutral-900/60 relative overflow-hidden group"
+                                            >
+                                                {/* Background glow */}
+                                                <div className="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-colors"></div>
+
+                                                {/* Card Header */}
+                                                <div className="flex justify-between items-start mb-4 relative z-10">
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${SPORT_COLORS[bet.sport] ?? 'bg-primary/10 text-primary border-primary/30'}`}>
+                                                                {bet.sport}
                                                             </span>
-                                                        )}
-                                                        <span className={`text-[10px] font-bold ${category.color} uppercase tracking-widest bg-neutral-800 px-2 py-0.5 rounded border border-border-muted`}>
-                                                            {category.subtitle.split(' ')[0]}
-                                                        </span>
-                                                    </div>
-                                                    {/* Team logos + names or Player Headshot */}
-                                                    {bet.playerHeadshot ? (
-                                                        <div className="flex items-center gap-3 mt-1 py-1">
-                                                            <div className="relative">
-                                                                <img src={bet.playerHeadshot} alt={bet.legs[0]?.player} className="w-10 h-10 rounded-full object-cover bg-neutral-800" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                                                {bet.playerTeamLogo && (
-                                                                    <img src={bet.playerTeamLogo} className="w-6 h-6 absolute -bottom-1 -right-2 object-contain drop-shadow-md z-10" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                                                )}
+                                                            {bet.isLive && (
+                                                                <span className="text-[10px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded uppercase tracking-widest flex items-center gap-1">
+                                                                    <span className="w-1 h-1 bg-red-400 rounded-full animate-pulse"></span>
+                                                                    Live
+                                                                </span>
+                                                            )}
+                                                            <span className={`text-[10px] font-bold ${category.color} uppercase tracking-widest bg-neutral-800 px-2 py-0.5 rounded border border-border-muted`}>
+                                                                {category.subtitle.split(' ')[0]}
+                                                            </span>
+                                                        </div>
+                                                        {/* Team logos + names or Player Headshot */}
+                                                        {bet.playerHeadshot ? (
+                                                            <div className="flex items-center gap-3 mt-1 py-1">
+                                                                <div className="relative">
+                                                                    <img src={bet.playerHeadshot} alt={bet.legs[0]?.player} className="w-10 h-10 rounded-full object-cover bg-neutral-800" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                                    {bet.playerTeamLogo && (
+                                                                        <img src={bet.playerTeamLogo} className="w-6 h-6 absolute -bottom-1 -right-2 object-contain drop-shadow-md z-10" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-sm font-black text-text-main leading-tight">{bet.legs[0]?.player}</span>
+                                                                    <span className="text-[9px] text-text-muted font-bold truncate">
+                                                                        {bet.awayTeam} @ {bet.homeTeam}
+                                                                    </span>
+                                                                </div>
                                                             </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <img src={bet.awayLogo} alt={bet.awayTeam} className="w-6 h-6 object-contain drop-shadow-sm" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                                <span className="text-xs font-bold text-text-muted">{bet.awayTeam}</span>
+                                                                <span className="text-text-muted">@</span>
+                                                                <img src={bet.homeLogo} alt={bet.homeTeam} className="w-6 h-6 object-contain drop-shadow-sm" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                                <span className="text-xs font-bold text-text-main">{bet.homeTeam}</span>
+                                                            </div>
+                                                        )}
+                                                        {/* AI Edge Badge */}
+                                                        <div className="flex items-center gap-2 mt-1.5">
+                                                            <span className="text-[9px] font-black text-green-400 bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded tracking-wider flex items-center gap-1 uppercase">
+                                                                <span className="material-symbols-outlined text-[10px]">psychology</span>
+                                                                AI Edge {bet.aiEdge}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right shrink-0">
+                                                        <span className="text-xl font-black text-primary bg-primary/10 px-3 py-1 rounded">{bet.odds}</span>
+                                                        <div className="mt-1 flex flex-col justify-end">
+                                                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">AI Win Prob</span>
+                                                            <span className="text-[11px] font-black text-text-main tabular-nums">{bet.aiProbability}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Legs List */}
+                                                <div className="flex-1 flex flex-col gap-2 mb-5 relative z-10">
+                                                    {bet.legs.map((leg, i) => (
+                                                        <div key={i} className="flex items-center justify-between bg-neutral-800/60 border border-border-muted p-3 rounded">
                                                             <div className="flex flex-col">
-                                                                <span className="text-sm font-black text-text-main leading-tight">{bet.legs[0]?.player}</span>
-                                                                <span className="text-[9px] text-text-muted font-bold truncate">
-                                                                    {bet.awayTeam} @ {bet.homeTeam}
+                                                                <span className="text-xs font-bold text-text-main">{leg.player}</span>
+                                                                <span className="text-[10px] text-text-muted font-medium">
+                                                                    {leg.line === 'Yes' ? leg.prop : `${leg.line.includes('Over') || leg.line.includes('Under') || leg.line.includes('+') || leg.line.includes('-') ? '' : 'Over '}${leg.line} ${leg.prop}`}
                                                                 </span>
                                                             </div>
+                                                            <span className="text-xs font-black text-primary">{leg.line === 'Yes' ? 'Yes' : leg.line.replace(/Over\s*/i, '').replace(/Under\s*/i, '')}</span>
                                                         </div>
-                                                    ) : (
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <img src={bet.awayLogo} alt={bet.awayTeam} className="w-6 h-6 object-contain drop-shadow-sm" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                                            <span className="text-xs font-bold text-text-muted">{bet.awayTeam}</span>
-                                                            <span className="text-text-muted">@</span>
-                                                            <img src={bet.homeLogo} alt={bet.homeTeam} className="w-6 h-6 object-contain drop-shadow-sm" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                                            <span className="text-xs font-bold text-text-main">{bet.homeTeam}</span>
-                                                        </div>
-                                                    )}
-                                                    {/* AI Edge Badge */}
-                                                    <div className="flex items-center gap-2 mt-1.5">
-                                                        <span className="text-[9px] font-black text-green-400 bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded tracking-wider flex items-center gap-1 uppercase">
-                                                            <span className="material-symbols-outlined text-[10px]">psychology</span>
-                                                            AI Edge {bet.aiEdge}
-                                                        </span>
-                                                    </div>
+                                                    ))}
                                                 </div>
-                                                <div className="text-right shrink-0">
-                                                    <span className="text-xl font-black text-primary bg-primary/10 px-3 py-1 rounded">{bet.odds}</span>
-                                                    <div className="mt-1 flex flex-col justify-end">
-                                                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">AI Win Prob</span>
-                                                        <span className="text-[11px] font-black text-text-main tabular-nums">{bet.aiProbability}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
 
-                                            {/* Legs List */}
-                                            <div className="flex-1 flex flex-col gap-2 mb-5 relative z-10">
-                                                {bet.legs.map((leg, i) => (
-                                                    <div key={i} className="flex items-center justify-between bg-neutral-800/60 border border-border-muted p-3 rounded">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xs font-bold text-text-main">{leg.player}</span>
-                                                            <span className="text-[10px] text-text-muted font-medium">
-                                                                {leg.line === 'Yes' ? leg.prop : `${leg.line.includes('Over') || leg.line.includes('Under') || leg.line.includes('+') || leg.line.includes('-') ? '' : 'Over '}${leg.line} ${leg.prop}`}
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-xs font-black text-primary">{leg.line === 'Yes' ? 'Yes' : leg.line.replace(/Over\s*/i, '').replace(/Under\s*/i, '')}</span>
+                                                {/* Footer */}
+                                                <div className="mt-auto flex items-center justify-between border-t border-border-muted pt-4 relative z-10">
+                                                    <div className="flex items-center gap-1.5 bg-orange-500 text-black px-3 py-1.5 rounded-full font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                                                        <span className="material-symbols-outlined text-sm">local_fire_department</span>
+                                                        {bet.placedCount} <span className="text-[9px] font-bold opacity-80">Placed</span>
                                                     </div>
-                                                ))}
-                                            </div>
-
-                                            {/* Footer */}
-                                            <div className="mt-auto flex items-center justify-between border-t border-border-muted pt-4 relative z-10">
-                                                <div className="flex items-center gap-1.5 bg-orange-500 text-black px-3 py-1.5 rounded-full font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(249,115,22,0.3)]">
-                                                    <span className="material-symbols-outlined text-sm">local_fire_department</span>
-                                                    {bet.placedCount} <span className="text-[9px] font-bold opacity-80">Placed</span>
+                                                    <button
+                                                        disabled={addedBets.has(bet.id)}
+                                                        onClick={() => handleAddSGP(bet)}
+                                                        className={`transition-colors px-4 py-2 rounded font-black text-xs uppercase tracking-widest filter active:brightness-75 ${addedBets.has(bet.id)
+                                                            ? 'bg-green-500 text-black border border-green-500 cursor-not-allowed'
+                                                            : 'bg-primary text-black border border-primary hover:bg-primary/80 hover:scale-105'
+                                                            }`}
+                                                    >
+                                                        {addedBets.has(bet.id) ? (
+                                                            <div className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">check</span> Added</div>
+                                                        ) : 'Add to Slip'}
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    disabled={addedBets.has(bet.id)}
-                                                    onClick={() => handleAddSGP(bet)}
-                                                    className={`transition-colors px-4 py-2 rounded font-black text-xs uppercase tracking-widest filter active:brightness-75 ${addedBets.has(bet.id)
-                                                        ? 'bg-green-500 text-black border border-green-500 cursor-not-allowed'
-                                                        : 'bg-primary text-black border border-primary hover:bg-primary/80 hover:scale-105'
-                                                        }`}
-                                                >
-                                                    {addedBets.has(bet.id) ? (
-                                                        <div className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">check</span> Added</div>
-                                                    ) : 'Add to Slip'}
-                                                </button>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 )}
 

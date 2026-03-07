@@ -7,7 +7,6 @@ import { GlossaryTooltip } from '../ui/GlossaryTooltip';
 import { RiskMeter } from '../ui/RiskMeter';
 import { PulsingBeacon } from '../ui/PulsingBeacon';
 import { useLiveOddsShift, applyOddsShift } from '../../hooks/useLiveOddsShift';
-import { getCurrentUser, isAdminEmail } from '../../data/PickLabsAuthDB';
 
 interface GameCardProps {
     game: Game;
@@ -55,9 +54,6 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
 
     const { isRookieModeActive } = useRookieMode();
     const shifts = useLiveOddsShift(game.status, game.id);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const isPremiumUser = getCurrentUser()?.isPremium || isAdminEmail(getCurrentUser()?.email || '');
 
     // Which bet types are already in slip for this game?
     const selectedTypes = new Set(betSlip.filter(b => b.gameId === game.id).map(b => b.type));
@@ -148,7 +144,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
                     {game.awayTeam.logo ? (
                         <img
                             alt={game.awayTeam.name}
-                            className="w-10 h-10 sm:w-12 sm:h-12 mx-auto object-contain mb-1.5"
+                            className="w-8 h-8 sm:w-10 sm:h-10 mx-auto object-contain mb-1.5"
                             src={game.awayTeam.logo}
                             onError={(e) => {
                                 e.currentTarget.onerror = null;
@@ -156,7 +152,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
                             }}
                         />
                     ) : (
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto bg-neutral-800 rounded-full flex items-center justify-center mb-1.5">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 mx-auto bg-neutral-800 rounded-full flex items-center justify-center mb-1.5">
                             <span className="material-symbols-outlined text-slate-500 text-base">
                                 {game.sport.startsWith('Soccer') ? 'sports_soccer' :
                                     game.sport.startsWith('Tennis') ? 'sports_tennis' :
@@ -168,7 +164,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
                         </div>
                     )}
                     {/* Show abbreviated last word on xs, full name on sm+ */}
-                    <h3 className="text-[10px] sm:text-[11px] md:text-sm font-black text-text-main uppercase italic leading-none sm:leading-tight w-full text-center">
+                    <h3 className="text-[9px] sm:text-[10px] md:text-xs font-black text-text-main uppercase italic leading-none sm:leading-tight w-full text-center">
                         <div className="sm:hidden mb-0.5">
                             {game.awayTeam.name.includes(' ')
                                 ? game.awayTeam.name.split(' ').pop()
@@ -190,7 +186,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
                 <div className="col-span-2 sm:col-span-3 flex items-center justify-center gap-2 sm:gap-3">
                     {/* Away prob */}
                     <div className="text-center">
-                        <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mb-0.5 mx-auto">
+                        <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mb-0.5 mx-auto">
                             <svg className="w-full h-full -rotate-90">
                                 <circle className="text-neutral-800" cx="50%" cy="50%" fill="transparent" r="44%" stroke="currentColor" strokeWidth="4"></circle>
                                 <circle
@@ -220,7 +216,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
 
                     {/* Home prob */}
                     <div className="text-center">
-                        <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mb-0.5 mx-auto">
+                        <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mb-0.5 mx-auto">
                             <svg className="w-full h-full -rotate-90">
                                 <circle className="text-neutral-800" cx="50%" cy="50%" fill="transparent" r="44%" stroke="currentColor" strokeWidth="4"></circle>
                                 <circle
@@ -247,7 +243,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
                     {game.homeTeam.logo ? (
                         <img
                             alt={game.homeTeam.name}
-                            className="w-10 h-10 sm:w-12 sm:h-12 mx-auto object-contain mb-1.5"
+                            className="w-8 h-8 sm:w-10 sm:h-10 mx-auto object-contain mb-1.5"
                             src={game.homeTeam.logo}
                             onError={(e) => {
                                 e.currentTarget.onerror = null;
@@ -436,13 +432,13 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
                 <div className="flex justify-between items-center bg-background-darker px-5 py-3 border-t border-border-muted">
                     <div className="flex items-center gap-2">
                         {isLive ? (
-                            <span className="text-[9px] text-primary font-black animate-glow-hot">{game.streakLabel}</span>
+                            <span className="text-[9px] text-[#A3FF00] font-black">{game.streakLabel}</span>
                         ) : (
                             <span className="text-[9px] text-slate-500 font-black">{game.streakLabel}</span>
                         )}
                     </div>
                 </div>
-                <PublicBetting game={game} onMatchDetailsClick={onSelectGame} isOpen={publicBettingOpen ?? false} onToggle={onPublicBettingToggle ?? (() => { })} isUnlocked={isUnlocked} />
+                <PublicBetting game={game} onPickLabsAnalysisClick={onSelectGame} isOpen={publicBettingOpen ?? false} onToggle={onPublicBettingToggle ?? (() => { })} isUnlocked={isUnlocked} />
 
             </div>
         </div>

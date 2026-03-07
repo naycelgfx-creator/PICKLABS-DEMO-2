@@ -6,6 +6,7 @@ import {
     isAdminEmail, signup,
     TierKey, DurationKey,
     getAllPendingPayments, approvePendingPayment, rejectPendingPayment, PendingPayment,
+    getAdminMathWindow, setAdminMathWindow
 } from '../../data/PickLabsAuthDB';
 
 // ─── AdminPanel ───────────────────────────────────────────────────────────────
@@ -26,6 +27,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserEmail, onClos
     const [genTier, setGenTier] = useState<TierKey>('pro');
     const [genDuration, setGenDuration] = useState<DurationKey>('month');
     const [lastCode, setLastCode] = useState<string | null>(null);
+    // Math Prediction Window
+    const [mathWindow, setMathWindow] = useState<number>(getAdminMathWindow());
     // Payment queue
     const [payments, setPayments] = useState<PendingPayment[]>([]);
     const [showAll, setShowAll] = useState(false);
@@ -176,6 +179,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserEmail, onClos
                                 <span className="material-symbols-outlined text-[13px]">lock</span>
                                 Lock
                             </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Math Prediction Settings */}
+                <div className="bg-[#121212] border border-blue-500/20 rounded-2xl p-5 space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[14px]">calculate</span>
+                        Math Prediction Logic
+                    </p>
+                    <div className="flex flex-wrap gap-4 items-center">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[9px] text-text-muted uppercase tracking-widest">Prediction Window Frame</label>
+                            <p className="text-[10px] text-text-muted mb-1">
+                                Controls the number of previous games the AI studies app-wide.
+                            </p>
+                            <div className="flex gap-2">
+                                {[5, 10, 20].map(w => (
+                                    <button
+                                        key={w}
+                                        onClick={() => {
+                                            setMathWindow(w);
+                                            setAdminMathWindow(w);
+                                            showToast(`🔄 Global AI math window set tracking last ${w} games.`);
+                                        }}
+                                        className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${mathWindow === w
+                                            ? 'bg-blue-500/20 border-blue-500/60 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+                                            : 'bg-[#1e1e1e] border-border-muted text-text-muted hover:border-blue-500/30 hover:text-white'}`}
+                                    >
+                                        {w} Games
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

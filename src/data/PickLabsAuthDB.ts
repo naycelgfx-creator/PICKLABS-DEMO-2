@@ -111,6 +111,16 @@ export interface PendingPayment {
     note?: string;                 // Optional admin note on rejection
 }
 
+// Global System Settings
+export function getAdminMathWindow(): number {
+    const val = localStorage.getItem('picklabs_admin_math_window');
+    return val ? parseInt(val, 10) : 5; // Default is 5 games
+}
+
+export function setAdminMathWindow(window: number) {
+    localStorage.setItem('picklabs_admin_math_window', window.toString());
+}
+
 const PENDING_PAYMENTS_KEY = 'picklabs_pending_payments';
 
 export function getAllPendingPayments(): PendingPayment[] {

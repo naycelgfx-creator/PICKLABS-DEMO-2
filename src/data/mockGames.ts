@@ -62,7 +62,7 @@ export const SPORT_LOGOS: Record<string, string> = {
     WBC: '/wbc-logo-new.png'
 };
 
-export const REAL_TEAMS: Record<string, { name: string, abbr: string, type?: 'team' | 'player', url?: string, league?: string }[]> = {
+export const REAL_TEAMS: Record<string, { name: string, abbr: string, type?: 'team' | 'player', url?: string, league?: string, sport?: string }[]> = {
     NBA: [
         { name: '76ers', abbr: 'phi', url: 'https://a.espncdn.com/i/teamlogos/nba/500/phi.png' },
         { name: 'Bucks', abbr: 'mil', url: 'https://a.espncdn.com/i/teamlogos/nba/500/mil.png' },
@@ -227,6 +227,7 @@ export const REAL_TEAMS: Record<string, { name: string, abbr: string, type?: 'te
         { name: 'J. Jones', abbr: 'jon-jones', type: 'player', url: 'https://a.espncdn.com/combiner/i?img=/i/headshots/mma/players/full/2335639.png&w=350&h=254' },
         { name: "S. O'Malley", abbr: 'omalley', type: 'player', url: 'https://a.espncdn.com/combiner/i?img=/i/headshots/mma/players/full/4222625.png&w=350&h=254' }
     ],
+
     NCAAM: [
         { name: 'Arizona', abbr: 'ariz', url: 'https://a.espncdn.com/i/teamlogos/ncaa/500/12.png' },
         { name: 'Auburn', abbr: 'aub', url: 'https://a.espncdn.com/i/teamlogos/ncaa/500/2.png' },
@@ -308,6 +309,22 @@ export const REAL_TEAMS: Record<string, { name: string, abbr: string, type?: 'te
         { name: 'Notre Dame', abbr: 'nd', url: 'https://a.espncdn.com/i/teamlogos/ncaa/500/87.png' },
         { name: 'Tennessee', abbr: 'tenn', url: 'https://a.espncdn.com/i/teamlogos/ncaa/500/2433.png' },
         { name: 'Clemson', abbr: 'clem', url: 'https://a.espncdn.com/i/teamlogos/ncaa/500/228.png' }
+    ],
+    Tennis: [
+        { name: 'WTA Tour', abbr: 'wta', url: '/wta.png', sport: 'Tennis' },
+        { name: 'US Open', abbr: 'usopen', url: '/us-open.png', sport: 'Tennis' },
+        { name: 'ATP Tour', abbr: 'atp', url: '/atp_tour.png', sport: 'Tennis' }
+    ],
+    NASCAR: [
+        { name: 'Cup Series', abbr: 'cup', url: '/nascar-cup.png', sport: 'Racing.NASCAR.CUP' },
+        { name: 'Xfinity', abbr: 'xfinity', url: '/nascar-xfinity.png', sport: 'Racing.NASCAR.XFINITY' },
+        { name: 'Trucks', abbr: 'trucks', url: '/nascar-truck.png', sport: 'Racing.NASCAR.TRUCK' }
+    ],
+    Golf: [
+        { name: 'PGA Tour', abbr: 'pga', url: '/pga-tour-logo.png', sport: 'Golf.PGA' },
+        { name: 'LPGA', abbr: 'lpga', url: '/lpga.png', sport: 'Golf.LPGA' },
+        { name: 'LIV Golf', abbr: 'liv', url: '/liv_golf.png', sport: 'Golf.LIV' },
+        { name: 'DP World', abbr: 'dp', url: '/dp_world_tour.png', sport: 'Golf.PGA' }
     ]
 };
 

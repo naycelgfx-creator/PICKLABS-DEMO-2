@@ -14,6 +14,7 @@ import { SavedPicksView } from './components/saved/SavedPicksView';
 import { ValueFinderView } from './components/value-finder/ValueFinderView';
 import { LandingPageView } from './components/landing/LandingPageView';
 import { LoginPageView } from './components/auth/LoginPageView';
+import { HomeDashboardView } from './components/dashboard/HomeDashboardView';
 import { SportsbookView } from './components/sportsbook/SportsbookView';
 import { HolographicBoardView } from './components/holographic-board/HolographicBoardView';
 import { AdminAnalyticsView } from './components/admin/AdminAnalyticsView';
@@ -24,8 +25,11 @@ import { RookieTour } from './components/ui/RookieTour';
 import { PlayerDirectory } from './components/directory/PlayerDirectory';
 import { APP_SPORT_TO_ESPN, fetchESPNScoreboardByDate, ESPNGame, SportKey } from './data/espnScoreboard';
 import { generateAIPrediction } from './data/espnTeams';
-import { CheckoutView } from './components/checkout/CheckoutView';
-import { getCurrentUser, isAdminEmail, logout, TierKey, DurationKey } from './data/PickLabsAuthDB';
+import { PricingPageView } from './components/onboarding/PricingPageView';
+import { SportSelectionView } from './components/onboarding/SportSelectionView';
+import { TeamSelectionView } from './components/onboarding/TeamSelectionView';
+
+import { getCurrentUser, isAdminEmail, logout } from './data/PickLabsAuthDB';
 import { clearAuth } from './utils/auth';
 import { useRookieMode } from './contexts/RookieModeContext';
 
@@ -69,13 +73,14 @@ function App() {
         return saved;
       }
     } catch { /* ignore */ }
-    return 'live-board';
+    return 'home';
   });
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { incrementQuota } = useRookieMode();
 
-  const setCurrentView = useCallback((view: ViewType) => {
+  const setCurrentView = useCallback((view: ViewType | string) => {
+
     if (view === 'matchup-terminal') {
       const user = getCurrentUser();
       const isPremiumUser = user?.isPremium || isAdminEmail(user?.email || '');
@@ -84,15 +89,45 @@ function App() {
         return;
       }
     }
-    setCurrentViewRaw(view);
+    setCurrentViewRaw(view as ViewType);
   }, [incrementQuota]);
 
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
-  // Persist current view changes to localStorage
+  // ── URL sync — updates browser address bar when navigating pages ──────────
+  const VIEW_URLS: Partial<Record<ViewType, string>> = {
+    'home': '/dashboard',
+    'precision-hub': '/precision-hub',
+    'popular-bets': '/popular-bets',
+    'sharp-tools': '/sharp-tools',
+    'live-board': '/live-board',
+    'sportsbook': '/sportsbook',
+    'matchup-terminal': '/matchup-terminal',
+    'bankroll': '/bankroll',
+    'teams-directory': '/teams',
+    'player-directory': '/players',
+    'saved-picks': '/saved-picks',
+    'value-finder': '/value-finder',
+    'account-settings': '/settings',
+    'admin-panel': '/admin',
+    'admin-analytics': '/admin/analytics',
+    'pricing-page': '/pricing',
+    'sport-selection': '/onboarding/sports',
+    'team-selection': '/onboarding/teams',
+    '3d-board': '/3d-board',
+    'landing-page': '/',
+    'login-page': '/login',
+  };
+
+  // Persist current view changes to localStorage + sync URL
   useEffect(() => {
     localStorage.setItem('picklabs_last_view', currentView);
+    const path = VIEW_URLS[currentView as ViewType] ?? `/${currentView}`;
+    if (window.location.pathname !== path) {
+      window.history.replaceState({ view: currentView }, '', path);
+    }
   }, [currentView]);
+
   const [betSlip, setBetSlip] = useState<BetPick[]>([]);
   const [bankroll, setBankroll] = useState<number>(1000);
   const [ticketHistory, setTicketHistory] = useState<ResolvedTicket[]>([]);
@@ -100,18 +135,7 @@ function App() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [hasSimulated, setHasSimulated] = useState(false);
   const [isAIPickLoading, setIsAIPickLoading] = useState(false);
-  // Checkout state — set when pricing card is clicked
-  const [checkoutTier, setCheckoutTier] = useState<TierKey>('pro');
-  const [checkoutDuration, setCheckoutDuration] = useState<DurationKey>('month');
 
-  /** Navigate to checkout with a specific tier and duration */
-  const navigateToCheckout = (tier: TierKey, duration: DurationKey = 'month') => {
-    setCheckoutTier(tier);
-    setCheckoutDuration(duration);
-    setCurrentViewRaw('checkout');
-  };
-  // Expose via window so AccountSettingsView can call it without prop-drilling
-  (window as unknown as Record<string, unknown>).__pickLabsCheckout = navigateToCheckout;
 
   // Bankroll Handlers
   const handlePlaceTicket = (ticket: BetPick[], totalStake: number) => {
@@ -450,7 +474,12 @@ function App() {
     setIsAIPickLoading(false);
   }, [isAIPickLoading, incrementQuota]);
 
-  const isMarketingView = currentView === 'landing-page' || currentView === 'login-page';
+  const isMarketingView =
+    currentView === 'landing-page' ||
+    currentView === 'login-page' ||
+    currentView === 'pricing-page' ||
+    currentView === 'sport-selection' ||
+    currentView === 'team-selection';
 
   return (
     <>
@@ -466,6 +495,10 @@ function App() {
         )}
 
         <main className={`flex-1 ${!isMarketingView ? 'pt-[80px]' : ''}`}>
+          {currentView === 'home' && (
+            <HomeDashboardView onNavigate={(view) => setCurrentView(view as ViewType)} />
+          )}
+
           {currentView === 'landing-page' && (
             <LandingPageView onNavigate={(view) => setCurrentView(view as ViewType)} />
           )}
@@ -597,13 +630,24 @@ function App() {
             />
           )}
 
-          {currentView === 'checkout' && (
-            <CheckoutView
-              tier={checkoutTier}
-              duration={checkoutDuration}
-              onNavigate={(view) => setCurrentView(view as ViewType)}
+          {currentView === 'pricing-page' && (
+            <PricingPageView
+              onNavigate={(view: string) => setCurrentView(view as ViewType)}
             />
           )}
+
+          {currentView === 'sport-selection' && (
+            <SportSelectionView
+              onNavigate={(view: string) => setCurrentView(view as ViewType)}
+            />
+          )}
+
+          {currentView === 'team-selection' && (
+            <TeamSelectionView
+              onNavigate={(view: string) => setCurrentView(view as ViewType)}
+            />
+          )}
+
         </main>
 
         {!isMarketingView && (

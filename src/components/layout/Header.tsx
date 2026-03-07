@@ -155,7 +155,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                 <div className="flex items-center gap-3 sm:gap-6 xl:gap-10 min-w-0">
                     <a
                         className="flex items-center gap-3 text-primary cursor-pointer group shrink-0"
-                        onClick={(e) => { e.preventDefault(); setCurrentView('live-board' as ViewType); }}
+                        onClick={(e) => { e.preventDefault(); setCurrentView('home' as ViewType); }}
                     >
                         <img
                             src="/picklabs-logo.svg"
@@ -218,7 +218,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                 <div className="flex items-center gap-2 shrink-0">
 
                     <div className="hidden sm:block">
-                        {!isPremiumUser && <FreeModeQuotaMeter />}
                     </div>
 
                     {/* AI Pick My Bets — icon only on < xl, full pill on xl+ */}
@@ -258,8 +257,8 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                             <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-white dark:bg-neutral-900 border border-border-muted rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden z-50 animate-in">
                                 {/* Header / User Info */}
                                 <div className="px-4 py-4 border-b border-border-muted bg-neutral-50 dark:bg-neutral-900/80 flex flex-col gap-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="h-10 w-10 flex items-center justify-center p-0.5">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="h-10 w-10 flex items-center justify-center p-0.5 rounded-full bg-neutral-800 border border-border-muted overflow-hidden shrink-0">
                                             {user?.email && isAdminEmail(user.email) ? (
                                                 <img src="/src/assets/avatars/admin_avatar.png" alt="Admin Avatar" className="w-full h-full object-contain" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
                                             ) : user?.isPremium ? (
@@ -268,25 +267,30 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                                 <img src="/src/assets/avatars/free_avatar.png" alt="Free Avatar" className="w-full h-full object-contain" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
                                             )}
                                         </div>
-                                        <div className="flex-1 min-w-0">
+                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
                                             <p className="text-xs font-black text-text-main truncate">{user?.email || 'Free Account'}</p>
-                                            <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest">
+                                            <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-0.5">
                                                 {user?.email && isAdminEmail(user.email) ? 'Admin' : user?.isPremium ? 'Premium Plan' : 'Free Account'}
                                             </p>
                                         </div>
                                     </div>
                                     {/* Plan Badge */}
-                                    <div className="flex justify-between items-center mt-2 bg-black/20 p-2 rounded-lg border border-white/5">
+                                    <div className="flex justify-between items-center bg-black/40 p-2.5 rounded-lg border border-white/10 shadow-inner">
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Billing Cycle</span>
-                                            <span className="text-[11px] font-black text-white">{user?.isPremium ? 'Yearly ($199/yr)' : 'Monthly ($0/mo)'}</span>
+                                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Billing Cycle</span>
+                                            <span className="text-xs font-black text-white">{user?.isPremium ? 'Yearly ($199/yr)' : 'Monthly ($0/mo)'}</span>
                                         </div>
                                         {user?.email && isAdminEmail(user.email) && (
-                                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
                                                 Admin
                                             </span>
                                         )}
                                     </div>
+                                    {!isPremiumUser && (
+                                        <div className="mt-2 -mx-1">
+                                            <FreeModeQuotaMeter />
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Menu Items */}
@@ -475,8 +479,8 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                         )}
                     </div>
 
-                    {/* ── BOOKIE MANAGER — icon + dropdown (hidden on mobile) ── */}
-                    <div className="relative hidden sm:block" ref={bookieRef}>
+                    {/* ── BOOKIE MANAGER — icon + dropdown ── */}
+                    <div className="relative" ref={bookieRef}>
                         <button
                             onClick={() => setIsBookieOpen(prev => !prev)}
                             title="Sportsbook Manager"
@@ -614,63 +618,66 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
 
             {/* ── Mobile / Tablet Dropdown Menu ── */}
             {isMobileMenuOpen && (
-                <div className="xl:hidden absolute top-full left-0 right-0 bg-background-dark/95 backdrop-blur-xl border-b border-border-muted shadow-2xl p-6 flex flex-col gap-6 max-h-[calc(100vh-60px)] overflow-y-auto">
-                    <nav className="flex flex-col gap-4">
-                        <a className={`text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'live-board' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('live-board'); }}>Live Board</a>
-                        <a className={`flex items-center gap-2 text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'precision-hub' ? 'text-yellow-400' : 'text-yellow-500/70 hover:text-yellow-400'}`} onClick={(e) => { e.preventDefault(); setCurrentView('precision-hub'); }}>
-                            <span className="material-symbols-outlined text-sm">bolt</span> Precision Hub
+                <div className="xl:hidden absolute top-full left-0 right-0 bg-background-dark/95 backdrop-blur-xl border-b border-border-muted shadow-2xl p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
+                    {/* Primary Nav Grid */}
+                    <nav className="grid grid-cols-2 gap-x-4 gap-y-3">
+                        <a className={`text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'live-board' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('live-board'); }}>Live Board</a>
+                        <a className={`flex items-center gap-1.5 text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'precision-hub' ? 'text-yellow-400' : 'text-yellow-500/70 hover:text-yellow-400'}`} onClick={(e) => { e.preventDefault(); setCurrentView('precision-hub'); }}>
+                            <span className="material-symbols-outlined text-[14px]">bolt</span> Precision Hub
                         </a>
-                        <a className={`text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'matchup-terminal' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('matchup-terminal'); }}>Matchup Terminal</a>
-                        <a className={`text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'teams-directory' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('teams-directory'); }}>Teams</a>
-                        <a className={`text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'player-directory' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('player-directory'); }}>Players</a>
-                        <a className={`text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'sharp-tools' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('sharp-tools'); }}>Sharp Tools</a>
-                        <a className={`flex items-center gap-2 text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'sportsbook' ? 'text-green-400' : 'text-text-muted hover:text-green-400'}`} onClick={(e) => { e.preventDefault(); setCurrentView('sportsbook'); }}>
-                            <span className="material-symbols-outlined text-sm">casino</span> Sportsbook
+                        <a className={`text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'matchup-terminal' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('matchup-terminal'); }}>Matchup</a>
+                        <a className={`text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'teams-directory' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('teams-directory'); }}>Teams</a>
+                        <a className={`text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'player-directory' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('player-directory'); }}>Players</a>
+                        <a className={`text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'sharp-tools' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('sharp-tools'); }}>Sharp Tools</a>
+                        <a className={`flex items-center gap-1.5 text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'sportsbook' ? 'text-[#A3FF00]' : 'text-text-muted hover:text-[#A3FF00]'}`} onClick={(e) => { e.preventDefault(); setCurrentView('sportsbook'); }}>
+                            <span className="material-symbols-outlined text-[14px]">casino</span> Sportsbook
                         </a>
-                        <a className={`text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'bankroll' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('bankroll'); }}>Bankroll</a>
-                        <a className={`text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'social-dashboard' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('social-dashboard'); }}>Dashboard</a>
-                        <div className="h-px bg-border-muted my-2" />
-                        <a className={`flex items-center gap-2 text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'popular-bets' ? 'text-orange-500' : 'text-orange-500/70 hover:text-orange-400'}`} onClick={(e) => { e.preventDefault(); setCurrentView('popular-bets'); }}>
-                            <span className="material-symbols-outlined text-sm">local_fire_department</span> Popular
+                        <a className={`text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'bankroll' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('bankroll'); }}>Bankroll</a>
+                        <a className={`text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'social-dashboard' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('social-dashboard'); }}>Dashboard</a>
+
+                        {/* Secondary Nav Grid Items */}
+                        <a className={`flex items-center gap-1.5 text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'popular-bets' ? 'text-orange-500' : 'text-orange-500/70 hover:text-orange-400'}`} onClick={(e) => { e.preventDefault(); setCurrentView('popular-bets'); }}>
+                            <span className="material-symbols-outlined text-[14px]">local_fire_department</span> Popular
                         </a>
-                        <a className={`flex items-center gap-2 text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'saved-picks' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('saved-picks'); }}>
-                            <span className="material-symbols-outlined text-sm">bookmark</span> Saved
+                        <a className={`flex items-center gap-1.5 text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'saved-picks' ? 'text-primary' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('saved-picks'); }}>
+                            <span className="material-symbols-outlined text-[14px]">bookmark</span> Saved
                         </a>
-                        <a className={`flex items-center gap-2 text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'value-finder' ? 'text-accent-blue' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('value-finder'); }}>
-                            <span className="material-symbols-outlined text-sm">manage_search</span> Value Finder
+                        <a className={`flex items-center gap-1.5 text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer transition ${currentView === 'value-finder' ? 'text-accent-blue' : 'text-text-muted hover:text-white'}`} onClick={(e) => { e.preventDefault(); setCurrentView('value-finder'); }}>
+                            <span className="material-symbols-outlined text-[14px]">manage_search</span> Value Finder
                         </a>
                     </nav>
 
-                    <div className="h-px bg-border-muted w-full" />
+                    <div className="h-px bg-border-muted w-full my-1" />
 
-                    <div className="flex flex-col gap-3">
-                        <button onClick={onAIPick} disabled={isAIPickLoading} className={`flex items-center justify-center gap-2 px-4 py-3 bg-accent-purple/20 border border-accent-purple/40 rounded-lg text-accent-purple hover:bg-accent-purple hover:text-white transition text-xs font-black uppercase tracking-widest ${isAIPickLoading ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                            <span className={`material-symbols-outlined text-sm ${isAIPickLoading ? 'animate-spin' : ''}`}>smart_toy</span>
+                    <div className="flex flex-col gap-2 relative pb-4">
+                        <button onClick={onAIPick} disabled={isAIPickLoading} className={`flex items-center justify-center gap-2 px-4 py-2 bg-accent-purple/20 border border-accent-purple/40 rounded-lg text-accent-purple hover:bg-accent-purple hover:text-white transition text-[10px] font-black uppercase tracking-widest ${isAIPickLoading ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                            <span className={`material-symbols-outlined text-[16px] ${isAIPickLoading ? 'animate-spin' : ''}`}>smart_toy</span>
                             {isAIPickLoading ? 'Analyzing...' : 'AI Pick My Bets'}
                         </button>
 
-                        {!isPremiumUser && (
-                            <div className="flex justify-center my-2 sm:hidden">
-                                <FreeModeQuotaMeter />
-                            </div>
-                        )}
-
                         {/* Mobile Settings Section */}
-                        <div className="bg-neutral-900 border border-border-muted rounded-xl overflow-hidden mt-2">
-                            <div className="px-4 py-3 border-b border-border-muted flex items-center gap-3">
-                                <div className="h-8 w-8 flex items-center justify-center p-0.5">
-                                    {user?.email && isAdminEmail(user.email) ? (
-                                        <img src="/src/assets/avatars/admin_avatar.png" alt="Admin Avatar" className="w-full h-full object-contain" />
-                                    ) : user?.isPremium ? (
-                                        <img src="/src/assets/avatars/premium_plus_avatar.png" alt="Premium Avatar" className="w-full h-full object-contain" />
-                                    ) : (
-                                        <img src="/src/assets/avatars/free_avatar.png" alt="Free Avatar" className="w-full h-full object-contain" />
-                                    )}
+                        <div className="bg-neutral-900 border border-border-muted rounded-xl overflow-hidden mt-1">
+                            <div className="p-4 border-b border-border-muted bg-black/20 flex flex-col gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 flex items-center justify-center p-0.5 rounded-full bg-neutral-800 border border-border-muted overflow-hidden shrink-0">
+                                        {user?.email && isAdminEmail(user.email) ? (
+                                            <img src="/src/assets/avatars/admin_avatar.png" alt="Admin Avatar" className="w-full h-full object-contain" />
+                                        ) : user?.isPremium ? (
+                                            <img src="/src/assets/avatars/premium_plus_avatar.png" alt="Premium Avatar" className="w-full h-full object-contain" />
+                                        ) : (
+                                            <img src="/src/assets/avatars/free_avatar.png" alt="Free Avatar" className="w-full h-full object-contain" />
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col flex-1 min-w-0">
+                                        <span className="text-sm font-black text-white truncate">{user?.email || 'Free Account'}</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{user?.email && isAdminEmail(user.email) ? 'Admin' : user?.isPremium ? 'Premium · Yearly' : 'Free Account'}</span>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-black text-text-main">{user?.email}</span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{user?.email && isAdminEmail(user.email) ? 'Admin' : user?.isPremium ? 'Premium · Yearly' : 'Free Account'}</span>
-                                </div>
+                                {!isPremiumUser && (
+                                    <div className="w-full">
+                                        <FreeModeQuotaMeter />
+                                    </div>
+                                )}
                             </div>
                             <button onClick={() => {
                                 if (!user?.isPremium && hasExceededQuota && !isRookieModeActive) {
@@ -680,49 +687,51 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                 }
                                 toggleRookieMode();
                                 if (isRookieModeActive) setIsGlossaryOpen(false);
-                            }} className="w-full flex items-center justify-between px-4 py-3 border-b border-border-muted active:bg-white/5">
+                            }} className="w-full flex items-center justify-between px-3 py-2 border-b border-border-muted active:bg-white/5">
                                 <div className="flex items-center gap-2 relative">
-                                    <span className={`material-symbols-outlined text-sm ${isRookieModeActive ? 'text-yellow-400' : 'text-slate-400'}`}>school</span>
-                                    <span className="text-[11px] font-bold text-text-main">Rookie Mode</span>
+                                    <span className={`material-symbols-outlined text-[16px] ${isRookieModeActive ? 'text-yellow-400' : 'text-slate-400'}`}>school</span>
+                                    <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Rookie Mode</span>
                                 </div>
-                                <div className={`relative h-4 w-8 rounded-full border transition-all duration-300 ${shakeRookieMode ? 'animate-shake border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : isRookieModeActive ? 'bg-yellow-400/20 border-yellow-400/60' : 'bg-neutral-800 border-border-muted'}`}>
-                                    <div className={`absolute top-px h-3 w-3 rounded-full transition-all duration-300 ${isRookieModeActive ? 'translate-x-4 bg-yellow-400' : 'translate-x-px bg-slate-600'}`} />
+                                <div className={`relative h-4 w-7 rounded-full border transition-all duration-300 ${shakeRookieMode ? 'animate-shake border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : isRookieModeActive ? 'bg-yellow-400/20 border-yellow-400/60' : 'bg-neutral-800 border-border-muted'}`}>
+                                    <div className={`absolute top-px h-3 w-3 rounded-full transition-all duration-300 ${isRookieModeActive ? 'translate-x-3.5 bg-yellow-400' : 'translate-x-[1px] bg-slate-600'}`} />
                                     {!isRookieModeActive && (
-                                        <span className="absolute -top-1 -right-1 z-10 scale-75">
+                                        <span className="absolute -top-1 -right-1 z-10 scale-[0.6]">
                                             <PulsingBeacon color="yellow" alwaysVisible />
                                         </span>
                                     )}
                                 </div>
                             </button>
-                            {isRookieModeActive && (
-                                <button onClick={() => { setIsGlossaryOpen(o => !o); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-2 px-4 py-3 border-b border-border-muted active:bg-white/5 text-yellow-500">
-                                    <span className="material-symbols-outlined text-sm">menu_book</span>
-                                    <span className="text-[11px] font-bold">Open Glossary</span>
-                                </button>
-                            )}
-                            <button aria-label="Toggle Dark Mode" title="Toggle Dark Mode" onClick={() => setIsDark(!isDark)} className="w-full flex items-center justify-between px-4 py-3 border-b border-border-muted active:bg-white/5">
+                            {
+                                isRookieModeActive && (
+                                    <button onClick={() => { setIsGlossaryOpen(o => !o); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 border-b border-border-muted active:bg-white/5 text-yellow-500">
+                                        <span className="material-symbols-outlined text-[16px]">menu_book</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest">Open Glossary</span>
+                                    </button>
+                                )
+                            }
+                            <button aria-label="Toggle Dark Mode" title="Toggle Dark Mode" onClick={() => setIsDark(!isDark)} className="w-full flex items-center justify-between px-3 py-2 border-b border-border-muted active:bg-white/5">
                                 <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sm text-slate-400">{isDark ? 'light_mode' : 'dark_mode'}</span>
-                                    <span className="text-[11px] font-bold text-text-main">Dark Mode</span>
+                                    <span className="material-symbols-outlined text-[16px] text-slate-400">{isDark ? 'light_mode' : 'dark_mode'}</span>
+                                    <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Dark Mode</span>
                                 </div>
-                                <div className={`relative h-4 w-8 rounded-full border transition-all duration-300 ${isDark ? 'bg-primary/20 border-primary/60' : 'bg-neutral-800 border-border-muted'}`}>
-                                    <div className={`absolute top-px h-3 w-3 rounded-full transition-all duration-300 ${isDark ? 'translate-x-4 bg-primary' : 'translate-x-px bg-slate-600'}`} />
+                                <div className={`relative h-4 w-7 rounded-full border transition-all duration-300 ${isDark ? 'bg-primary/20 border-primary/60' : 'bg-neutral-800 border-border-muted'}`}>
+                                    <div className={`absolute top-px h-3 w-3 rounded-full transition-all duration-300 ${isDark ? 'translate-x-3.5 bg-primary' : 'translate-x-[1px] bg-slate-600'}`} />
                                 </div>
                             </button>
 
                             {/* Mobile Accent Colors */}
-                            <div className="w-full flex flex-col px-4 py-3 border-b border-border-muted bg-neutral-800/50">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="material-symbols-outlined text-sm text-slate-400">palette</span>
-                                    <span className="text-[11px] font-bold text-text-main">Theme Color</span>
+                            <div className="w-full flex justify-between items-center px-3 py-2 border-b border-border-muted bg-neutral-800/20">
+                                <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[16px] text-slate-400">palette</span>
+                                    <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Colors</span>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex items-center gap-1.5">
                                     {ACCENT_COLORS.map(c => (
                                         <button
                                             key={c.id}
                                             onClick={() => applyAccent(c)}
-                                            className={`h-7 w-7 rounded-full border-2 transition-all ${accentId === c.id
-                                                ? 'border-white scale-110 shadow-lg'
+                                            className={`h-5 w-5 rounded-full border transition-all ${accentId === c.id
+                                                ? 'border-white scale-110 shadow-sm'
                                                 : 'border-neutral-700'
                                                 }`}
                                             style={{ backgroundColor: c.hex }}
@@ -730,39 +739,41 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                     ))}
                                     <button
                                         onClick={() => applyAccent({ id: 'lime', label: 'Lime', rgb: '163 255 0', hex: '#a3ff00' })}
-                                        className={`h-7 w-7 rounded-full border-2 border-dashed transition-all ${accentId === 'lime'
-                                            ? 'border-neutral-600 scale-100'
+                                        className={`h-5 w-5 rounded-full border border-dashed transition-all ${accentId === 'lime'
+                                            ? 'border-neutral-500 scale-100'
                                             : 'border-neutral-600'
                                             }`}
                                         style={{
-                                            background: 'repeating-conic-gradient(#444 0% 25%, transparent 0% 50%) 0 0 / 6px 6px',
+                                            background: 'repeating-conic-gradient(#444 0% 25%, transparent 0% 50%) 0 0 / 4px 4px',
                                         }}
                                     />
                                 </div>
                             </div>
 
-                            <button onClick={toggleLiveBets} className="w-full flex items-center justify-between px-4 py-3 border-b border-border-muted active:bg-white/5">
+                            <button onClick={toggleLiveBets} className="w-full flex items-center justify-between px-3 py-2 border-b border-border-muted active:bg-white/5">
                                 <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sm text-slate-400">monitoring</span>
-                                    <span className="text-[11px] font-bold text-text-main">Live Bets</span>
+                                    <span className="material-symbols-outlined text-[16px] text-slate-400">monitoring</span>
+                                    <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Live Bets</span>
                                 </div>
-                                <div className={`relative h-4 w-8 rounded-full border transition-all duration-300 ${isLiveBetsActive ? 'bg-primary/20 border-primary/60' : 'bg-neutral-800 border-border-muted'}`}>
-                                    <div className={`absolute top-px h-3 w-3 rounded-full transition-all duration-300 ${isLiveBetsActive ? 'translate-x-4 bg-primary' : 'translate-x-px bg-slate-600'}`} />
+                                <div className={`relative h-4 w-7 rounded-full border transition-all duration-300 ${isLiveBetsActive ? 'bg-primary/20 border-primary/60' : 'bg-neutral-800 border-border-muted'}`}>
+                                    <div className={`absolute top-px h-3 w-3 rounded-full transition-all duration-300 ${isLiveBetsActive ? 'translate-x-3.5 bg-primary' : 'translate-x-[1px] bg-slate-600'}`} />
                                 </div>
                             </button>
 
-                            <button onClick={() => { setCurrentView('account-settings'); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-2 px-4 py-3 border-b border-border-muted active:bg-white/5 text-accent-blue">
-                                <span className="material-symbols-outlined text-sm">manage_accounts</span>
-                                <span className="text-[11px] font-bold">Account Portal</span>
-                            </button>
+                            <div className="grid grid-cols-2 text-center divide-x divide-border-muted border-b border-border-muted">
+                                <button onClick={() => { setCurrentView('account-settings'); setIsMobileMenuOpen(false); }} className="w-full flex flex-col items-center justify-center gap-1 p-2 active:bg-white/5 text-accent-blue">
+                                    <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-widest">Account</span>
+                                </button>
+                                <button onClick={() => alert("Bug Reporter opening...")} className="w-full flex flex-col items-center justify-center gap-1 p-2 active:bg-white/5 text-orange-400">
+                                    <span className="material-symbols-outlined text-[18px]">bug_report</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-widest">Report Bug</span>
+                                </button>
+                            </div>
 
-                            <button onClick={() => alert("Bug Reporter opening...")} className="w-full flex items-center gap-2 px-4 py-3 border-b border-border-muted active:bg-white/5 text-orange-400">
-                                <span className="material-symbols-outlined text-sm">bug_report</span>
-                                <span className="text-[11px] font-bold">Report Bug</span>
-                            </button>
-                            <button onClick={() => { clearAuth(); logout(); setCurrentView('login-page'); }} className="w-full flex items-center gap-2 px-4 py-3 active:bg-red-500/10 text-red-400">
-                                <span className="material-symbols-outlined text-sm">logout</span>
-                                <span className="text-[11px] font-bold">Sign Out</span>
+                            <button onClick={() => { clearAuth(); logout(); setCurrentView('login-page'); }} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 active:bg-red-500/10 text-red-400 bg-neutral-900/50">
+                                <span className="material-symbols-outlined text-[16px]">logout</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Sign Out</span>
                             </button>
                         </div>
                     </div>

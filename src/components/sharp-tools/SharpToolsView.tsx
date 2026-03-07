@@ -18,7 +18,7 @@ export const SharpToolsView: React.FC<{ selectedGame?: Game | null }> = ({ selec
 
         const loadRealGames = async () => {
             const today = new Date().toISOString().split('T')[0];
-            const espnKey: SportKey = 'NBA'; // Default to NBA if no game selected
+            const espnKey: SportKey = 'NBA';
             try {
                 const raw = await fetchESPNScoreboardByDate(espnKey, today);
                 if (raw.length > 0) {
@@ -49,6 +49,7 @@ export const SharpToolsView: React.FC<{ selectedGame?: Game | null }> = ({ selec
 
     return (
         <main className="max-w-[1440px] mx-auto p-6 space-y-6">
+
             <div className="grid grid-cols-12 gap-6">
                 <ArbitrageFinder game={activeGame} />
                 <EVOpportunities game={activeGame} />

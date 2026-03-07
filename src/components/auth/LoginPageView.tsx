@@ -64,6 +64,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [isFading, setIsFading] = useState(false);
     const [shaking, setShaking] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
 
     // 2FA state
     const [is2FAStep, setIs2FAStep] = useState(false);
@@ -88,7 +89,15 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
         e.preventDefault();
         setError('');
 
+
         try {
+            if (!is2FAStep && !rememberMe) {
+                setError('Please save your username and password to enter.');
+                setShaking(true);
+                setTimeout(() => setShaking(false), 500);
+                return;
+            }
+
             if (is2FAStep && pendingUser) {
                 const res = await verifyWithLockout(pendingUser, code2FA);
                 if (!res.success) {
@@ -225,6 +234,20 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
                                         </button>
                                     </div>
                                 </div>
+
+                                <div className="flex items-center gap-2 pt-2">
+                                    <input
+                                        type="checkbox"
+                                        id="rememberMe"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="w-4 h-4 bg-neutral-900 border-border-muted rounded text-primary focus:ring-primary"
+                                    />
+                                    <label htmlFor="rememberMe" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer">
+                                        Save username and password
+                                    </label>
+                                </div>
+
                                 <button
                                     type="submit"
                                     className="w-full py-4 bg-primary text-black font-black uppercase tracking-[0.2em] italic rounded-xl hover:scale-[1.01] transition-transform mt-2"

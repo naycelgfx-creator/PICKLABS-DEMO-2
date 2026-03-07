@@ -1,16 +1,15 @@
 import React from 'react';
 import { Footer } from '../layout/Footer';
 import { GlowingEffect } from '../ui/glowing-effect';
-import { PricingSection } from '../ui/pricing-section';
 import { LogoCloud } from '../ui/logo-cloud-3';
 import { BetSlipCompare } from '../ui/BetSlipCompare';
-import { ThemeToggle } from '../ui/theme-toggle';
+
 import { BlurFade } from '../ui/blur-fade';
 import { ShimmerButton } from '../ui/shimmer-button';
 import { ContainerScroll } from '../ui/container-scroll-animation';
-import { Sparkles, Zap, Shield, Star } from 'lucide-react';
 
-type ViewType = 'live-board' | 'matchup-terminal' | 'sharp-tools' | 'bankroll' | 'teams-directory' | 'popular-bets' | 'saved-picks' | 'value-finder' | 'landing-page' | 'login-page';
+import { ViewType } from '../shared/PremiumLockView';
+import { ThemeToggle } from '../ui/theme-toggle';
 
 interface LandingPageViewProps {
     onNavigate: (view: ViewType) => void;
@@ -55,95 +54,7 @@ const COMMUNITY_REVIEWS = [
 
 export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) => {
 
-
-    const PICKLABS_TIERS = [
-        {
-            name: '7-Day Free Trial',
-            price: { monthly: '0', yearly: '0' },
-            description: 'Start your journey on PickLabs free',
-            ctaLabel: 'Start Free Trial',
-            onCta: () => onNavigate('login-page'),
-            icon: <Zap className="w-5 h-5" />,
-            features: [
-                { name: 'Trending Insights', description: 'Today\'s top sharp public picks', included: true },
-                { name: 'Thousands of Props & Games', description: 'All major sports & leagues', included: true },
-                { name: 'Advanced Visuals', description: 'Charts, heatmaps & team stats', included: true },
-                { name: 'Injury Reports', description: 'Real-time roster updates', included: true },
-                { name: 'Odds Comparison', description: 'Line shopping across books', included: false },
-                { name: 'Real Time Betting Alerts', description: 'Sharp money & line move alerts', included: false },
-                { name: 'EV+ Bet Indicators', description: 'Positive expected value tags', included: false },
-                { name: 'Arbitrage Feed', description: 'Guaranteed profit opportunities', included: false },
-            ],
-        },
-        {
-            name: 'Premium',
-            price: { monthly: '19.99', yearly: '199.99' },
-            description: 'Core analytics suite',
-            accentColor: 'default' as const,
-            ctaLabel: 'Get Premium',
-            icon: <Shield className="w-5 h-5" />,
-            features: [
-                { name: 'Trending Insights', description: 'Today\'s top sharp public picks', included: true },
-                { name: 'Thousands of Props & Games', description: 'All major sports & leagues', included: true },
-                { name: 'Advanced Visuals', description: 'Charts, heatmaps & team stats', included: true },
-                { name: 'Injury Reports', description: 'Real-time roster updates', included: true },
-                { name: 'Odds Comparison', description: 'Line shopping across books', included: true },
-                { name: 'Real Time Betting Alerts', description: 'Sharp money & line move alerts', included: true },
-                { name: 'EV+ Bet Indicators', description: 'Positive expected value tags', included: false },
-                { name: 'Arbitrage Feed', description: 'Guaranteed profit opportunities', included: false },
-            ],
-        },
-        {
-            name: 'Premium+',
-            price: { monthly: '29.99', yearly: '299.99' },
-            description: 'Early bird: 50% off · Best value',
-            highlight: true,
-            badge: 'Best Value',
-            accentColor: 'purple' as const,
-            ctaLabel: 'Get Premium+',
-            icon: <Sparkles className="w-5 h-5" />,
-            features: [
-                { name: 'Everything in Premium', description: 'All Premium features included', included: true },
-                { name: 'Odds Movement Charts', description: 'Real-time line history visualization', included: true },
-                { name: 'EV+ Bet Indicators', description: 'Positive expected value tags', included: true },
-                { name: 'Positive EV Power Feed', description: 'Live +EV opportunity stream', included: true },
-                { name: 'Sharp Book Odds', description: 'Pinnacle & sharp book comparisons', included: true },
-                { name: 'Boost Index', description: 'Promo value scoring', included: true },
-                { name: 'Arbitrage Feed', description: 'Guaranteed profit opportunities', included: false },
-                { name: 'Middle Betting', description: 'Two-way market gap detection', included: false },
-            ],
-        },
-        {
-            name: 'Pro',
-            price: { monthly: '79.99', yearly: '359.99' },
-            description: 'Get Pro for 38% off · Full access',
-            highlight: true,
-            badge: 'All Access',
-            accentColor: 'green' as const,
-            ctaLabel: 'Get Pro',
-            icon: <Star className="w-5 h-5" />,
-            features: [
-                { name: 'Everything in Premium+', description: 'All Premium+ features included', included: true },
-                { name: 'Arbitrage Feed', description: 'Guaranteed profit opportunities', included: true },
-                { name: 'Middle Betting', description: 'Two-way market gap detection', included: true },
-                { name: 'Unlimited API Access', description: 'Full REST & WebSocket endpoints', included: true },
-                { name: 'Priority Support', description: '24/7 dedicated support channel', included: true },
-                { name: 'Early Feature Access', description: 'Beta features before public release', included: true },
-                { name: 'Custom Alerts', description: 'Build personalized betting triggers', included: true },
-                { name: 'Export & Reporting', description: 'Download your full bet history & stats', included: true },
-            ],
-        },
-    ];
-
-
-
-
-    const handleScrollToPricing = (e: React.MouseEvent) => {
-        e.preventDefault();
-        const el = document.getElementById('pricing');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-
+    // handleScrollToPricing removed as we navigate to pricing-page
     return (
         <div className="overflow-x-hidden w-full font-display bg-background-dark text-slate-100 min-h-screen selection:bg-primary selection:text-black">
             <header className="px-6 py-8 max-w-7xl mx-auto flex items-center justify-between">
@@ -156,9 +67,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                 </a>
                 <nav className="hidden md:flex items-center gap-8 text-[10px] font-black uppercase tracking-widest text-text-muted">
                     <a className="hover:text-primary transition-colors" href="#how-it-works">How It Works</a>
-                    <a className="hover:text-primary transition-colors" href="#pricing">Pricing</a>
-                    <a className="hover:text-primary transition-colors" href="#how-it-works">Data Feed</a>
-                    <a className="hover:text-primary transition-colors" href="#pricing">API</a>
+                    <a className="hover:text-primary transition-colors cursor-pointer" onClick={(e) => { e.preventDefault(); onNavigate('pricing-page'); }}>Pricing</a>
+                    <a className="hover:text-primary transition-colors" href="#data-feed">Data Feed</a>
+                    <a className="hover:text-primary transition-colors" href="#developer-api">API</a>
                 </nav>
                 <div className="flex items-center gap-2">
                     <ThemeToggle className="hidden md:flex" />
@@ -195,7 +106,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                         </p>
                         <div className="flex flex-col md:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
                             <ShimmerButton
-                                onClick={handleScrollToPricing}
+                                onClick={(e) => { e.preventDefault(); onNavigate('pricing-page'); }}
                                 shimmerColor="#ffffff"
                                 shimmerDuration="2.5s"
                                 shimmerSize="0.08em"
@@ -361,7 +272,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
             </section>
 
             {/* ── DEVELOPER API ── */}
-            <section className="w-full px-4 sm:px-6 py-24 bg-neutral-950 border-y border-border-muted">
+            <section id="developer-api" className="w-full px-4 sm:px-6 py-24 bg-neutral-950 border-y border-border-muted">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
                     {/* Left — simulated API terminal */}
@@ -436,7 +347,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
             </section>
 
             {/* ── CONSUMER DATA FEED ── */}
-            <section className="w-full px-4 sm:px-6 py-24 bg-background-dark border-b border-border-muted">
+            <section id="data-feed" className="w-full px-4 sm:px-6 py-24 bg-background-dark border-b border-border-muted">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
                     {/* Left — copy */}
@@ -533,15 +444,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                 </div>
             </section>
 
-            <section id="pricing" className="w-full px-4 sm:px-6 py-32">
-                <div className="max-w-[1400px] mx-auto">
-                    <PricingSection
-                        tiers={PICKLABS_TIERS}
-                        title="FREE 7 DAY TRIAL"
-                        subtitle="Experience the ultimate sports analytics platform risk-free for 7 days. Choose your edge below."
-                    />
-                </div>
-            </section>
+            {/* Section pricing removed to push users to the new page */}
 
             <Footer />
         </div >

@@ -232,7 +232,7 @@ export const SocialDashboardView: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border-muted">
-                                {sortedLeaderboard.map((user, idx) => {
+                                {sortedLeaderboard.slice(0, 30).map((user, idx) => {
                                     const isFeatured = featuredIds.includes(user.id);
                                     const isHot = user.winPercent >= 55;
                                     const isCold = user.winPercent <= 45;

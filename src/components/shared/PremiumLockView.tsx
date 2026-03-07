@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-export type ViewType = 'live-board' | 'matchup-terminal' | 'sharp-tools' | 'bankroll' | 'teams-directory' | 'player-directory' | 'popular-bets' | 'saved-picks' | 'value-finder' | 'landing-page' | 'login-page' | 'sportsbook' | 'ai-dashboard' | 'social-dashboard' | 'player-props' | 'trends' | 'live-odds' | 'leaderboard' | 'referrals' | 'account' | 'account-settings' | 'settings' | '3d-board' | 'admin-analytics' | 'precision-hub' | 'checkout' | 'admin-panel';
+export type ViewType = 'live-board' | 'matchup-terminal' | 'sharp-tools' | 'bankroll' | 'teams-directory' | 'player-directory' | 'popular-bets' | 'saved-picks' | 'value-finder' | 'landing-page' | 'login-page' | 'sportsbook' | 'ai-dashboard' | 'social-dashboard' | 'player-props' | 'trends' | 'live-odds' | 'leaderboard' | 'referrals' | 'account' | 'account-settings' | 'settings' | '3d-board' | 'admin-analytics' | 'precision-hub' | 'admin-panel' | 'pricing-page' | 'sport-selection' | 'team-selection' | 'home';
 
 export const PremiumLockView: React.FC<{ featureName: string; onNavigate: (v: ViewType) => void }> = ({ featureName, onNavigate }) => {
     const [isShaking, setIsShaking] = useState(false);
@@ -8,7 +8,7 @@ export const PremiumLockView: React.FC<{ featureName: string; onNavigate: (v: Vi
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 500);
         // Delay navigation slightly so they see the shake
-        setTimeout(() => onNavigate('landing-page'), 600);
+        setTimeout(() => onNavigate('pricing-page'), 600);
     };
 
     return (
