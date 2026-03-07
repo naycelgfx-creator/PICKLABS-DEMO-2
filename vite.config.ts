@@ -4,6 +4,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/PICKLABS-DEMO-2/',
   plugins: [
     react(),
     nodePolyfills({
