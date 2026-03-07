@@ -324,18 +324,13 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                 </div>
                             </section>
 
-
-                        </div>
-
-                        {/* RIGHT COLUMN: AI Parlays */}
-                        <div className="space-y-6">
                             {/* Popular Tickets */}
                             {aiPicks.length > 0 && (
-                                <section>
-                                    <h2 className="text-lg font-black uppercase text-white tracking-wider mb-4 mt-8 flex items-center gap-2">
+                                <section className="mt-8">
+                                    <h2 className="text-lg font-black uppercase text-white tracking-wider mb-4 flex items-center gap-2">
                                         <Ticket className="w-5 h-5 text-orange-500" /> Popular Tickets For You
                                     </h2>
-                                    <div className="grid grid-cols-1 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {aiPicks.map(bet => (
                                             <div key={bet.id} className="bg-neutral-900 border border-neutral-800 hover:border-orange-500/50 transition-colors rounded-xl p-5 flex flex-col h-full relative overflow-hidden group">
                                                 <div className="absolute -top-10 -right-10 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 transition-colors pointer-events-none"></div>
@@ -394,37 +389,17 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                 </section>
                             )}
 
-                            {/* News & Injuries */}
-                            <section>
-                                <h2 className="text-lg font-black uppercase text-white tracking-wider mb-4 flex items-center gap-2">
-                                    <AlertCircle className="w-5 h-5 text-accent-purple" /> Injuries & News
-                                </h2>
-                                <div className="space-y-3">
-                                    {[
-                                        { title: "Star QB questionable for Sunday with minor ankle sprain", source: "ESPN", time: "2h ago", impact: "High" },
-                                        { title: "Point Guard cleared to return after 3-game absence", source: "NBC Sports", time: "5h ago", impact: "Positive" },
-                                        { title: "Head coach discusses defensive strategy changes", source: "The Athletic", time: "8h ago", impact: "Low" }
-                                    ].map((news, i) => (
-                                        <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex justify-between items-center group cursor-pointer hover:bg-neutral-800 transition-colors">
-                                            <div className="space-y-1">
-                                                <h3 className="text-sm font-bold text-slate-200 group-hover:text-primary transition-colors">{news.title}</h3>
-                                                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">{news.source} • {news.time}</p>
-                                            </div>
-                                            <div className={cn(
-                                                "px-2 py-1 rounded text-[10px] font-black uppercase",
-                                                news.impact === 'High' ? 'bg-red-500/20 text-red-400' :
-                                                    news.impact === 'Positive' ? 'bg-primary/20 text-primary' : 'bg-slate-800 text-slate-400'
-                                            )}>
-                                                {news.impact}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
+                        </div>
+
+                        {/* RIGHT COLUMN: AI Parlays */}
+                        <div className="space-y-6">
+
+
+                            {/* Top Predictions */}
                             <h2 className="text-lg font-black uppercase text-white tracking-wider flex items-center gap-2">
                                 <span className="material-symbols-outlined text-primary">auto_awesome</span> Top Predictions for Your Teams
                             </h2>
-                            <div className="bg-neutral-900 border border-primary/30 rounded-2xl relative overflow-hidden shadow-[0_0_30px_rgba(13,242,13,0.1)]">
+                            <div className="bg-neutral-900 border border-primary/30 rounded-2xl relative overflow-hidden shadow-[0_0_30px_rgba(13,242,13,0.1)] mb-6">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[50px] rounded-full pointer-events-none"></div>
                                 <div className="p-6 relative z-10">
                                     <div className="flex items-center justify-between mb-6">
@@ -452,7 +427,8 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                 </div>
                             </div>
 
-                            <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 p-6 rounded-2xl border border-neutral-700 relative overflow-hidden mt-6">
+                            {/* Explore the Board */}
+                            <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 p-6 rounded-2xl border border-neutral-700 relative overflow-hidden mb-6">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] rounded-full pointer-events-none"></div>
                                 <h3 className="text-lg font-black uppercase italic mb-2">Explore the Board</h3>
                                 <p className="text-sm text-slate-400 mb-6 font-medium">Dive into the full slate of games, predictive analytics, and deep stats.</p>
@@ -463,6 +439,34 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                     Go to Live Board <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
+
+                            {/* News & Injuries */}
+                            <section>
+                                <h2 className="text-lg font-black uppercase text-white tracking-wider mb-4 flex items-center gap-2">
+                                    <AlertCircle className="w-5 h-5 text-accent-purple" /> Injuries & News
+                                </h2>
+                                <div className="space-y-3">
+                                    {[
+                                        { title: "Star QB questionable for Sunday with minor ankle sprain", source: "ESPN", time: "2h ago", impact: "High" },
+                                        { title: "Point Guard cleared to return after 3-game absence", source: "NBC Sports", time: "5h ago", impact: "Positive" },
+                                        { title: "Head coach discusses defensive strategy changes", source: "The Athletic", time: "8h ago", impact: "Low" }
+                                    ].map((news, i) => (
+                                        <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex justify-between items-center group cursor-pointer hover:bg-neutral-800 transition-colors">
+                                            <div className="space-y-1">
+                                                <h3 className="text-sm font-bold text-slate-200 group-hover:text-primary transition-colors">{news.title}</h3>
+                                                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">{news.source} • {news.time}</p>
+                                            </div>
+                                            <div className={cn(
+                                                "px-2 py-1 rounded text-[10px] font-black uppercase",
+                                                news.impact === 'High' ? 'bg-red-500/20 text-red-400' :
+                                                    news.impact === 'Positive' ? 'bg-primary/20 text-primary' : 'bg-slate-800 text-slate-400'
+                                            )}>
+                                                {news.impact}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
                         </div>
                     </div>
                 ) : (
