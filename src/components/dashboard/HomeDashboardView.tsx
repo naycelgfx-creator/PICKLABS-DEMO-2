@@ -163,6 +163,38 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* LEFT COLUMN: Games & News */}
                         <div className="lg:col-span-2 space-y-8">
+                            {/* Upcoming Favorite Games */}
+                            <section>
+                                <h2 className="text-lg font-black uppercase text-white tracking-wider mb-4 flex items-center gap-2">
+                                    <Calendar className="w-5 h-5 text-accent-cyan" /> Upcoming Matchups
+                                </h2>
+                                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x">
+                                    {uniqueGames.map((game) => (
+                                        <div key={game.id} className="min-w-[280px] sm:min-w-[320px] shrink-0 bg-neutral-900 border border-neutral-800 rounded-xl p-5 hover:border-neutral-700 transition-colors snap-start">
+                                            <div className="flex justify-between text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">
+                                                <span>{game.sport} • {game.timeLabel}</span>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <img src={game.awayTeam.logo} alt={game.awayTeam.name} className="w-8 h-8 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                                        <span className="font-bold text-sm text-slate-200">{game.awayTeam.name}</span>
+                                                    </div>
+                                                    <span className={`text-sm font-black ${game.awayTeam.score !== undefined ? 'text-white' : 'text-slate-500'}`}>{game.awayTeam.score ?? game.odds.spread}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <img src={game.homeTeam.logo} alt={game.homeTeam.name} className="w-8 h-8 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                                        <span className="font-bold text-sm text-slate-200">{game.homeTeam.name}</span>
+                                                    </div>
+                                                    <span className={`text-sm font-black ${game.homeTeam.score !== undefined ? 'text-white' : 'text-slate-500'}`}>{game.homeTeam.score ?? (game.odds.spread.startsWith('-') ? game.odds.spread.replace('-', '+') : `-${game.odds.spread}`)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
                             {/* Favorite Teams Bar */}
                             <section>
                                 <div className="flex items-center justify-between mb-4">
@@ -292,37 +324,6 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                 )}
                             </section>
 
-                            {/* Upcoming Favorite Games */}
-                            <section>
-                                <h2 className="text-lg font-black uppercase text-white tracking-wider mb-4 flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-accent-cyan" /> Upcoming Matchups
-                                </h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {uniqueGames.slice(0, 4).map((game) => (
-                                        <div key={game.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 hover:border-neutral-700 transition-colors">
-                                            <div className="flex justify-between text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">
-                                                <span>{game.sport} • {game.timeLabel}</span>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <img src={game.awayTeam.logo} alt={game.awayTeam.name} className="w-8 h-8 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                                        <span className="font-bold text-sm text-slate-200">{game.awayTeam.name}</span>
-                                                    </div>
-                                                    <span className="text-sm font-black {game.awayTeam.score !== undefined ? 'text-white' : 'text-slate-500'}">{game.awayTeam.score ?? game.odds.spread}</span>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <img src={game.homeTeam.logo} alt={game.homeTeam.name} className="w-8 h-8 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                                        <span className="font-bold text-sm text-slate-200">{game.homeTeam.name}</span>
-                                                    </div>
-                                                    <span className="text-sm font-black {game.homeTeam.score !== undefined ? 'text-white' : 'text-slate-500'}">{game.homeTeam.score ?? (game.odds.spread.startsWith('-') ? game.odds.spread.replace('-', '+') : `-${game.odds.spread}`)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
 
                             {/* Popular Tickets */}
                             {aiPicks.length > 0 && (
