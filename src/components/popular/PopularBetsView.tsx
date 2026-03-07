@@ -494,7 +494,8 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
                                         ))}
                                     </div>
                                 </div>
-                            ))}
+                            );
+                        })}
                     </div>
                 )}
 
