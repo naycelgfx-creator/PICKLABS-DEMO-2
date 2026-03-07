@@ -294,9 +294,8 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] 
     return null;
 };
 
-const UniversalPropChart: React.FC<UniversalPropChartProps> = ({ logs, line, propType, playerName, chartType }) => {
-    void playerName;
-    void propType;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const UniversalPropChart: React.FC<UniversalPropChartProps> = ({ logs, line, propType, playerName: _playerName, chartType }) => {
 
     if (!logs.length) return null;
 

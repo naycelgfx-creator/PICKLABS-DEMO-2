@@ -267,7 +267,7 @@ export interface SessionData {
 async function hashPassword(msg: string): Promise<string> {
     const encoder = new TextEncoder();
     const data = encoder.encode(msg);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -397,7 +397,7 @@ export async function signup(email: string, password: string, referralCode?: str
     }
 
     const newUser: DBUser = {
-        id: crypto.randomUUID(),
+        id: window.crypto.randomUUID(),
         email,
         passwordHash: await hashPassword(password),
         isPremium: false,

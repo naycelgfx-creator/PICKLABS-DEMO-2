@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     nodePolyfills({
       include: ['crypto', 'buffer', 'stream', 'util'],
-      globals: { Buffer: true, global: true, process: true },
+      globals: { Buffer: true, process: true },
     })
   ],
   server: {
@@ -19,6 +19,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
+        intro: 'if (typeof global === "undefined") var global = window;',
         manualChunks(id) {
           if (id.includes('player_db.json')) {
             return 'data-player-db';

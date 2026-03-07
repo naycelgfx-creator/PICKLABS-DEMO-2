@@ -118,11 +118,10 @@ const IMPACT_COLORS = {
 
 // ─────────────────────────────────────────────────────────────────────
 export const WeatherImpact: React.FC<WeatherImpactProps> = ({ game }) => {
-    if (!isOutdoor(game.sport)) return null;
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { temp, condition, windSpeed, windDir } = useMemo(() => getWeather(game), [game]);
     const { text: impactText, level: impactLevel } = getImpactText(condition, windSpeed, windDir, temp, game.sport);
+
+    if (!isOutdoor(game.sport)) return null;
 
     const sport = game.sport;
     const sportLabelMap: Record<string, string> = {

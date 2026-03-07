@@ -25,28 +25,17 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{
-          background: '#0a0a0a',
-          color: '#fff',
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'monospace',
-          padding: '2rem',
-          textAlign: 'center',
-        }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
-          <h1 style={{ color: '#0df20d', fontSize: '1.5rem', marginBottom: '0.5rem' }}>
+        <div className="bg-[#0a0a0a] text-white min-h-screen flex flex-col items-center justify-center font-mono p-8 text-center">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h1 className="text-[#0df20d] text-2xl mb-2">
             PickLabs — Startup Error
           </h1>
-          <p style={{ color: '#aaa', marginBottom: '1rem', maxWidth: '600px' }}>
+          <p className="text-[#aaa] mb-4 max-w-xl">
             The app crashed during initialization. Please refresh or clear your browser cache.
           </p>
-          <details style={{ background: '#111', padding: '1rem', borderRadius: '8px', maxWidth: '800px', textAlign: 'left', color: '#f87171' }}>
-            <summary style={{ cursor: 'pointer', color: '#fff', marginBottom: '0.5rem' }}>Error Details</summary>
-            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '0.75rem' }}>
+          <details className="bg-[#111] p-4 rounded-lg max-w-3xl text-left text-red-400">
+            <summary className="cursor-pointer text-white mb-2">Error Details</summary>
+            <pre className="whitespace-pre-wrap break-all text-xs">
               {this.state.error?.toString()}
               {'\n\n'}
               {this.state.errorInfo?.componentStack}
@@ -54,19 +43,9 @@ export class ErrorBoundary extends Component<Props, State> {
           </details>
           <button
             onClick={() => { localStorage.clear(); window.location.reload(); }}
-            style={{
-              marginTop: '1.5rem',
-              padding: '0.75rem 2rem',
-              background: '#0df20d',
-              color: '#000',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-            }}
+            className="mt-6 px-8 py-3 bg-[#0df20d] text-black border-none rounded-lg font-bold cursor-pointer text-sm hover:bg-[#a3ff00] transition-colors"
           >
-            Clear Cache & Reload
+            Clear Cache &amp; Reload
           </button>
         </div>
       );

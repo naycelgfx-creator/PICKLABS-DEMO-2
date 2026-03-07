@@ -61,7 +61,14 @@ export interface ResolvedTicket {
 // ─── Premium Lock Helper View ─────────────────────────────────────────────────
 // Extracted to src/components/shared/PremiumLockView.tsx
 // ──────────────────────────────────────────────────────────────────────────────
-// ──────────────────────────────────────────────────────────────────────────────
+
+// ── URL sync map — defined at module scope to avoid dependency issues ─────────
+const VIEW_URLS: Partial<Record<ViewType, string>> = {
+  'home': '/dashboard',
+  'precision-hub': '/precision-hub',
+  'login-page': '/login',
+  'landing-page': '/',
+};
 
 function App() {
   const [currentView, setCurrentViewRaw] = useState<ViewType>(() => {
@@ -94,30 +101,14 @@ function App() {
 
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
-  // ── URL sync — updates browser address bar when navigating pages ──────────
-  const VIEW_URLS: Partial<Record<ViewType, string>> = {
-    'home': '/dashboard',
-    'precision-hub': '/precision-hub',
-    'popular-bets': '/popular-bets',
-    'sharp-tools': '/sharp-tools',
-    'live-board': '/live-board',
-    'sportsbook': '/sportsbook',
-    'matchup-terminal': '/matchup-terminal',
-    'bankroll': '/bankroll',
-    'teams-directory': '/teams',
-    'player-directory': '/players',
-    'saved-picks': '/saved-picks',
-    'value-finder': '/value-finder',
-    'account-settings': '/settings',
-    'admin-panel': '/admin',
-    'admin-analytics': '/admin/analytics',
-    'pricing-page': '/pricing',
-    'sport-selection': '/onboarding/sports',
-    'team-selection': '/onboarding/teams',
-    '3d-board': '/3d-board',
-    'landing-page': '/',
-    'login-page': '/login',
-  };
+  // ── URL sync — parse path to set initial view ────────────────────────────
+  useEffect(() => {
+    const path = window.location.pathname;
+    const view = Object.keys(VIEW_URLS).find(k => VIEW_URLS[k as ViewType] === path) as ViewType;
+    if (view) {
+      setCurrentViewRaw(view); // Use setCurrentViewRaw here to avoid quota check on initial load
+    }
+  }, []);
 
   // Persist current view changes to localStorage + sync URL
   useEffect(() => {
@@ -152,7 +143,7 @@ function App() {
     }
 
     const historyItem: ResolvedTicket = {
-      id: crypto.randomUUID(),
+      id: window.crypto.randomUUID(),
       picks: ticket,
       status,
       stake,
@@ -162,10 +153,6 @@ function App() {
 
     setTicketHistory(prev => [historyItem, ...prev]);
     setActiveTickets(prev => prev.filter((_, i) => i !== ticketIndex));
-  };
-
-  const handleRunSimulation = () => {
-    setIsSimulating(true);
   };
 
   const handleSimulationComplete = () => {
@@ -216,7 +203,7 @@ function App() {
         alert("You cannot add more than 20 picks to your bet slip.");
         return filtered;
       }
-      return [...filtered, { ...bet, id: crypto.randomUUID() }];
+      return [...filtered, { ...bet, id: window.crypto.randomUUID() }];
     });
   };
 
@@ -462,7 +449,7 @@ function App() {
       })
       .slice(0, 5)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .map(({ score, ...pick }) => ({ ...pick, id: crypto.randomUUID() }));
+      .map(({ score, ...pick }) => ({ ...pick, id: window.crypto.randomUUID() }));
 
     if (top.length === 0) {
       // No ESPN games today — show an alert
@@ -548,7 +535,6 @@ function App() {
               game={selectedGame}
               onAddBet={handeAddBet}
               hasSimulated={hasSimulated}
-              onRunSimulation={handleRunSimulation}
               betSlip={betSlip}
               setBetSlip={setBetSlip}
             />
@@ -626,7 +612,6 @@ function App() {
 
           {currentView === 'account-settings' && (
             <AccountSettingsView
-              onNavigate={(view) => setCurrentView(view as ViewType)}
               onLogout={() => { clearAuth(); logout(); setCurrentView('login-page'); }}
             />
           )}

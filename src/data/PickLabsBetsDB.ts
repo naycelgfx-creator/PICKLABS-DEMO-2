@@ -74,7 +74,7 @@ export function logBet(email: string, betPick: BetPick): BetTracker {
     const payout = calculatePayout(betPick.stake, numOdds);
 
     const newBet: BetTracker = {
-        id: crypto.randomUUID(),
+        id: window.crypto.randomUUID(),
         userEmail: email,
         gameType: betPick.type === 'Prop' ? 'Player Prop' : (betPick.type as any) === 'Value' ? 'Value Pick' : betPick.type,
         propType: betPick.team,
@@ -97,7 +97,7 @@ export function logManualBet(email: string, matchup: string, wager: number, odds
     const payout = calculatePayout(wager, odds);
 
     const newBet: BetTracker = {
-        id: crypto.randomUUID(),
+        id: window.crypto.randomUUID(),
         userEmail: email,
         gameType: 'Manual Entry',
         propType: 'Manual',
