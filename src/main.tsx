@@ -7,17 +7,21 @@ import { RookieModeProvider } from './contexts/RookieModeContext'
 import { SportsbookProvider } from './contexts/SportsbookContext'
 import { LiveBetsProvider } from './contexts/LiveBetsContext'
 import { TicketCartProvider } from './contexts/TicketCartContext'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <SportsbookProvider>
-      <LiveBetsProvider>
-        <RookieModeProvider>
-          <TicketCartProvider>
-            <App />
-          </TicketCartProvider>
-        </RookieModeProvider>
-      </LiveBetsProvider>
-    </SportsbookProvider>
+    <ErrorBoundary>
+      <SportsbookProvider>
+        <LiveBetsProvider>
+          <RookieModeProvider>
+            <TicketCartProvider>
+              <App />
+            </TicketCartProvider>
+          </RookieModeProvider>
+        </LiveBetsProvider>
+      </SportsbookProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )
+
