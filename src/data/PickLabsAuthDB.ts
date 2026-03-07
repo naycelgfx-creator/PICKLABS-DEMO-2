@@ -18,8 +18,7 @@
  */
 
 import { adminDeleteUserBets } from './PickLabsBetsDB';
-import speakeasy from 'speakeasy';
-import bcrypt from 'bcryptjs';
+
 
 const DB_KEY = 'picklabs_users_db';       // mirrors: picklabs.db
 const SESSION_KEY = 'picklabs_session';   // mirrors: Flask-Login cookie
@@ -806,7 +805,8 @@ export function adminToggleActive(userId: string): void {
 
 // ─── 2FA (Speakeasy) ──────────────────────────────────────────────────────────
 
-export function generate2FASecret(email: string) {
+export async function generate2FASecret(email: string) {
+    const speakeasy = (await import('speakeasy')).default;
     return speakeasy.generateSecret({
         name: email,
         issuer: "PickLabs.bet"
@@ -817,6 +817,9 @@ export async function enable2FA(email: string): Promise<{ secret: string, qrCode
     const users = getAllUsers();
     const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
     if (idx === -1) return null;
+
+    const speakeasy = (await import('speakeasy')).default;
+    const bcrypt = (await import('bcryptjs')).default;
 
     const secret = speakeasy.generateSecret({
         name: email,
@@ -868,6 +871,7 @@ export async function enableRecoveryCodes(email: string): Promise<string[] | nul
     const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
     if (idx === -1) return null;
 
+    const bcrypt = (await import('bcryptjs')).default;
     const recoveryCodes: string[] = [];
     const hashedCodes: string[] = [];
 
@@ -919,6 +923,9 @@ export async function verifyWithLockout(user: DBUser, submittedToken: string): P
     if (!user.twoFactorSecret) {
         return { success: true }; // No 2FA enabled
     }
+
+    const speakeasy = (await import('speakeasy')).default;
+    const bcrypt = (await import('bcryptjs')).default;
 
     // 1. Check if it's a 6-digit Speakeasy code
     const is6Digit = /^\d{6}$/.test(submittedToken);
