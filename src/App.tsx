@@ -1,33 +1,34 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { SimulationOverlay } from './components/ui/SimulationOverlay';
 import { LiveBoard } from './components/live-board/LiveBoard';
 import { Game } from './data/mockGames';
-import { SharpToolsView } from './components/sharp-tools/SharpToolsView';
-import { BankrollView } from './components/bankroll/BankrollView';
-import { MatchupTerminalView } from './components/dashboard/MatchupTerminalView';
-import { SocialDashboardView } from './components/dashboard/SocialDashboardView';
-import { TeamsDirectory } from './components/directory/TeamsDirectory';
-import { PopularBetsView } from './components/popular/PopularBetsView';
-import { SavedPicksView } from './components/saved/SavedPicksView';
-import { ValueFinderView } from './components/value-finder/ValueFinderView';
-import { LandingPageView } from './components/landing/LandingPageView';
-import { LoginPageView } from './components/auth/LoginPageView';
-import { HomeDashboardView } from './components/dashboard/HomeDashboardView';
-import { SportsbookView } from './components/sportsbook/SportsbookView';
-import { HolographicBoardView } from './components/holographic-board/HolographicBoardView';
-import { AdminAnalyticsView } from './components/admin/AdminAnalyticsView';
-import { AdminPanel } from './components/admin/AdminPanel';
-import { PrecisionHubView } from './components/precision-hub/PrecisionHubView';
-import { AccountSettingsView } from './components/account/AccountSettingsView';
+
+const SharpToolsView = lazy(() => import('./components/sharp-tools/SharpToolsView').then(m => ({ default: m.SharpToolsView })));
+const BankrollView = lazy(() => import('./components/bankroll/BankrollView').then(m => ({ default: m.BankrollView })));
+const MatchupTerminalView = lazy(() => import('./components/dashboard/MatchupTerminalView').then(m => ({ default: m.MatchupTerminalView })));
+const SocialDashboardView = lazy(() => import('./components/dashboard/SocialDashboardView').then(m => ({ default: m.SocialDashboardView })));
+const TeamsDirectory = lazy(() => import('./components/directory/TeamsDirectory').then(m => ({ default: m.TeamsDirectory })));
+const PopularBetsView = lazy(() => import('./components/popular/PopularBetsView').then(m => ({ default: m.PopularBetsView })));
+const SavedPicksView = lazy(() => import('./components/saved/SavedPicksView').then(m => ({ default: m.SavedPicksView })));
+const ValueFinderView = lazy(() => import('./components/value-finder/ValueFinderView').then(m => ({ default: m.ValueFinderView })));
+const LandingPageView = lazy(() => import('./components/landing/LandingPageView').then(m => ({ default: m.LandingPageView })));
+const LoginPageView = lazy(() => import('./components/auth/LoginPageView').then(m => ({ default: m.LoginPageView })));
+const HomeDashboardView = lazy(() => import('./components/dashboard/HomeDashboardView').then(m => ({ default: m.HomeDashboardView })));
+const SportsbookView = lazy(() => import('./components/sportsbook/SportsbookView').then(m => ({ default: m.SportsbookView })));
+const HolographicBoardView = lazy(() => import('./components/holographic-board/HolographicBoardView').then(m => ({ default: m.HolographicBoardView })));
+const AdminAnalyticsView = lazy(() => import('./components/admin/AdminAnalyticsView').then(m => ({ default: m.AdminAnalyticsView })));
+const AdminPanel = lazy(() => import('./components/admin/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const PrecisionHubView = lazy(() => import('./components/precision-hub/PrecisionHubView').then(m => ({ default: m.PrecisionHubView })));
+const AccountSettingsView = lazy(() => import('./components/account/AccountSettingsView').then(m => ({ default: m.AccountSettingsView })));
 import { RookieTour } from './components/ui/RookieTour';
-import { PlayerDirectory } from './components/directory/PlayerDirectory';
+const PlayerDirectory = lazy(() => import('./components/directory/PlayerDirectory').then(m => ({ default: m.PlayerDirectory })));
 import { APP_SPORT_TO_ESPN, fetchESPNScoreboardByDate, ESPNGame, SportKey } from './data/espnScoreboard';
 import { generateAIPrediction } from './data/espnTeams';
-import { PricingPageView } from './components/onboarding/PricingPageView';
-import { SportSelectionView } from './components/onboarding/SportSelectionView';
-import { TeamSelectionView } from './components/onboarding/TeamSelectionView';
+const PricingPageView = lazy(() => import('./components/onboarding/PricingPageView').then(m => ({ default: m.PricingPageView })));
+const SportSelectionView = lazy(() => import('./components/onboarding/SportSelectionView').then(m => ({ default: m.SportSelectionView })));
+const TeamSelectionView = lazy(() => import('./components/onboarding/TeamSelectionView').then(m => ({ default: m.TeamSelectionView })));
 
 import { getCurrentUser, isAdminEmail, logout } from './data/PickLabsAuthDB';
 import { clearAuth } from './utils/auth';
@@ -495,6 +496,7 @@ function App() {
         )}
 
         <main className={`flex-1 ${!isMarketingView ? 'pt-[80px]' : ''}`}>
+          <Suspense fallback={<div className="flex h-[70vh] w-full items-center justify-center"><div className="w-12 h-12 border-4 border-accent-purple border-t-transparent rounded-full animate-spin"></div></div>}>
           {currentView === 'home' && (
             <HomeDashboardView onNavigate={(view) => setCurrentView(view as ViewType)} />
           )}
@@ -647,7 +649,7 @@ function App() {
               onNavigate={(view: string) => setCurrentView(view as ViewType)}
             />
           )}
-
+          </Suspense>
         </main>
 
         {!isMarketingView && (
