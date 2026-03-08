@@ -214,9 +214,12 @@ interface TeamOddsCardProps {
         edge: number;
         suggestions: { kelly: number; fixed: number; target: number; };
     };
+    oracleEnabled?: boolean;        // per-game AI toggle state
+    onToggleOracle?: () => void;    // flip the toggle for this game
+    oracleResult?: React.ReactNode; // inline ORACLE result panel for this game
 }
 
-const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport, onAIAnalyzeBet, aiPrediction }) => {
+const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport, onAIAnalyzeBet, aiPrediction, oracleEnabled, onToggleOracle, oracleResult }) => {
     // PickLabs ORACLE — AI-powered prediction (replaces local math engine)
     const { prediction: pred, loading: oracleLoading, isOracle: _isOracle } = useOraclePrediction({
         homeTeam: game.homeTeam.displayName,
@@ -403,6 +406,23 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                         </span>
                     )}
                 </div>
+                {/* Per-game ORACLE toggle */}
+                <div className="flex items-center gap-2">
+                    <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${oracleEnabled ? 'text-primary' : 'text-slate-600'}`}>
+                        {oracleEnabled ? '⚡ ORACLE ON' : 'ORACLE'}
+                    </span>
+                    <button
+                        onClick={onToggleOracle}
+                        title={oracleEnabled ? 'Disable ORACLE for this game' : 'Enable ORACLE for this game'}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 ${
+                            oracleEnabled ? 'bg-primary shadow-[0_0_8px_rgba(163,255,0,0.4)]' : 'bg-neutral-700'
+                        }`}
+                    >
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
+                            oracleEnabled ? 'translate-x-[18px]' : 'translate-x-0.5'
+                        }`} />
+                    </button>
+                </div>
             </div>
 
             {/* Teams */}
@@ -460,6 +480,13 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                     </span>
                 </div>
             </div>
+
+            {/* Inline ORACLE result (shown below card when toggle is ON + Full AI run) */}
+            {oracleEnabled && oracleResult && (
+                <div className="border-t border-primary/30 bg-black/30 px-3 py-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {oracleResult}
+                </div>
+            )}
         </div>
     );
 };
@@ -762,8 +789,12 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
     const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
     const [aiAnalysisContent, setAiAnalysisContent] = useState<React.ReactNode>(null);
     const [focusedGameId, setFocusedGameId] = useState<string | null>(null);
-    const [analyzeAll, setAnalyzeAll] = useState(false);
-    void focusedGameId; void analyzeAll; void setAnalyzeAll; // wired to UI Analyze All toggle
+    // Per-game ORACLE toggle: Set of game IDs that have the toggle ON
+    const [oracleEnabledGames, setOracleEnabledGames] = useState<Set<string>>(new Set());
+    // Per-game inline ORACLE results (shown inside each card when toggle + Full AI run)
+    const [gameOracleResults, setGameOracleResults] = useState<Record<string, React.ReactNode>>({});
+    const [gameOracleLoading, setGameOracleLoading] = useState<Set<string>>(new Set());
+    void focusedGameId; void gameOracleLoading;
     const AI_TABS: { id: AITab; label: string; icon: string; color: string }[] = [
         { id: 'full', label: 'Full AI', icon: 'auto_awesome', color: 'text-primary border-primary/40 bg-primary/10' },
         { id: 'game', label: 'Game', icon: 'sports_score', color: 'text-blue-400 border-blue-400/40 bg-blue-400/10' },
@@ -772,6 +803,77 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
         { id: 'weather', label: 'Weather', icon: 'cloud', color: 'text-sky-400 border-sky-400/40 bg-sky-400/10' },
         { id: 'expert', label: 'Expert', icon: 'record_voice_over', color: 'text-orange-400 border-orange-400/40 bg-orange-400/10' },
     ];
+
+    // ── Run Full ORACLE for all toggle-enabled games ────────────────────────
+    const runAllOracleGames = async (gamesArg: ESPNGame[]) => {
+        const enabledIds = Array.from(oracleEnabledGames);
+        const gamesToAnalyze = enabledIds.length > 0
+            ? gamesArg.filter(g => enabledIds.includes(g.id))
+            : gamesArg.slice(0, 1);
+
+        if (gamesToAnalyze.length === 0) return;
+
+        setAiTab('full');
+        setAiMode(true);
+        setAiAnalysisLoading(false);
+        setAiAnalysisContent(null);
+
+        // Show loading spinner inside each enabled card
+        const loadingNodes: Record<string, React.ReactNode> = {};
+        gamesToAnalyze.forEach(g => {
+            loadingNodes[g.id] = (
+                <div className="flex items-center gap-2 p-2 animate-pulse">
+                    <span className="material-symbols-outlined text-primary text-sm animate-spin">sync</span>
+                    <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider">ORACLE analyzing...</span>
+                </div>
+            );
+        });
+        setGameOracleResults(prev => ({ ...prev, ...loadingNodes }));
+        setGameOracleLoading(new Set(gamesToAnalyze.map(g => g.id)));
+
+        await Promise.all(gamesToAnalyze.map(async (game) => {
+            const home = game.homeTeam.displayName;
+            const away = game.awayTeam.displayName;
+            const sport = game.sport ?? activeSport;
+
+            let result: React.ReactNode;
+            try {
+                const prediction = await getOracleFullPrediction(
+                    home, away, sport,
+                    game.homeTeam.record ?? '', game.awayTeam.record ?? '', '', ''
+                );
+                const hWin = prediction ? Math.round(prediction.homeWinProb) : 55;
+                const aWin = prediction ? Math.round(prediction.awayWinProb) : 45;
+                const pick = (prediction?.homeWinProb ?? 55) > (prediction?.awayWinProb ?? 45) ? home : away;
+                const conf = prediction?.confidence ?? 62;
+                const spread = prediction?.spread ?? '-3.5';
+                const total = prediction?.total ?? '220.5';
+                const ouPick = prediction?.overUnderPick ?? 'Over';
+                const insight = prediction?.insight ?? 'ORACLE analyzing matchup...';
+
+                result = (
+                    <div className="space-y-1 p-2 text-left">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-primary">⚡ ORACLE</span>
+                            <span className="text-[9px] font-black text-white bg-primary/10 border border-primary/30 px-2 py-0.5 rounded">
+                                {pick} · {Math.max(hWin, aWin)}%
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-bold">{spread} · {ouPick} {total}</span>
+                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${
+                                conf >= 70 ? 'bg-primary/20 text-primary' : conf >= 55 ? 'bg-yellow-400/20 text-yellow-400' : 'bg-red-400/20 text-red-400'
+                            }`}>{conf >= 70 ? 'HIGH ✓' : conf >= 55 ? 'MED' : 'LOW ⚠'} {conf}%</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 leading-snug line-clamp-2">{insight}</p>
+                    </div>
+                );
+            } catch {
+                result = <div className="p-2 text-[9px] text-red-400">ORACLE analysis failed.</div>;
+            }
+
+            setGameOracleResults(prev => ({ ...prev, [game.id]: result }));
+            setGameOracleLoading(prev => { const next = new Set(prev); next.delete(game.id); return next; });
+        }));
+    };
 
     const runAIAnalysis = async (tab: AITab, game: ESPNGame | null) => {
         setAiTab(tab);
@@ -1613,13 +1715,18 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                     <button
                                         key={t.id}
                                         title={t.label}
-                                        onClick={() => runAIAnalysis(t.id, sortedGames[0] ?? null)}
+                                        onClick={() => t.id === 'full' ? runAllOracleGames(sortedGames) : runAIAnalysis(t.id, sortedGames[0] ?? null)}
                                         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${aiTab === t.id && aiMode ? t.color : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
                                             }`}
                                     >
                                         <span className="material-symbols-outlined text-[13px]">{t.icon}</span>
                                         <span className="hidden sm:inline">{t.label}</span>
-                                        {aiTab === t.id && aiMode && <span className="w-1 h-1 rounded-full bg-current animate-pulse" />}
+                                        {t.id === 'full' && oracleEnabledGames.size > 0 && (
+                                            <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-primary text-black text-[8px] font-black">
+                                                {oracleEnabledGames.size}
+                                            </span>
+                                        )}
+                                        {aiTab === t.id && aiMode && t.id !== 'full' && <span className="w-1 h-1 rounded-full bg-current animate-pulse" />}
                                     </button>
                                 ))}
                                 {aiMode && (
@@ -1829,6 +1936,13 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                                                 onAddBet={onAddBet}
                                                                 aiPrediction={aiPredictions[game.id]}
                                                                 onAIAnalyzeBet={runBetAIAnalysis}
+                                                                oracleEnabled={oracleEnabledGames.has(game.id)}
+                                                                onToggleOracle={() => setOracleEnabledGames(prev => {
+                                                                    const next = new Set(prev);
+                                                                    if (next.has(game.id)) next.delete(game.id); else next.add(game.id);
+                                                                    return next;
+                                                                })}
+                                                                oracleResult={gameOracleResults[game.id]}
                                                             />
                                                         ))}
                                                     </div>
