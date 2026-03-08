@@ -215,10 +215,11 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                 <button
                     onClick={onClose}
                     title="Close"
+                    aria-label="Close"
                     className="absolute top-3 right-3 z-30 w-8 h-8 rounded-full flex items-center justify-center transition-all"
                     style={{ background: 'rgba(0,0,0,0.45)', border: `1px solid ${borderClr}`, color: textClr }}
                 >
-                    <span className="material-symbols-outlined text-[16px]">close</span>
+                    <span className="material-symbols-outlined text-[16px]" aria-hidden="true">close</span>
                 </button>
 
                 {/* ── Hero ── */}
@@ -230,8 +231,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                             src={athlete.teamLogo}
                             alt=""
                             aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-contain"
-                            style={{ opacity: 0.55, transform: 'scale(1.05)' }}
+                            className="absolute inset-0 w-full h-full object-contain opacity-55 scale-105"
                         />
                     )}
 
@@ -249,15 +249,14 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                             className="relative z-20 h-56 w-auto object-cover object-top drop-shadow-2xl"
                         />
                     ) : (
-                        <div className="relative z-20 w-28 h-28 rounded-full flex items-center justify-center mb-4"
-                            style={{ background: 'rgba(0,0,0,0.3)' }}>
+                        <div className="relative z-20 w-28 h-28 rounded-full flex items-center justify-center mb-4 bg-black/30">
                             <span className="material-symbols-outlined text-5xl" style={{ color: textClr }}>person</span>
                         </div>
                     )}
                 </div>
 
                 {/* ── Info Panel ── */}
-                <div className="px-5 pt-3 pb-5 flex flex-col gap-4" style={{ background: 'rgba(0,0,0,0.55)' }}>
+                <div className="px-5 pt-3 pb-5 flex flex-col gap-4 bg-black/60">
 
                     {/* Name row */}
                     <div className="flex items-start justify-between gap-3">
@@ -275,7 +274,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                         {athlete.teamLogo && (
                             <img
                                 src={athlete.teamLogo}
-                                alt={athlete.teamAbbr || ''}
+                                alt={athlete.teamAbbr ? `${athlete.teamAbbr} Logo` : 'Team Logo'}
                                 className="w-12 h-12 object-contain shrink-0 drop-shadow-lg"
                                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                             />
@@ -284,8 +283,8 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
 
                     {/* Physical bio */}
                     <div
-                        className="grid grid-cols-3 gap-3 text-center rounded-xl p-3"
-                        style={{ background: 'rgba(0,0,0,0.4)', border: `1px solid ${borderClr}44` }}
+                        className="grid grid-cols-3 gap-3 text-center rounded-xl p-3 bg-black/40"
+                        style={{ border: `1px solid ${borderClr}44` }}
                     >
                         {[
                             { lbl: 'Birthday', val: fmtDOB(athlete.dateOfBirth) },
@@ -313,8 +312,8 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                             <div className="grid grid-cols-4 gap-2">
                                 {Array.from({ length: 8 }).map((_, i) => (
                                     <div key={i} className="flex flex-col items-center gap-1">
-                                        <div className="h-2 w-8 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                                        <div className="h-5 w-10 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.15)' }} />
+                                        <div className="h-2 w-8 rounded animate-pulse bg-white/10" />
+                                        <div className="h-5 w-10 rounded animate-pulse bg-white/10" />
                                     </div>
                                 ))}
                             </div>
@@ -323,8 +322,8 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                                 {parsed.items.map(({ label, value }) => (
                                     <div
                                         key={label}
-                                        className="flex flex-col items-center text-center rounded-lg py-2 px-1"
-                                        style={{ background: 'rgba(0,0,0,0.35)', border: `1px solid ${borderClr}55` }}
+                                        className="flex flex-col items-center text-center rounded-lg py-2 px-1 bg-black/30"
+                                        style={{ border: `1px solid ${borderClr}55` }}
                                     >
                                         <span className="text-[8px] font-black uppercase tracking-widest text-white/50 mb-1">{label}</span>
                                         <span className="text-base font-black text-white leading-none">{value ?? '—'}</span>

@@ -260,11 +260,11 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                     <div className="flex items-center gap-3 mb-3">
                                         <div className="h-10 w-10 flex items-center justify-center p-0.5 rounded-full bg-neutral-800 border border-border-muted overflow-hidden shrink-0">
                                             {user?.email && isAdminEmail(user.email) ? (
-                                                <img src="/src/assets/avatars/admin_avatar.png" alt="Admin Avatar" className="w-full h-full object-contain" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
+                                                <img src="/src/assets/avatars/admin_avatar.png" alt="Admin Avatar" className="w-full h-full object-contain transition-[filter] duration-400 ease-in-out" style={{ filter: logoFilter }} />
                                             ) : user?.isPremium ? (
-                                                <img src="/src/assets/avatars/premium_plus_avatar.png" alt="Premium Avatar" className="w-full h-full object-contain" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
+                                                <img src="/src/assets/avatars/premium_plus_avatar.png" alt="Premium Avatar" className="w-full h-full object-contain transition-[filter] duration-400 ease-in-out" style={{ filter: logoFilter }} />
                                             ) : (
-                                                <img src="/src/assets/avatars/free_avatar.png" alt="Free Avatar" className="w-full h-full object-contain" style={{ filter: logoFilter, transition: 'filter 0.4s ease' }} />
+                                                <img src="/src/assets/avatars/free_avatar.png" alt="Free Avatar" className="w-full h-full object-contain transition-[filter] duration-400 ease-in-out" style={{ filter: logoFilter }} />
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -608,6 +608,8 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
 
                     {/* Hamburger — mobile only */}
                     <button
+                        title="Toggle Mobile Menu"
+                        aria-label="Toggle Mobile Menu"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         className="xl:hidden h-10 w-10 flex items-center justify-center rounded-lg bg-neutral-800 border border-border-muted text-text-main hover:bg-neutral-700 transition"
                     >
@@ -650,7 +652,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                     <div className="h-px bg-border-muted w-full my-1" />
 
                     <div className="flex flex-col gap-2 relative pb-4">
-                        <button onClick={onAIPick} disabled={isAIPickLoading} className={`flex items-center justify-center gap-2 px-4 py-2 bg-accent-purple/20 border border-accent-purple/40 rounded-lg text-accent-purple hover:bg-accent-purple hover:text-white transition text-[10px] font-black uppercase tracking-widest ${isAIPickLoading ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                        <button title="AI Pick My Bets" aria-label="AI Pick My Bets" onClick={onAIPick} disabled={isAIPickLoading} className={`flex items-center justify-center gap-2 px-4 py-2 bg-accent-purple/20 border border-accent-purple/40 rounded-lg text-accent-purple hover:bg-accent-purple hover:text-white transition text-[10px] font-black uppercase tracking-widest ${isAIPickLoading ? 'opacity-70 cursor-not-allowed' : ''}`}>
                             <span className={`material-symbols-outlined text-[16px] ${isAIPickLoading ? 'animate-spin' : ''}`}>smart_toy</span>
                             {isAIPickLoading ? 'Analyzing...' : 'AI Pick My Bets'}
                         </button>
@@ -750,7 +752,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                 </div>
                             </div>
 
-                            <button onClick={toggleLiveBets} className="w-full flex items-center justify-between px-3 py-2 border-b border-border-muted active:bg-white/5">
+                            <button aria-label="Toggle Live Bets" title="Toggle Live Bets" onClick={toggleLiveBets} className="w-full flex items-center justify-between px-3 py-2 border-b border-border-muted active:bg-white/5">
                                 <div className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[16px] text-slate-400">monitoring</span>
                                     <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Live Bets</span>

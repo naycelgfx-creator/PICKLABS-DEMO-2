@@ -154,7 +154,7 @@ export const BetSlip: React.FC<BetSlipProps & { onClose?: () => void }> = ({ bet
                 <div className="p-4 space-y-3 max-h-[480px] overflow-y-auto custom-scrollbar">
                     {betSlip.length === 0 ? (
                         <div className="text-center py-24 space-y-4">
-                            <img src="/picklabs-logo.svg" alt="PickLabs" className="w-24 h-24 mx-auto mb-2" style={{ opacity: 0.4 }} />
+                            <img src="/picklabs-logo.svg" alt="PickLabs" className="w-24 h-24 mx-auto mb-2 opacity-40" />
                             <p className="text-[#A3FF00]/60 text-[10px] font-black uppercase tracking-[0.2em]">EMPTY BET SLIP</p>
                             <p className="text-[10px] text-slate-500 font-bold tracking-widest mt-1">Click odds on any game to add</p>
                         </div>

@@ -188,8 +188,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
                                 </div>
                                 <button
                                     type="submit"
-                                    className="w-full py-4 bg-primary text-black font-black uppercase tracking-[0.2em] italic rounded-xl hover:scale-[1.01] transition-transform mt-2"
-                                    style={{ boxShadow: '0 0 20px rgba(13,242,13,0.2)' }}
+                                    className="w-full py-4 bg-primary text-black font-black uppercase tracking-[0.2em] italic rounded-xl hover:scale-[1.01] transition-transform mt-2 shadow-[0_0_20px_rgba(13,242,13,0.2)]"
                                 >
                                     VERIFY CODE
                                 </button>
@@ -227,6 +226,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
                                         />
                                         <button
                                             type="button"
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
                                             onClick={() => setShowPassword(!showPassword)}
                                             className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-text-main transition-colors"
                                         >
@@ -250,8 +250,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
 
                                 <button
                                     type="submit"
-                                    className="w-full py-4 bg-primary text-black font-black uppercase tracking-[0.2em] italic rounded-xl hover:scale-[1.01] transition-transform mt-2"
-                                    style={{ boxShadow: '0 0 20px rgba(13,242,13,0.2)' }}
+                                    className="w-full py-4 bg-primary text-black font-black uppercase tracking-[0.2em] italic rounded-xl hover:scale-[1.01] transition-transform mt-2 shadow-[0_0_20px_rgba(13,242,13,0.2)]"
                                 >
                                     ENTER
                                 </button>
@@ -304,7 +303,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
                 </div>
             </main>
             <section className="hidden lg:flex flex-grow bg-neutral-950 relative overflow-hidden items-center justify-center p-12">
-                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #1e2e1e 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
+                <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(circle_at_2px_2px,#1e2e1e_1px,transparent_0)] bg-[size:40px_40px]"></div>
                 <div className="w-full max-w-4xl relative z-10">
                     <div className={`transition-opacity duration-300 ${isFading ? 'opacity-0' : 'opacity-100'}`}>
                         <div className="flex items-center justify-between mb-6 px-4">

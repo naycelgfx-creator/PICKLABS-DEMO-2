@@ -418,9 +418,9 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
                                                         {bet.playerHeadshot ? (
                                                             <div className="flex items-center gap-3 mt-1 py-1">
                                                                 <div className="relative">
-                                                                    <img src={bet.playerHeadshot} alt={bet.legs[0]?.player} className="w-10 h-10 rounded-full object-cover bg-neutral-800" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                                    <img src={bet.playerHeadshot} alt={bet.legs[0]?.player ?? 'Player Headshot'} className="w-10 h-10 rounded-full object-cover bg-neutral-800" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                                                     {bet.playerTeamLogo && (
-                                                                        <img src={bet.playerTeamLogo} className="w-6 h-6 absolute -bottom-1 -right-2 object-contain drop-shadow-md z-10" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                                        <img src={bet.playerTeamLogo} alt={`${bet.homeTeam} or ${bet.awayTeam} Logo`} className="w-6 h-6 absolute -bottom-1 -right-2 object-contain drop-shadow-md z-10" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                                                     )}
                                                                 </div>
                                                                 <div className="flex flex-col">

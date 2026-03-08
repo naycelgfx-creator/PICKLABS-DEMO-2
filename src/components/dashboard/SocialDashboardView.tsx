@@ -103,7 +103,7 @@ export const SocialDashboardView: React.FC = () => {
                 <div className="flex flex-col md:flex-row items-end justify-between gap-4 border-b border-border-muted pb-6">
                     <div className="flex items-center gap-5">
                         <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(163,255,0,0.15)]">
-                            <span className="material-symbols-outlined text-primary text-4xl">travel_explore</span>
+                            <span className="material-symbols-outlined text-primary text-4xl" aria-hidden="true">travel_explore</span>
                         </div>
                         <div className="flex flex-col">
                             <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter">Global Leaderboard</h2>
@@ -127,7 +127,7 @@ export const SocialDashboardView: React.FC = () => {
                 {/* ── Featured Top 4 Row ── */}
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary text-xl">star</span>
+                        <span className="material-symbols-outlined text-primary text-xl" aria-hidden="true">star</span>
                         <h3 className="text-xl font-black text-white italic tracking-widest uppercase">Featured Bettors</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -194,7 +194,7 @@ export const SocialDashboardView: React.FC = () => {
                                         onClick={(e) => copyParlay(user.recentParlay, e)}
                                         className="flex-1 flex items-center justify-center gap-2 py-3 bg-white dark:bg-neutral-900/40 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-main text-[10px] font-black uppercase tracking-widest transition-colors border-t border-r border-border-muted"
                                     >
-                                        <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                                        <span className="material-symbols-outlined text-[14px]" aria-hidden="true">content_copy</span>
                                         Tail Picks
                                     </button>
                                     <button
@@ -214,7 +214,7 @@ export const SocialDashboardView: React.FC = () => {
                 <div className="flex flex-col mt-4">
                     <div className="flex items-center justify-between mb-4 px-2">
                         <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-white/50 text-xl">leaderboard</span>
+                            <span className="material-symbols-outlined text-white/50 text-xl" aria-hidden="true">leaderboard</span>
                             <h3 className="text-xl font-black text-white italic tracking-widest uppercase">Global Standings</h3>
                         </div>
                     </div>
@@ -246,12 +246,12 @@ export const SocialDashboardView: React.FC = () => {
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center gap-3">
-                                                    <img src={user.avatar} className="w-8 h-8 rounded shrink-0 border border-border-muted" alt="" />
+                                                    <img src={user.avatar} className="w-8 h-8 rounded shrink-0 border border-border-muted" alt={`${user.nickname} avatar`} />
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-bold text-text-main text-sm">{user.nickname}</span>
                                                         {isHot && <span className="text-orange-500 text-xs" title="Hot Streak">🔥</span>}
                                                         {isCold && <span className="text-blue-400 text-xs" title="Ice Cold">❄️</span>}
-                                                        {isFeatured && <span className="material-symbols-outlined text-primary text-[14px]" title="Currently Featured">star</span>}
+                                                        {isFeatured && <span className="material-symbols-outlined text-primary text-[14px]" title="Currently Featured" aria-hidden="true">star</span>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -282,16 +282,18 @@ export const SocialDashboardView: React.FC = () => {
                                                         onClick={(e) => copyParlay(user.recentParlay, e)}
                                                         className="text-slate-400 hover:text-text-main p-1 transition-colors"
                                                         title="Tail Parlay"
+                                                        aria-label="Tail Parlay"
                                                     >
-                                                        <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                                                        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">content_copy</span>
                                                     </button>
                                                     <button
                                                         onClick={(e) => addToFeatured(user.id, e)}
                                                         className={`${isFeatured ? 'text-primary' : 'text-slate-400 hover:text-primary'} p-1 disabled:opacity-50 transition-colors`}
                                                         title={isFeatured ? "Already Featured" : "Pin to Featured"}
+                                                        aria-label={isFeatured ? "Already Featured" : "Pin to Featured"}
                                                         disabled={isFeatured}
                                                     >
-                                                        <span className="material-symbols-outlined text-[18px]">push_pin</span>
+                                                        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">push_pin</span>
                                                     </button>
                                                 </div>
                                             </td>

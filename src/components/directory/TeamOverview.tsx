@@ -502,8 +502,8 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({ teamId, teamName, ab
                                                 {graphData.map((d, i) => (
                                                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                                                         <div
-                                                            className="w-full rounded-md flex items-center justify-center text-[10px] font-black"
-                                                            style={{ background: heat(d.pointsFor, forMin, forMax), height: 52, color: '#000', opacity: 0.92 }}
+                                                            className="w-full h-[52px] text-black opacity-[0.92] rounded-md flex items-center justify-center text-[10px] font-black"
+                                                            style={{ background: heat(d.pointsFor, forMin, forMax) }}
                                                         >{d.pointsFor}</div>
                                                         <span className="text-[8px] text-slate-600 font-bold">{d.game}</span>
                                                     </div>
@@ -514,8 +514,8 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({ teamId, teamName, ab
                                                 {graphData.map((d, i) => (
                                                     <div key={i} className="flex-1">
                                                         <div
-                                                            className="w-full rounded-md flex items-center justify-center text-[10px] font-black"
-                                                            style={{ background: heat(d.pointsAgainst, agMin, agMax), height: 52, color: '#000', opacity: 0.92 }}
+                                                            className="w-full h-[52px] text-black opacity-[0.92] rounded-md flex items-center justify-center text-[10px] font-black"
+                                                            style={{ background: heat(d.pointsAgainst, agMin, agMax) }}
                                                         >{d.pointsAgainst}</div>
                                                     </div>
                                                 ))}

@@ -32,7 +32,7 @@ const ShootingTile: React.FC<{ label: string; value: string; accentColor: string
                         strokeDasharray={`${filled} ${circ}`}
                         strokeLinecap="round"
                         transform="rotate(-90 28 28)"
-                        style={{ transition: 'stroke-dasharray 0.6s ease' }}
+                        className="transition-[stroke-dasharray] duration-700 ease-in-out"
                     />
                     <text x="28" y="33" textAnchor="middle" fontSize="10" fontWeight="900" fill="white">{pct}%</text>
                 </svg>
@@ -166,7 +166,7 @@ const PlayerRow: React.FC<{ player: BoxScorePlayer; isExpanded: boolean; onClick
                         </span>
                     )}
                 </div>
-                <span className={`material-symbols-outlined text-slate-600 text-sm transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
+                <span className={`material-symbols-outlined text-slate-600 text-sm transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} aria-hidden="true">
                     keyboard_arrow_down
                 </span>
             </button>

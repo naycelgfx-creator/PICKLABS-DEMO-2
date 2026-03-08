@@ -96,7 +96,7 @@ const StatRow = ({ label, value, sub }: { label: string; value: string | number;
     <div className="bg-neutral-900 rounded-lg p-2.5 border border-neutral-800 flex flex-col gap-0.5">
         <div className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">{label}</div>
         <div className="text-sm font-black text-white">{value}</div>
-        {sub && <div className="text-[9px] text-slate-600">{sub}</div>}
+        {sub ? <div className="text-[9px] text-slate-600">{sub}</div> : null}
     </div>
 );
 
@@ -377,7 +377,7 @@ const CustomAIPanel = () => {
             </div>
 
             {/* Suggestion chips */}
-            {chatHistory.length === 0 && (
+            {chatHistory.length === 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                     {[
                         'LeBron on back-to-backs?',
@@ -394,10 +394,10 @@ const CustomAIPanel = () => {
                         </button>
                     ))}
                 </div>
-            )}
+            ) : null}
 
             {/* Chat history */}
-            {chatHistory.length > 0 && (
+            {chatHistory.length > 0 ? (
                 <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                     {chatHistory.map((msg, i) => (
                         <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
@@ -407,22 +407,22 @@ const CustomAIPanel = () => {
                                     ? 'bg-accent-purple/20 text-white border border-accent-purple/30'
                                     : 'bg-neutral-900 text-slate-300 border border-neutral-800'
                             )}>
-                                {msg.role === 'ai' && <span className="text-accent-purple font-black mr-1">AI</span>}
+                                {msg.role === 'ai' ? <span className="text-accent-purple font-black mr-1">AI</span> : null}
                                 {msg.text}
                             </div>
                         </div>
                     ))}
-                    {isThinking && (
+                    {isThinking ? (
                         <div className="flex justify-start">
                             <div className="bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-[11px] text-slate-500 flex items-center gap-1.5">
                                 <span className="material-symbols-outlined text-[14px] animate-spin text-accent-purple">sync</span>
                                 PickLabs AI is thinking...
                             </div>
                         </div>
-                    )}
+                    ) : null}
                     <div ref={endRef} />
                 </div>
-            )}
+            ) : null}
 
             {/* Input */}
             <div className="flex gap-2">
@@ -435,6 +435,8 @@ const CustomAIPanel = () => {
                     className="flex-1 bg-neutral-900 border border-neutral-700 text-xs text-white placeholder-slate-600 rounded-xl px-3 py-2.5 focus:outline-none focus:border-accent-purple/50 transition-colors"
                 />
                 <button
+                    aria-label="Send Message"
+                    title="Send Message"
                     onClick={handleSend}
                     disabled={!query.trim() || isThinking}
                     className="px-3 py-2.5 bg-accent-purple text-white rounded-xl hover:bg-purple-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -628,9 +630,9 @@ export const PropSelectorHeader: React.FC<PropSelectorHeaderProps> = ({
         <div className={cn('space-y-3 mb-6', className)}>
             {/* ── Row 1: Entity Filter Pills ── */}
             <div ref={scrollRef} className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                {activePills.length === 0 && (
+                {activePills.length === 0 ? (
                     <span className="text-[11px] text-slate-500 italic">No props selected — click a player or team below to add</span>
-                )}
+                ) : null}
                 {activePills.map((pill, pi) => (
                     <div
                         key={`${pill.entity}-${pi}`}
@@ -644,6 +646,7 @@ export const PropSelectorHeader: React.FC<PropSelectorHeaderProps> = ({
                                 <span className="text-[10px] font-black text-white">{tag.stat}</span>
                                 <button
                                     title={`Remove ${tag.stat}`}
+                                    aria-label={`Remove ${tag.stat}`}
                                     onClick={() => removeTag(pi, tag.stat)}
                                     className="text-slate-600 hover:text-red-400 transition-colors ml-0.5"
                                 >
@@ -651,12 +654,12 @@ export const PropSelectorHeader: React.FC<PropSelectorHeaderProps> = ({
                                 </button>
                             </span>
                         ))}
-                        {pill.tags.length > 2 && (
+                        {pill.tags.length > 2 ? (
                             <span className="text-[9px] font-black text-slate-500 bg-neutral-800 rounded-full px-1.5 py-0.5">
                                 +{pill.tags.length - 2}
                             </span>
-                        )}
-                        <button title="Remove player" onClick={() => removePill(pi)} className="text-slate-600 hover:text-red-400 transition-colors ml-0.5">
+                        ) : null}
+                        <button title="Remove player" aria-label="Remove player" onClick={() => removePill(pi)} className="text-slate-600 hover:text-red-400 transition-colors ml-0.5">
                             <X className="w-3 h-3" />
                         </button>
                     </div>
@@ -668,6 +671,8 @@ export const PropSelectorHeader: React.FC<PropSelectorHeaderProps> = ({
                 {TABS.map(tab => (
                     <button
                         key={tab.id}
+                        title={tab.label}
+                        aria-label={tab.label}
                         onClick={() => handleTabClick(tab.id)}
                         className={cn(
                             'relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all shrink-0 border',
@@ -678,9 +683,9 @@ export const PropSelectorHeader: React.FC<PropSelectorHeaderProps> = ({
                     >
                         {tab.icon}
                         {tab.label}
-                        {tab.badge && activeTab === tab.id && (
+                        {tab.badge && activeTab === tab.id ? (
                             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full shadow-[0_0_6px_rgba(13,242,13,0.6)]" />
-                        )}
+                        ) : null}
                     </button>
                 ))}
 
@@ -704,15 +709,17 @@ export const PropSelectorHeader: React.FC<PropSelectorHeaderProps> = ({
             </div>
 
             {/* ── Context hint ── */}
-            {activeTabMeta && 'context' in activeTabMeta && activeTabMeta.context && (
+            {activeTabMeta && 'context' in activeTabMeta && activeTabMeta.context ? (
                 <div className="text-[10px] text-slate-500 italic px-1">
                     {activeTabMeta.context}
                 </div>
-            )}
+            ) : null}
 
             {/* ── Row 3: CTA Button ── */}
-            {activeTab !== 'custom' && (
+            {activeTab !== 'custom' ? (
                 <button
+                    title={ctaLabel}
+                    aria-label={ctaLabel}
                     onClick={handleGenerate}
                     disabled={loading || (activePills.length === 0 && !['weather', 'expert'].includes(activeTab))}
                     className={cn(
@@ -731,23 +738,23 @@ export const PropSelectorHeader: React.FC<PropSelectorHeaderProps> = ({
                         </>
                     ) : (
                         <>
-                            {activeTab === 'full' && <Sparkles className="w-4 h-4" />}
-                            {activeTab === 'game' && <Target className="w-4 h-4" />}
-                            {activeTab === 'props' && <BarChart2 className="w-4 h-4" />}
-                            {activeTab === 'underdog' && <Zap className="w-4 h-4" />}
-                            {activeTab === 'weather' && <Cloud className="w-4 h-4" />}
-                            {activeTab === 'expert' && <Users className="w-4 h-4" />}
+                            {activeTab === 'full' ? <Sparkles className="w-4 h-4" /> : null}
+                            {activeTab === 'game' ? <Target className="w-4 h-4" /> : null}
+                            {activeTab === 'props' ? <BarChart2 className="w-4 h-4" /> : null}
+                            {activeTab === 'underdog' ? <Zap className="w-4 h-4" /> : null}
+                            {activeTab === 'weather' ? <Cloud className="w-4 h-4" /> : null}
+                            {activeTab === 'expert' ? <Users className="w-4 h-4" /> : null}
                             {ctaLabel}
                             <Star className="w-3 h-3 opacity-60" />
                         </>
                     )}
                 </button>
-            )}
+            ) : null}
 
             {/* ── Result Panel ── */}
-            {analysisResult && (
+            {analysisResult ? (
                 <div>{analysisResult.content}</div>
-            )}
+            ) : null}
         </div>
     );
 };

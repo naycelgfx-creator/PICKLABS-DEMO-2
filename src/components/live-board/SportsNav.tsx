@@ -135,15 +135,14 @@ export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport
                                                 img.src = fallbackSrc;
                                             } else {
                                                 // Last resort: Material Symbols icon
-                                                img.style.display = 'none';
+                                                img.classList.add('hidden');
                                                 const icon = img.nextElementSibling as HTMLElement | null;
-                                                if (icon) icon.style.display = 'inline';
+                                                if (icon) icon.classList.remove('hidden');
                                             }
                                         }}
                                     />
                                     <span
-                                        className="material-symbols-outlined text-[24px] sm:text-[28px] text-text-muted"
-                                        style={{ display: 'none' }}
+                                        className="hidden material-symbols-outlined text-[24px] sm:text-[28px] text-text-muted"
                                     >
                                         {materialIcon}
                                     </span>

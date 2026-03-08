@@ -33,22 +33,14 @@ const GameSquareStrip: React.FC<{
     const sliced = count ? logs.slice(0, count) : logs;
 
     return (
-        <div style={{ position: 'relative', display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '3px', minHeight: '44px' }}>
+        <div className="relative flex flex-row items-start gap-[3px] min-h-[44px]">
             {sliced.map((log, i) => {
                 const isOver = log.stat1 >= line;
                 const opp = log.opponent.replace(/^@\s*/, '').substring(0, 3).toUpperCase();
                 return (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                    <div key={i} className="flex flex-col items-center gap-[2px]">
                         <div
-                            style={{
-                                width: '16px',
-                                height: '28px',
-                                borderRadius: '2px',
-                                backgroundColor: isOver ? '#10b981' : '#ef4444',
-                                cursor: 'help',
-                                flexShrink: 0,
-                                transition: 'transform 0.1s'
-                            }}
+                            className={`w-4 h-7 rounded-sm cursor-help shrink-0 transition-transform duration-100 ${isOver ? 'bg-emerald-500' : 'bg-red-500'}`}
                             onMouseEnter={e => {
                                 (e.target as HTMLElement).style.transform = 'scale(1.15)';
                                 const rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -62,8 +54,10 @@ const GameSquareStrip: React.FC<{
                                 (e.target as HTMLElement).style.transform = '';
                                 setTooltip(null);
                             }}
+                            aria-label={`vs ${opp}: ${log.stat1} ${propType}`}
+                            role="img"
                         />
-                        <span style={{ fontSize: '8px', fontWeight: 700, color: '#94a3b8', lineHeight: 1 }}>{opp}</span>
+                        <span className="text-[8px] font-black text-slate-400 leading-none">{opp}</span>
                     </div>
                 );
             })}
@@ -436,10 +430,12 @@ export const PlayerPropsForm: React.FC<PlayerPropsFormProps> = ({ game, onAddBet
                                                             </div>
                                                         </div>
                                                         <button
+                                                            aria-label="Close"
+                                                            title="Close"
                                                             onClick={e => { e.stopPropagation(); setExpandedKey(null); }}
                                                             className="p-1.5 rounded border border-border-muted text-slate-500 hover:text-white hover:border-accent-purple/40 transition-all"
                                                         >
-                                                            <span className="material-symbols-outlined text-sm">close</span>
+                                                            <span className="material-symbols-outlined text-sm" aria-hidden="true">close</span>
                                                         </button>
                                                     </div>
                                                     {/* Deep-dive content */}
