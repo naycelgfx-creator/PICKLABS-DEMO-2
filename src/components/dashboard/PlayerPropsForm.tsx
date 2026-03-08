@@ -63,22 +63,10 @@ const GameSquareStrip: React.FC<{
             })}
             {tooltip && (
                 <div
+                    className="fixed z-[9999] pointer-events-none -translate-x-1/2 -translate-y-full bg-slate-900 border border-slate-700 rounded px-2 py-[3px] text-[10px] text-white font-bold whitespace-nowrap shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
                     style={{
-                        position: 'fixed',
-                        zIndex: 9999,
-                        pointerEvents: 'none',
                         left: tooltip.x,
                         top: tooltip.y,
-                        transform: 'translate(-50%, -100%)',
-                        background: '#0f172a',
-                        border: '1px solid #334155',
-                        borderRadius: '4px',
-                        padding: '3px 8px',
-                        fontSize: '10px',
-                        color: '#fff',
-                        fontWeight: 700,
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                     }}
                 >
                     {tooltip.text}

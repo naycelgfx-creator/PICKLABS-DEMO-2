@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import QRCode from 'qrcode';
 import {
     getCurrentUser, SessionData,
-    has2FAEnabled, enable2FA, disable2FA,
-    hasRecoveryCodesEnabled, enableRecoveryCodes, disableRecoveryCodes,
 } from '../../data/PickLabsAuthDB';
-import { RecoveryVault } from './RecoveryVault';
 import { clearAuth } from '../../utils/auth';
 
 interface AccountSettingsViewProps {
@@ -17,13 +13,7 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({ onLogo
     const [daysLeft, setDaysLeft] = useState<number>(0);
     const [loading, setLoading] = useState(true);
 
-    // 2FA State
-    const [is2FAEnabled, setIs2FAEnabled] = useState(false);
-    const [isRecoveryEnabled, setIsRecoveryEnabled] = useState(false);
-    const [showVault, setShowVault] = useState(false);
-    const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
-    const [qrUrl, setQrUrl] = useState('');
-    const [secretText, setSecretText] = useState('');
+
 
     useEffect(() => {
         const session = getCurrentUser();
@@ -43,8 +33,7 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({ onLogo
                 setDaysLeft(Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24))));
             }
         }
-        setIs2FAEnabled(has2FAEnabled(session.email));
-        setIsRecoveryEnabled(hasRecoveryCodesEnabled(session.email));
+
         setLoading(false);
     }, [onLogout]);
 
@@ -54,56 +43,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({ onLogo
         window.location.reload();
     };
 
-    const handleToggle2FA = async () => {
-        if (!user) return;
-        if (is2FAEnabled) {
-            if (window.confirm("Are you sure you want to disable 2FA? This decreases your account security.")) {
-                disable2FA(user.email);
-                setIs2FAEnabled(false);
-                setIsRecoveryEnabled(false);
-                setShowVault(false);
-                setRecoveryCodes([]);
-            }
-        } else {
-            const res = await enable2FA(user.email);
-            if (res) {
-                setIs2FAEnabled(true);
-                setIsRecoveryEnabled(true);
-                setSecretText(res.secret);
-                setRecoveryCodes(res.recoveryCodes);
-                if (res.qrCodeUrl) {
-                    try {
-                        const url = await QRCode.toDataURL(res.qrCodeUrl);
-                        setQrUrl(url);
-                    } catch (err) {
-                        console.error("Failed to generate QR Code", err);
-                    }
-                }
-                setShowVault(true);
-            }
-        }
-    };
-
-    const handleToggleRecoveryCodes = async () => {
-        if (!user) return;
-        if (isRecoveryEnabled) {
-            if (window.confirm("Disable Emergency Recovery Codes? If you lose access to your authenticator, you will be locked out.")) {
-                disableRecoveryCodes(user.email);
-                setIsRecoveryEnabled(false);
-                setShowVault(false);
-                setRecoveryCodes([]);
-            }
-        } else {
-            const codes = await enableRecoveryCodes(user.email);
-            if (codes) {
-                setIsRecoveryEnabled(true);
-                setRecoveryCodes(codes);
-                setShowVault(true);
-                setQrUrl('');
-                setSecretText('');
-            }
-        }
-    };
 
 
     if (loading || !user) {
@@ -151,69 +90,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({ onLogo
 
                         <hr className="border-border/50 my-6" />
 
-                        {/* Security */}
-                        <div className="space-y-3">
-                            <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                <span className="material-symbols-outlined text-primary text-sm">shield</span>
-                                Security Settings
-                            </h3>
-                            <div className="bg-neutral-900/80 border border-border-muted rounded-xl p-4 space-y-4">
-                                {/* 2FA Toggle */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div>
-                                        <h4 className="text-sm font-bold text-white mb-0.5">Two-Factor Authentication</h4>
-                                        <p className="text-xs font-bold text-text-muted">Secure your account with an authenticator app.</p>
-                                    </div>
-                                    <button
-                                        onClick={handleToggle2FA}
-                                        className={`shrink - 0 px - 4 py - 2.5 rounded - lg text - xs font - black uppercase tracking - widest transition - all ${is2FAEnabled
-                                                ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                                                : 'bg-primary text-black hover:bg-emerald-400 shadow-[0_0_15px_rgba(13,242,13,0.2)]'
-                                            } `}
-                                    >
-                                        {is2FAEnabled ? 'Disable 2FA' : 'Enable 2FA'}
-                                    </button>
-                                </div>
-
-                                <hr className="border-border/40" />
-
-                                {/* Recovery Codes Toggle */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div>
-                                        <h4 className="text-sm font-bold text-white mb-0.5">Emergency Recovery Codes</h4>
-                                        <p className="text-xs font-bold text-text-muted">Backup codes if you lose your authenticator.</p>
-                                    </div>
-                                    <button
-                                        onClick={handleToggleRecoveryCodes}
-                                        className={`shrink - 0 px - 4 py - 2.5 rounded - lg text - xs font - black uppercase tracking - widest transition - all ${isRecoveryEnabled
-                                                ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                                                : 'bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 shadow-[0_0_15px_rgba(13,242,13,0.1)]'
-                                            } `}
-                                    >
-                                        {isRecoveryEnabled ? 'Disable Codes' : 'Enable Codes'}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Vault / QR panel */}
-                            {showVault && (
-                                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    {qrUrl && (
-                                        <div className="bg-neutral-950 border border-primary/20 rounded-xl p-5 text-center">
-                                            <p className="text-[10px] text-text-muted uppercase tracking-widest mb-3">Scan with your authenticator app</p>
-                                            <div className="bg-white p-2 rounded-xl inline-block">
-                                                <img src={qrUrl} alt="2FA QR Code" className="w-36 h-36" />
-                                            </div>
-                                            <div className="mt-3 bg-black/60 py-2 px-3 rounded-lg border border-primary/10">
-                                                <p className="text-primary font-mono font-black text-xs tracking-[0.15em] break-all">{secretText}</p>
-                                            </div>
-                                            <p className="text-[10px] text-text-muted mt-2 uppercase tracking-widest">Manual Entry Code</p>
-                                        </div>
-                                    )}
-                                    <RecoveryVault codes={recoveryCodes} onClose={() => setShowVault(false)} />
-                                </div>
-                            )}
-                        </div>
 
                         {/* Footer */}
                         <div className="mt-8 pt-5 border-t border-border/40 flex flex-wrap items-center justify-between gap-4">

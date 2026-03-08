@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { saveAuth } from '../../utils/auth';
-import { login, verifyWithLockout, complete2FALogin, DBUser } from '../../data/PickLabsAuthDB';
+import { login } from '../../data/PickLabsAuthDB';
 
 // Cloudflare API Configuration
 export const CLOUDFLARE_ZONE_ID = '2fd6ec5105d12895c7c2fba08bfe6420';
@@ -66,10 +66,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
     const [shaking, setShaking] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
 
-    // 2FA state
-    const [is2FAStep, setIs2FAStep] = useState(false);
-    const [code2FA, setCode2FA] = useState('');
-    const [pendingUser, setPendingUser] = useState<DBUser | null>(null);
+
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -91,31 +88,10 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
 
 
         try {
-            if (!is2FAStep && !rememberMe) {
+            if (!rememberMe) {
                 setError('Please save your username and password to enter.');
                 setShaking(true);
                 setTimeout(() => setShaking(false), 500);
-                return;
-            }
-
-            if (is2FAStep && pendingUser) {
-                const res = await verifyWithLockout(pendingUser, code2FA);
-                if (!res.success) {
-                    setError(res.message || 'Invalid code.');
-                    setShaking(true);
-                    setTimeout(() => setShaking(false), 500);
-                    if (res.lockedOut) {
-                        // Return to login screen if locked out
-                        setIs2FAStep(false);
-                        setCode2FA('');
-                    }
-                    return;
-                }
-
-                // Success!
-                complete2FALogin(pendingUser);
-                saveAuth();
-                onNavigate('live-board');
                 return;
             }
 
@@ -124,12 +100,6 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
                 setError(res.message);
                 setShaking(true);
                 setTimeout(() => setShaking(false), 500);
-                return;
-            }
-
-            if (res.requires2FA && res.user) {
-                setPendingUser(res.user);
-                setIs2FAStep(true);
                 return;
             }
 
@@ -167,40 +137,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
                         </div>
                     )}
                     <form onSubmit={handleSubmit} className={`space-y-4 ${shaking ? 'animate-shake' : ''}`}>
-                        {is2FAStep ? (
-                            <div className="space-y-4 pt-1">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Authentication Code</label>
-                                    <input
-                                        type="text"
-                                        value={code2FA}
-                                        onChange={(e) => setCode2FA(e.target.value.toUpperCase())}
-                                        placeholder="000000 or XXXX-XXXX"
-                                        maxLength={9}
-                                        className="w-full bg-neutral-900 border border-border-muted text-center text-xl tracking-[0.3em] font-black text-primary rounded-xl py-4 focus:ring-1 focus:ring-primary outline-none transition-colors placeholder:text-neutral-700"
-                                        required
-                                        autoFocus
-                                    />
-                                    <p className="text-[10px] text-text-muted text-center mt-2">
-                                        Enter the 6-digit code from your app, <br />
-                                        <span className="text-yellow-500/80">or use an 8-character Emergency Recovery Code.</span>
-                                    </p>
-                                </div>
-                                <button
-                                    type="submit"
-                                    className="w-full py-4 bg-primary text-black font-black uppercase tracking-[0.2em] italic rounded-xl hover:scale-[1.01] transition-transform mt-2 shadow-[0_0_20px_rgba(13,242,13,0.2)]"
-                                >
-                                    VERIFY CODE
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { setIs2FAStep(false); setCode2FA(''); setError(''); }}
-                                    className="w-full py-3 bg-neutral-900 border border-border-muted text-text-muted hover:text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-colors mt-2"
-                                >
-                                    BACK
-                                </button>
-                            </div>
-                        ) : (
+
                             <div className="space-y-4 pt-1">
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email Address</label>
@@ -273,7 +210,6 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({ onNavigate }) => {
                                     </div>
                                 </div>
                             </div>
-                        )}
                     </form>
                 </div>
                 <div className="mt-auto pt-12">

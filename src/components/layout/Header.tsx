@@ -732,6 +732,8 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                         <button
                                             key={c.id}
                                             onClick={() => applyAccent(c)}
+                                            title={c.label}
+                                            aria-label={`Select ${c.label} Accent`}
                                             className={`h-5 w-5 rounded-full border transition-all ${accentId === c.id
                                                 ? 'border-white scale-110 shadow-sm'
                                                 : 'border-neutral-700'
@@ -741,6 +743,8 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                     ))}
                                     <button
                                         onClick={() => applyAccent({ id: 'lime', label: 'Lime', rgb: '163 255 0', hex: '#a3ff00' })}
+                                        title="Reset to Lime"
+                                        aria-label="Reset to Lime Accent"
                                         className={`h-5 w-5 rounded-full border border-dashed transition-all ${accentId === 'lime'
                                             ? 'border-neutral-500 scale-100'
                                             : 'border-neutral-600'

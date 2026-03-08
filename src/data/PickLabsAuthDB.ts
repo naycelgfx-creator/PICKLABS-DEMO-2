@@ -247,10 +247,6 @@ export interface DBUser {
     sessionDurationMs?: number; // Total time spent active on the app
     dailyBetsCount?: number;   // Number of bets placed today
     lastLoginAt?: number;      // Epoch ms when last logged in
-    twoFactorSecret?: string;  // Speakeasy base32 secret
-    faAttempts?: number;       // Number of failed 2FA attempts
-    lockoutUntil?: number | null; // Epoch ms for lockout
-    recoveryCodes?: string[];  // Hashed backup codes
 }
 
 export interface SessionData {
@@ -469,24 +465,9 @@ export function recordUserSessionLogout(userId: string) {
     }
 }
 
-export function verifyOTP(email: string, otp: string): boolean {
-    const users = getAllUsers();
-    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-    if (idx === -1) return false;
-
-    const user = users[idx];
-    if (user.otp === otp && user.otpExpiry && Date.now() < user.otpExpiry) {
-        // Clear OTP on success
-        users[idx].otp = undefined;
-        users[idx].otpExpiry = undefined;
-
-        // If they verified an OTP, we can assume the device is trusted now
-        // so let's update their "IP" to the current mocked device
-        users[idx].lastKnownIp = getMockClientIP();
-
-        saveAllUsers(users);
-        return true;
-    }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+export function verifyOTP(..._args: any[]): boolean {
+    // Legacy Password Reset Placeholder
     return false;
 }
 
@@ -500,7 +481,7 @@ export async function resetPassword(email: string, newPassword: string): Promise
     return true;
 }
 
-export async function login(email: string, password: string): Promise<{ ok: boolean; message: string; requires2FA?: boolean; user?: DBUser }> {
+export async function login(email: string, password: string): Promise<{ ok: boolean; message: string; user?: DBUser }> {
     // --- Hardcoded Accounts Bypass ---
     const hardcodedAccounts: Record<string, { password: string, isPremium: boolean, tier?: string, id: string }> = {
         // Admin
@@ -563,9 +544,7 @@ export async function login(email: string, password: string): Promise<{ ok: bool
             return { ok: false, message: '❌ Account has been deactivated by admin.' };
         }
 
-        if (sampleUser.twoFactorSecret && sampleUser.email !== 'master.admin@picklabs.bet') {
-            return { ok: true, message: '2FA Required', requires2FA: true, user: sampleUser };
-        }
+
 
         const session: SessionData = {
             userId: sampleUser.id,
@@ -598,13 +577,7 @@ export async function login(email: string, password: string): Promise<{ ok: bool
         return { ok: false, message: '❌ Account has been deactivated by admin.' };
     }
 
-    // 2FA IP Check
-    const currentIp = getMockClientIP();
-    if (user.lastKnownIp && user.lastKnownIp !== currentIp) {
-        // IP mismatch -> trigger 2FA
-        generateOTP(user.email);
-        return { ok: false, message: '⚠️ New device detected. OTP required.', requires2FA: true, user };
-    }
+
 
     // Check Premium Expiry
     if (user.premiumExpiresAt && Date.now() > user.premiumExpiresAt) {
@@ -613,13 +586,11 @@ export async function login(email: string, password: string): Promise<{ ok: bool
     }
 
     // Update known IP and login time on normal successful login
-    users[idx].lastKnownIp = currentIp;
+    users[idx].lastKnownIp = getMockClientIP();
     users[idx].lastLoginAt = Date.now();
     saveAllUsers(users);
 
-    if (user.twoFactorSecret) {
-        return { ok: true, message: '2FA Required', requires2FA: true, user };
-    }
+
 
     // Create the session cookie equivalent (mirrors: login_user(user, remember=True))
     const session: SessionData = {
@@ -803,215 +774,7 @@ export function adminToggleActive(userId: string): void {
     }
 }
 
-// ─── 2FA (Speakeasy) ──────────────────────────────────────────────────────────
 
-export async function generate2FASecret(email: string) {
-    // @ts-ignore
-    const OTPAuth = await import('otpauth');
-    const secret = new OTPAuth.Secret({ size: 20 });
-    const totp = new OTPAuth.TOTP({
-        issuer: "PickLabs.bet",
-        label: email,
-        algorithm: "SHA1",
-        digits: 6,
-        period: 30,
-        secret: secret
-    });
-    return {
-        base32: secret.base32,
-        otpauth_url: totp.toString()
-    };
-}
-
-export async function enable2FA(email: string): Promise<{ secret: string, qrCodeUrl: string, recoveryCodes: string[] } | null> {
-    const users = getAllUsers();
-    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-    if (idx === -1) return null;
-
-    // @ts-ignore
-    const OTPAuth = await import('otpauth');
-    const secret = new OTPAuth.Secret({ size: 20 });
-    const totp = new OTPAuth.TOTP({
-        issuer: "PickLabs.bet",
-        label: email,
-        algorithm: "SHA1",
-        digits: 6,
-        period: 30,
-        secret: secret
-    });
-
-    const recoveryCodes: string[] = [];
-    const hashedCodes: string[] = [];
-
-    // Generate 4 backup codes (per user request UI showing 4)
-    for (let i = 0; i < 4; i++) {
-        const part1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const code = `${part1}-${part2}`;
-        recoveryCodes.push(code);
-        hashedCodes.push(await hashPassword(code));
-    }
-
-    users[idx].twoFactorSecret = secret.base32;
-    users[idx].recoveryCodes = hashedCodes;
-    saveAllUsers(users);
-
-    return {
-        secret: secret.base32,
-        qrCodeUrl: totp.toString(),
-        recoveryCodes
-    };
-}
-
-export function disable2FA(email: string): boolean {
-    const users = getAllUsers();
-    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-    if (idx === -1) return false;
-
-    users[idx].twoFactorSecret = undefined;
-    users[idx].recoveryCodes = undefined;
-    saveAllUsers(users);
-    return true;
-}
-
-export function hasRecoveryCodesEnabled(email: string): boolean {
-    const users = getAllUsers();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    return user ? (user.recoveryCodes !== undefined && user.recoveryCodes.length > 0) : false;
-}
-
-export async function enableRecoveryCodes(email: string): Promise<string[] | null> {
-    const users = getAllUsers();
-    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-    if (idx === -1) return null;
-
-    const recoveryCodes: string[] = [];
-    const hashedCodes: string[] = [];
-
-    for (let i = 0; i < 4; i++) {
-        const part1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const code = `${part1}-${part2}`;
-        recoveryCodes.push(code);
-        hashedCodes.push(await hashPassword(code));
-    }
-
-    users[idx].recoveryCodes = hashedCodes;
-    saveAllUsers(users);
-
-    return recoveryCodes;
-}
-
-export function disableRecoveryCodes(email: string): boolean {
-    const users = getAllUsers();
-    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-    if (idx === -1) return false;
-
-    users[idx].recoveryCodes = undefined;
-    saveAllUsers(users);
-    return true;
-}
-
-export function has2FAEnabled(email: string): boolean {
-    const users = getAllUsers();
-    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-    if (idx === -1) return false;
-    return !!users[idx].twoFactorSecret;
-}
-
-// Log admin logic
-export async function logActivity(userEmail: string, status: string, ipAddress: string) {
-    const timestamp = new Date().toLocaleString();
-    console.log(`[Admin Log] ${timestamp} - ${userEmail} - ${status} (IP: ${ipAddress})`);
-}
-
-// Check with lockout
-export async function verifyWithLockout(user: DBUser, submittedToken: string): Promise<{ success: boolean; message?: string; lockedOut?: boolean }> {
-    const now = Date.now();
-
-    if (user.lockoutUntil && now < user.lockoutUntil) {
-        return { success: false, message: "Too many attempts. Try again later.", lockedOut: true };
-    }
-
-    if (!user.twoFactorSecret) {
-        return { success: true }; // No 2FA enabled
-    }
-
-    // @ts-ignore
-    const OTPAuth = await import('otpauth');
-
-    // 1. Check if it's a 6-digit OTP code
-    const is6Digit = /^\d{6}$/.test(submittedToken);
-
-    let isCorrect = false;
-
-    if (is6Digit) {
-        const totp = new OTPAuth.TOTP({
-            issuer: "PickLabs.bet",
-            label: user.email,
-            algorithm: "SHA1",
-            digits: 6,
-            period: 30,
-            secret: OTPAuth.Secret.fromBase32(user.twoFactorSecret)
-        });
-        const delta = totp.validate({ token: submittedToken, window: 1 });
-        isCorrect = (delta !== null);
-    }
-
-    // 2. Check Recovery Codes if NOT 6 digits
-    if (!isCorrect && user.recoveryCodes && user.recoveryCodes.length > 0) {
-        for (let i = 0; i < user.recoveryCodes.length; i++) {
-            const hashedCode = user.recoveryCodes[i];
-            const match = await checkPasswordHash(submittedToken, hashedCode);
-            if (match) {
-                // Delete this code so it can't be used again
-                user.recoveryCodes.splice(i, 1);
-                isCorrect = true;
-                break;
-            }
-        }
-    }
-
-    const users = getAllUsers();
-    const idx = users.findIndex(u => u.id === user.id);
-    if (idx === -1) return { success: false, message: "User not found" };
-
-    if (isCorrect) {
-        // SUCCESS: Reset attempts
-        users[idx].faAttempts = 0;
-        users[idx].lockoutUntil = null;
-        users[idx].recoveryCodes = user.recoveryCodes; // in case we used one
-        saveAllUsers(users);
-        logActivity(user.email, '2FA Success', getMockClientIP());
-        return { success: true };
-    } else {
-        // FAILURE: Increase attempt count
-        const newAttempts = (users[idx].faAttempts || 0) + 1;
-        let lockoutTime = null;
-
-        if (newAttempts >= 3) {
-            // Lock them out for 15 minutes
-            lockoutTime = now + 15 * 60000;
-        }
-
-        users[idx].faAttempts = newAttempts;
-        users[idx].lockoutUntil = lockoutTime;
-        saveAllUsers(users);
-
-        logActivity(user.email, '2FA Failed', getMockClientIP());
-        return { success: false, message: "Invalid code.", lockedOut: lockoutTime !== null };
-    }
-}
-
-export function complete2FALogin(user: DBUser) {
-    const session: SessionData = {
-        userId: user.id,
-        email: user.email,
-        isPremium: user.isPremium || isAdminEmail(user.email),
-        expiry: Date.now() + SESSION_TTL_MS,
-    };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-}
 
 export function adminDelete(userId: string): void {
     const all = getAllUsers();
