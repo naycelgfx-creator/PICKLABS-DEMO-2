@@ -806,11 +806,21 @@ export function adminToggleActive(userId: string): void {
 // ─── 2FA (Speakeasy) ──────────────────────────────────────────────────────────
 
 export async function generate2FASecret(email: string) {
-    const speakeasy = (await import('speakeasy')).default;
-    return speakeasy.generateSecret({
-        name: email,
-        issuer: "PickLabs.bet"
+    // @ts-ignore
+    const OTPAuth = await import('otpauth');
+    const secret = new OTPAuth.Secret({ size: 20 });
+    const totp = new OTPAuth.TOTP({
+        issuer: "PickLabs.bet",
+        label: email,
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: secret
     });
+    return {
+        base32: secret.base32,
+        otpauth_url: totp.toString()
+    };
 }
 
 export async function enable2FA(email: string): Promise<{ secret: string, qrCodeUrl: string, recoveryCodes: string[] } | null> {
@@ -818,12 +828,16 @@ export async function enable2FA(email: string): Promise<{ secret: string, qrCode
     const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
     if (idx === -1) return null;
 
-    const speakeasy = (await import('speakeasy')).default;
-    const bcrypt = (await import('bcryptjs')).default;
-
-    const secret = speakeasy.generateSecret({
-        name: email,
-        issuer: "PickLabs.bet"
+    // @ts-ignore
+    const OTPAuth = await import('otpauth');
+    const secret = new OTPAuth.Secret({ size: 20 });
+    const totp = new OTPAuth.TOTP({
+        issuer: "PickLabs.bet",
+        label: email,
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: secret
     });
 
     const recoveryCodes: string[] = [];
@@ -835,7 +849,7 @@ export async function enable2FA(email: string): Promise<{ secret: string, qrCode
         const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
         const code = `${part1}-${part2}`;
         recoveryCodes.push(code);
-        hashedCodes.push(await bcrypt.hash(code, 10));
+        hashedCodes.push(await hashPassword(code));
     }
 
     users[idx].twoFactorSecret = secret.base32;
@@ -844,7 +858,7 @@ export async function enable2FA(email: string): Promise<{ secret: string, qrCode
 
     return {
         secret: secret.base32,
-        qrCodeUrl: secret.otpauth_url || '',
+        qrCodeUrl: totp.toString(),
         recoveryCodes
     };
 }
@@ -871,7 +885,6 @@ export async function enableRecoveryCodes(email: string): Promise<string[] | nul
     const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
     if (idx === -1) return null;
 
-    const bcrypt = (await import('bcryptjs')).default;
     const recoveryCodes: string[] = [];
     const hashedCodes: string[] = [];
 
@@ -880,7 +893,7 @@ export async function enableRecoveryCodes(email: string): Promise<string[] | nul
         const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
         const code = `${part1}-${part2}`;
         recoveryCodes.push(code);
-        hashedCodes.push(await bcrypt.hash(code, 10));
+        hashedCodes.push(await hashPassword(code));
     }
 
     users[idx].recoveryCodes = hashedCodes;
@@ -924,28 +937,32 @@ export async function verifyWithLockout(user: DBUser, submittedToken: string): P
         return { success: true }; // No 2FA enabled
     }
 
-    const speakeasy = (await import('speakeasy')).default;
-    const bcrypt = (await import('bcryptjs')).default;
+    // @ts-ignore
+    const OTPAuth = await import('otpauth');
 
-    // 1. Check if it's a 6-digit Speakeasy code
+    // 1. Check if it's a 6-digit OTP code
     const is6Digit = /^\d{6}$/.test(submittedToken);
 
     let isCorrect = false;
 
     if (is6Digit) {
-        isCorrect = speakeasy.totp.verify({
-            secret: user.twoFactorSecret,
-            encoding: 'base32',
-            token: submittedToken,
-            window: 1 // Allow 30s grace period
+        const totp = new OTPAuth.TOTP({
+            issuer: "PickLabs.bet",
+            label: user.email,
+            algorithm: "SHA1",
+            digits: 6,
+            period: 30,
+            secret: OTPAuth.Secret.fromBase32(user.twoFactorSecret)
         });
+        const delta = totp.validate({ token: submittedToken, window: 1 });
+        isCorrect = (delta !== null);
     }
 
     // 2. Check Recovery Codes if NOT 6 digits
     if (!isCorrect && user.recoveryCodes && user.recoveryCodes.length > 0) {
         for (let i = 0; i < user.recoveryCodes.length; i++) {
             const hashedCode = user.recoveryCodes[i];
-            const match = await bcrypt.compare(submittedToken, hashedCode);
+            const match = await checkPasswordHash(submittedToken, hashedCode);
             if (match) {
                 // Delete this code so it can't be used again
                 user.recoveryCodes.splice(i, 1);
