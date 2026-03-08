@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { BetPick } from '../../App';
 import { fetchESPNScoreboardByDate, ESPNGame, APP_SPORT_TO_ESPN, SportKey, fetchESPNRoster, ESPNRosterPlayer } from '../../data/espnScoreboard';
-import { generateAIPrediction } from '../../data/espnTeams';
+import { generateAIPrediction as _generateAIPrediction } from '../../data/espnTeams'; void _generateAIPrediction;
+import { useOraclePrediction } from '../../hooks/useOraclePrediction';
 import { RookieGuideBanner } from '../shared/RookieGuideBanner';
 import { useRookieMode } from '../../contexts/RookieModeContext';
 import { BetSlip } from '../live-board/BetSlip';
@@ -215,10 +216,16 @@ interface TeamOddsCardProps {
 }
 
 const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport, onAIAnalyzeBet, aiPrediction }) => {
-    // Generate fallback prediction for standard odds formatting, but use AI prediction if available
-    const pred = useMemo(() => generateAIPrediction(
-        game.homeTeam.record, game.awayTeam.record, sport, [], []
-    ), [game.homeTeam.record, game.awayTeam.record, sport]);
+    // PickLabs ORACLE — AI-powered prediction (replaces local math engine)
+    const { prediction: pred, loading: oracleLoading, isOracle: _isOracle } = useOraclePrediction({
+        homeTeam: game.homeTeam.displayName,
+        awayTeam: game.awayTeam.displayName,
+        sport,
+        homeRecord: game.homeTeam.record,
+        awayRecord: game.awayTeam.record,
+        skip: game.status === 'post',
+    });
+    void oracleLoading; void _isOracle;
 
     const isFinal = game.status === 'post';
     const isLive = game.status === 'in';

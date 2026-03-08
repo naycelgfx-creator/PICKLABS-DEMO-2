@@ -8,6 +8,7 @@ import { Game } from './data/mockGames';
 import { RookieTour } from './components/ui/RookieTour';
 import { APP_SPORT_TO_ESPN, fetchESPNScoreboardByDate, ESPNGame, SportKey } from './data/espnScoreboard';
 import { generateAIPrediction } from './data/espnTeams';
+import { getOracleAIPicks } from './data/geminiService';
 import { getCurrentUser, isAdminEmail, logout } from './data/PickLabsAuthDB';
 import { clearAuth } from './utils/auth';
 import { useRookieMode } from './contexts/RookieModeContext';
@@ -246,6 +247,39 @@ function App() {
     );
 
     if (allGames.length > 0) {
+      // ── 1. Try PickLabs ORACLE (Gemini AI) first ──────────────────────────
+      try {
+        const oraclePicks = await getOracleAIPicks(allGames.map(g => ({
+          id: g.game.id,
+          homeTeam: { displayName: g.game.homeTeam.displayName, record: g.game.homeTeam.record },
+          awayTeam: { displayName: g.game.awayTeam.displayName, record: g.game.awayTeam.record },
+          sport: g.sportLabel,
+          status: g.game.status,
+          date: g.game.date,
+          leaders: g.game.leaders,
+        })));
+
+        for (const pick of oraclePicks) {
+          candidates.push({
+            id: `oracle-${pick.gameId}`,
+            gameId: pick.gameId,
+            type: pick.type,
+            team: pick.team,
+            odds: pick.odds,
+            matchupStr: pick.matchupStr,
+            stake: pick.stake,
+            score: pick.confidence,
+            gameStatus: pick.gameStatus,
+            gameStatusName: '',
+            gameDate: pick.gameDate,
+          });
+        }
+      } catch (oracleErr) {
+        console.warn('ORACLE picks failed, trying server...', oracleErr);
+      }
+
+      // ── 2. Also try local Python server for additional picks ──────────────
+      if (candidates.length === 0) {
       try {
         const payload = allGames.map(g => {
           let decOdds = 1.90;
@@ -435,7 +469,8 @@ function App() {
             }
           }
         }
-      }
+        }
+      } // end if(candidates.length === 0) — Python server fallback
     }
 
     // Sort by score desc, pick top 5, deduplicate per game (max 1 pick per game)

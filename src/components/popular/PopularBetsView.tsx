@@ -35,6 +35,7 @@ export interface SGPBet {
 
 // ── Build a popular SGP from a real ESPN game ─────────────────────────────
 export const generateSGP = (game: ESPNGame, idx: number): SGPBet => {
+    // Start with local math prediction immediately (synchronous fallback)
     const pred = generateAIPrediction(game.homeTeam.record, game.awayTeam.record, game.sport, [], []);
     const sport = game.sport;
     const home = game.homeTeam.displayName;
