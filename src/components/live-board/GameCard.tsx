@@ -74,7 +74,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
             game.homeTeam.record ?? '0-0',
             game.awayTeam.record ?? '0-0'
         ).then(insight => {
-            if (insight) setGeminiInsight(`🤖 ${insight}`);
+            if (insight) setGeminiInsight(`⚡ ${insight}`);
         }).finally(() => setGeminiLoading(false));
     }, [isUnlocked, game.homeTeam.name, game.awayTeam.name, game.sport, game.homeTeam.record, game.awayTeam.record, geminiInsight, geminiLoading]);
 
@@ -450,7 +450,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
                 <div className="flex justify-between items-center bg-background-darker px-5 py-3 border-t border-border-muted">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                         {geminiLoading ? (
-                            <span className="text-[9px] text-primary/60 font-black animate-pulse">🤖 PickLabs AI analyzing...</span>
+                            <span className="text-[9px] text-primary/60 font-black animate-pulse">⚡ ORACLE analyzing...</span>
                         ) : geminiInsight ? (
                             <span className={`text-[9px] font-black truncate ${isLive ? 'text-primary' : 'text-emerald-400'}`}>{geminiInsight}</span>
                         ) : isLive ? (

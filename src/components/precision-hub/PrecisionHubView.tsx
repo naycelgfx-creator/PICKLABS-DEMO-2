@@ -160,7 +160,7 @@ const OddsCompare: React.FC<{ ai: string; vegas: string }> = ({ ai, vegas }) => 
     </div>
 );
 
-// ── Gemini AI Insight Banner ──────────────────────────────────────────────────
+// ── PickLabs ORACLE Insight Banner ───────────────────────────────────────────
 const GeminiMatchupBanner: React.FC<{ row: TeamRow }> = ({ row }) => {
     const [pred, setPred] = React.useState<GeminiPrediction | null>(null);
     const [loading, setLoading] = React.useState(false);
@@ -192,7 +192,7 @@ const GeminiMatchupBanner: React.FC<{ row: TeamRow }> = ({ row }) => {
             className="w-full flex items-center justify-center gap-2 py-2 bg-primary/5 hover:bg-primary/10 border-t border-border-muted/40 text-[9px] font-black uppercase tracking-widest text-primary/70 hover:text-primary transition-all"
         >
             <span className="material-symbols-outlined text-xs">smart_toy</span>
-            Ask Gemini AI
+            Ask ORACLE AI
         </button>
     );
 
@@ -201,14 +201,14 @@ const GeminiMatchupBanner: React.FC<{ row: TeamRow }> = ({ row }) => {
             {loading ? (
                 <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-sm animate-spin">progress_activity</span>
-                    <span className="text-[10px] text-primary/60 font-bold animate-pulse">Gemini AI analyzing matchup...</span>
+                    <span className="text-[10px] text-primary/60 font-bold animate-pulse">⚡ ORACLE analyzing real data...</span>
                 </div>
             ) : pred ? (
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-primary text-sm">smart_toy</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">Gemini AI Analysis</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">PickLabs ORACLE</span>
                             <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
                                 pred.riskLevel === 'Low' ? 'bg-primary/10 text-primary border-primary/30' :
                                 pred.riskLevel === 'High' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
@@ -232,9 +232,15 @@ const GeminiMatchupBanner: React.FC<{ row: TeamRow }> = ({ row }) => {
                             ))}
                         </ul>
                     )}
+                    {pred.dataSource && (
+                        <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border-muted/30">
+                            <span className="material-symbols-outlined text-[10px] text-text-muted">database</span>
+                            <span className="text-[8px] text-text-muted font-bold uppercase tracking-widest">Sources: {pred.dataSource}</span>
+                        </div>
+                    )}
                 </div>
             ) : (
-                <span className="text-[9px] text-text-muted">Gemini AI unavailable — using local model.</span>
+                <span className="text-[9px] text-text-muted">ORACLE unavailable — using local model.</span>
             )}
         </div>
     );
