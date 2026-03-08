@@ -227,6 +227,14 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
       {/* Top Navigation */}
       <header className="px-6 py-6 flex items-center justify-between border-b border-border-muted/30 max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-3">
+          {/* Back button */}
+          <button
+            onClick={() => onNavigate("live-board")}
+            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors hover:bg-white/5 px-3 py-1.5 rounded-full border border-neutral-800 hover:border-neutral-600 mr-2"
+          >
+            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            Back
+          </button>
           <img
             src="/picklabs-full-logo.svg"
             alt="PickLabs Logo"

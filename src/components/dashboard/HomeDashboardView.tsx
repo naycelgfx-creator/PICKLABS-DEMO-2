@@ -252,15 +252,15 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
 
 
                                         return (
-                                            <div key={player.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-0 flex relative overflow-hidden group hover:border-neutral-700 transition-colors h-[190px]">
+                                            <div key={player.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-0 flex relative overflow-hidden group hover:border-neutral-700 transition-colors h-[120px]">
                                                 {/* Number watermark */}
-                                                <div className="absolute top-1/2 -translate-y-1/2 right-4 text-[72px] font-black italic text-neutral-800/60 select-none z-0">
+                                                <div className="absolute top-1/2 -translate-y-1/2 right-3 text-[40px] font-black italic text-neutral-800/60 select-none z-0">
                                                     {jerseyNumber}
                                                 </div>
 
                                                 {/* Left side: Photo on white bg with big logo */}
-                                                <div className="w-36 md:w-40 h-full shrink-0 bg-white relative z-10 flex items-end justify-center pt-2 overflow-hidden">
-                                                    <img src={teamLogo} alt={player.teamName} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none w-[280px] h-[280px] object-contain pointer-events-none" />
+                                                <div className="w-24 h-full shrink-0 bg-white relative z-10 flex items-end justify-center pt-1 overflow-hidden">
+                                                    <img src={teamLogo} alt={player.teamName} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none w-[180px] h-[180px] object-contain pointer-events-none" />
                                                     <img src={player.photoUrl} alt={player.name} className="w-[110%] h-[110%] object-cover object-bottom relative z-10 drop-shadow-xl origin-bottom" onError={(e) => {
                                                         e.currentTarget.style.display = 'none';
                                                         e.currentTarget.parentElement!.innerHTML = '<span class="material-symbols-outlined text-4xl text-neutral-600 self-center mb-6 z-10">person</span>';
@@ -268,15 +268,15 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                                 </div>
 
                                                 {/* Right side: Info */}
-                                                <div className="p-3 flex flex-col justify-between relative z-10 flex-1 ml-2 shadow-[-20px_0_20px_-10px_rgba(23,23,23,1)] bg-neutral-900 border-l border-neutral-800">
+                                                <div className="p-2 flex flex-col justify-between relative z-10 flex-1 ml-1 shadow-[-20px_0_20px_-10px_rgba(23,23,23,1)] bg-neutral-900 border-l border-neutral-800">
                                                     <div>
                                                         <div className="flex items-center justify-between pr-2">
-                                                            <h3 className="text-sm md:text-base font-black text-white leading-tight truncate">{player.name}</h3>
-                                                            <span className="text-primary font-black italic text-sm">{jerseyNumber}</span>
+                                                            <h3 className="text-xs font-black text-white leading-tight truncate">{player.name}</h3>
+                                                            <span className="text-primary font-black italic text-xs">{jerseyNumber}</span>
                                                         </div>
                                                         <div className="flex items-center gap-2 mt-1 mb-1">
-                                                            <span className="bg-accent-purple text-white px-1.5 py-0.5 rounded font-black text-[9px] uppercase tracking-wider">{player.position}</span>
-                                                            <span className="text-slate-400 font-bold text-[9px] uppercase tracking-wider">{formattedHeight} • {player.weight} lbs</span>
+                                                            <span className="bg-accent-purple text-white px-1 py-0.5 rounded font-black text-[8px] uppercase tracking-wider">{player.position}</span>
+                                                            <span className="text-slate-400 font-bold text-[8px] uppercase tracking-wider">{formattedHeight} • {player.weight} lbs</span>
                                                         </div>
                                                     </div>
 
@@ -295,7 +295,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-col items-end justify-between h-full pl-2 border-l border-neutral-800/50 shrink-0">
-                                                                <img src={teamLogo} alt="Team" className="w-10 h-10 object-contain drop-shadow-md" />
+                                                                <img src={teamLogo} alt="Team" className="w-7 h-7 object-contain drop-shadow-md" />
                                                                 <span className="text-[9px] text-slate-500 font-black tracking-widest text-primary flex items-center gap-1 mt-1">
                                                                     <Calendar className="w-3 h-3" /> {player.recentLogs?.[0]?.date || 'Mar 7'}
                                                                 </span>
