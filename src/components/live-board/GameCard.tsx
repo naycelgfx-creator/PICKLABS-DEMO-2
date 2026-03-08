@@ -7,6 +7,7 @@ import { GlossaryTooltip } from '../ui/GlossaryTooltip';
 import { RiskMeter } from '../ui/RiskMeter';
 import { PulsingBeacon } from '../ui/PulsingBeacon';
 import { useLiveOddsShift, applyOddsShift } from '../../hooks/useLiveOddsShift';
+import { getGeminiQuickInsight } from '../../data/geminiService';
 
 interface GameCardProps {
     game: Game;
@@ -59,6 +60,23 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
 
     const { isRookieModeActive } = useRookieMode();
     const shifts = useLiveOddsShift(game.status, game.id);
+
+    // Gemini AI quick insight (fetched once per card when unlocked)
+    const [geminiInsight, setGeminiInsight] = React.useState<string | null>(null);
+    const [geminiLoading, setGeminiLoading] = React.useState(false);
+    React.useEffect(() => {
+        if (!isUnlocked || geminiInsight || geminiLoading) return;
+        setGeminiLoading(true);
+        getGeminiQuickInsight(
+            game.homeTeam.name,
+            game.awayTeam.name,
+            game.sport,
+            game.homeTeam.record ?? '0-0',
+            game.awayTeam.record ?? '0-0'
+        ).then(insight => {
+            if (insight) setGeminiInsight(`🤖 ${insight}`);
+        }).finally(() => setGeminiLoading(false));
+    }, [isUnlocked, game.homeTeam.name, game.awayTeam.name, game.sport, game.homeTeam.record, game.awayTeam.record, geminiInsight, geminiLoading]);
 
     // Which bet types are already in slip for this game?
     const selectedTypes = new Set(betSlip.filter(b => b.gameId === game.id).map(b => b.type));
@@ -430,8 +448,12 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame, onAddBet
 
             <div className="mt-4 -mx-5 -mb-5 rounded-b-xl overflow-hidden flex flex-col">
                 <div className="flex justify-between items-center bg-background-darker px-5 py-3 border-t border-border-muted">
-                    <div className="flex items-center gap-2">
-                        {isLive ? (
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {geminiLoading ? (
+                            <span className="text-[9px] text-primary/60 font-black animate-pulse">🤖 PickLabs AI analyzing...</span>
+                        ) : geminiInsight ? (
+                            <span className={`text-[9px] font-black truncate ${isLive ? 'text-primary' : 'text-emerald-400'}`}>{geminiInsight}</span>
+                        ) : isLive ? (
                             <span className="text-[9px] text-[#A3FF00] font-black">{game.streakLabel}</span>
                         ) : (
                             <span className="text-[9px] text-slate-500 font-black">{game.streakLabel}</span>

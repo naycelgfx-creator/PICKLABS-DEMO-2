@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchESPNScoreboardByDate, ESPNGame, ESPNTeamInfo, SportKey } from '../../data/espnScoreboard';
 import { generateAIPrediction } from '../../data/espnTeams';
+import { getGeminiMatchupInsight, GeminiPrediction } from '../../data/geminiService';
 
 
 // ── Sport configs ─────────────────────────────────────────────────────────────
@@ -158,6 +159,87 @@ const OddsCompare: React.FC<{ ai: string; vegas: string }> = ({ ai, vegas }) => 
         <span className="text-[9px] text-text-muted">{vegas}</span>
     </div>
 );
+
+// ── Gemini AI Insight Banner ──────────────────────────────────────────────────
+const GeminiMatchupBanner: React.FC<{ row: TeamRow }> = ({ row }) => {
+    const [pred, setPred] = React.useState<GeminiPrediction | null>(null);
+    const [loading, setLoading] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
+
+    const fetch = React.useCallback(async () => {
+        if (pred || loading) return;
+        setLoading(true);
+        const result = await getGeminiMatchupInsight({
+            homeTeam: row.homeTeam.name,
+            awayTeam: row.awayTeam.name,
+            sport: row.sportLabel,
+            homeRecord: row.homeTeam.record,
+            awayRecord: row.awayTeam.record,
+            homeForm: '',
+            awayForm: '',
+            homeWinProb: row.homeWinProb,
+            awayWinProb: row.awayWinProb,
+            spread: row.homeSpread,
+            overUnder: row.total,
+        });
+        if (result) setPred(result);
+        setLoading(false);
+    }, [pred, loading, row]);
+
+    if (!open) return (
+        <button
+            onClick={() => { setOpen(true); fetch(); }}
+            className="w-full flex items-center justify-center gap-2 py-2 bg-primary/5 hover:bg-primary/10 border-t border-border-muted/40 text-[9px] font-black uppercase tracking-widest text-primary/70 hover:text-primary transition-all"
+        >
+            <span className="material-symbols-outlined text-xs">smart_toy</span>
+            Ask Gemini AI
+        </button>
+    );
+
+    return (
+        <div className="border-t border-border-muted/40 bg-gradient-to-r from-primary/5 to-accent-purple/5 px-4 py-3">
+            {loading ? (
+                <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-sm animate-spin">progress_activity</span>
+                    <span className="text-[10px] text-primary/60 font-bold animate-pulse">Gemini AI analyzing matchup...</span>
+                </div>
+            ) : pred ? (
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary text-sm">smart_toy</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">Gemini AI Analysis</span>
+                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
+                                pred.riskLevel === 'Low' ? 'bg-primary/10 text-primary border-primary/30' :
+                                pred.riskLevel === 'High' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                                'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                            }`}>{pred.riskLevel} Risk</span>
+                        </div>
+                        <span className="text-[9px] font-black text-primary">{pred.confidence}% conf.</span>
+                    </div>
+                    <p className="text-[10px] text-text-main font-medium leading-relaxed">{pred.insight}</p>
+                    <div className="flex items-center gap-3">
+                        <span className="text-[8px] text-text-muted uppercase font-bold tracking-widest">AI Pick:</span>
+                        <span className="text-[11px] font-black text-primary">{pred.pick}</span>
+                    </div>
+                    {pred.reasoning.length > 0 && (
+                        <ul className="flex flex-col gap-1 mt-1">
+                            {pred.reasoning.map((r, i) => (
+                                <li key={i} className="flex items-start gap-1.5 text-[9px] text-text-muted">
+                                    <span className="text-primary mt-0.5 shrink-0">·</span>
+                                    {r}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            ) : (
+                <span className="text-[9px] text-text-muted">Gemini AI unavailable — using local model.</span>
+            )}
+        </div>
+    );
+};
+
 
 const RecBadge: React.FC<{ rec: string; conf: number }> = ({ rec, conf }) => {
     const c = rec === 'HOME' ? 'bg-primary/10 text-primary border-primary/30' : rec === 'AWAY' ? 'bg-accent-purple/10 text-accent-purple border-accent-purple/30' : 'bg-neutral-800 text-text-muted border-border-muted';
@@ -579,6 +661,13 @@ export const PrecisionHubView: React.FC = () => {
                                 </tbody>
                             </table>
                         </div>
+                        {!loading && filtTeams.length > 0 && (
+                            <div className="flex flex-col border-t border-border-muted">
+                                {filtTeams.map(row => (
+                                    <GeminiMatchupBanner key={row.gameId} row={row} />
+                                ))}
+                            </div>
+                        )}
                         {!loading && filtTeams.length > 0 && (
                             <div className="px-4 py-2.5 border-t border-border-muted flex flex-wrap items-center gap-4 text-[8px] text-text-muted font-bold uppercase tracking-widest">
                                 <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-xs text-primary">smart_toy</span>AI ML = PickLabs no-vig line</span>
