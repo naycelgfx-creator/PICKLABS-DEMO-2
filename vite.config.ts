@@ -38,6 +38,9 @@ export default defineConfig({
             if (id.includes('lucide-react') || id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge')) {
               return 'vendor-ui';
             }
+            if (id.includes('otpauth')) {
+              return 'vendor-otpauth';
+            }
             return 'vendor-others';
           }
         }
