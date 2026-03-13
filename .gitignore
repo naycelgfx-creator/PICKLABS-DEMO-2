@@ -25,3 +25,9 @@ dist-ssr
 
 .npm-cache
 .npm-cache/
+.npm-cache2/
+.npm-cache-new/
+.npm_local_cache/
+.my-npm-cache/
+.my-npm-cache_bad/
+node_modules_bad/
