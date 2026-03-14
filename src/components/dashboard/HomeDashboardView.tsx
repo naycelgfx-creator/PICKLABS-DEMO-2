@@ -10,6 +10,37 @@ import { ChevronRight, ChevronDown, TrendingUp, AlertCircle, Calendar, User, Tic
 import { ComposedChart, Area, Line, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { WinningTicker } from './WinningTicker';
 
+const TEAM_COLORS: Record<string, { primary: string; secondary: string }> = {
+    // NBA
+    LAL: { primary: '#552583', secondary: '#FDB927' },
+    BOS: { primary: '#007A33', secondary: '#BA9653' },
+    GSW: { primary: '#1D428A', secondary: '#FFC72C' },
+    MIA: { primary: '#98002E', secondary: '#F9A01B' },
+    NYK: { primary: '#006BB6', secondary: '#F58426' },
+    CHI: { primary: '#CE1141', secondary: '#000000' },
+    DAL: { primary: '#00538C', secondary: '#002B5E' },
+    DEN: { primary: '#0E2240', secondary: '#FEC524' },
+    PHX: { primary: '#1D1160', secondary: '#E56020' },
+    // NFL
+    NE:  { primary: '#002244', secondary: '#C60C30' },
+    KC:  { primary: '#E31837', secondary: '#FFB81C' },
+    SF:  { primary: '#AA0000', secondary: '#B3995D' },
+    BUF: { primary: '#00338D', secondary: '#C60C30' },
+    GB:  { primary: '#203731', secondary: '#FFB612' },
+    DAL_NFL: { primary: '#003594', secondary: '#869397' },
+    // MLB
+    NYY: { primary: '#003087', secondary: '#E4002C' },
+    LAD: { primary: '#005A9C', secondary: '#EF3E42' },
+    // NHL
+    TOR: { primary: '#00205B', secondary: '#FFFFFF' },
+    MTL: { primary: '#AF1E2D', secondary: '#003E7E' },
+};
+
+function getTeamColors(abbr?: string): { primary: string; secondary: string } {
+    if (!abbr) return { primary: '#11f8b7', secondary: '#3880fa' };
+    return TEAM_COLORS[abbr.toUpperCase()] ?? { primary: '#11f8b7', secondary: '#3880fa' };
+}
+
 const TEAM_TREND_DATA = Array.from({ length: 20 }).map((_, i) => {
     const isWin = Math.random() > 0.4;
     const opponent = ['LAL', 'PHX', 'BOS', 'MIA', 'GSW', 'DEN', 'DAL', 'NYK'][Math.floor(Math.random() * 8)];
@@ -183,6 +214,9 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
         .map(id => upcomingFavoriteGames.find(g => g?.id === id))
         .filter(Boolean) as Game[];
 
+    // Derive team colors from first favorite team's abbreviation
+    const { primary: chartPrimary, secondary: chartSecondary } = getTeamColors(favoriteTeamDetails[0]?.abbr);
+
     return (
         <div className="flex-1 w-full bg-background-dark min-h-screen text-slate-100 overflow-y-auto font-display">
             <WinningTicker />
@@ -238,7 +272,8 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                             <section className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                                     <h2 className="text-lg font-black uppercase text-white tracking-wider flex items-center gap-2">
-                                        <Activity className="w-5 h-5 text-primary" /> Team Form & Trends
+                                        <Activity className="w-5 h-5" style={{ color: chartPrimary }} />
+                                        {favoriteTeamDetails[0] ? `${favoriteTeamDetails[0].name} Form` : 'Team Form & Trends'}
                                     </h2>
                                     <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg p-1 w-fit">
                                         {[5, 10, 20].map(span => (
@@ -247,10 +282,9 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                                 onClick={() => setTrendRange(span)}
                                                 className={cn(
                                                     "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all",
-                                                    trendRange === span 
-                                                        ? "bg-primary text-black shadow-[0_0_10px_rgba(17,248,183,0.3)]" 
-                                                        : "text-slate-400 hover:text-white"
+                                                    trendRange === span ? "text-black" : "text-slate-400 hover:text-white"
                                                 )}
+                                                style={trendRange === span ? { backgroundColor: chartPrimary } : {}}
                                             >
                                                 Last {span}
                                             </button>
@@ -262,14 +296,8 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                         <ComposedChart data={TEAM_TREND_DATA.slice(-trendRange)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                             <defs>
                                                 <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
-                                                    {/* Using the user's primary theme color as primary */}
-                                                    <stop offset="5%" stopColor="#11f8b7" stopOpacity={0.4}/>
-                                                    <stop offset="95%" stopColor="#11f8b7" stopOpacity={0}/>
-                                                </linearGradient>
-                                                <linearGradient id="colorSecondary" x1="0" y1="0" x2="0" y2="1">
-                                                    {/* Alternative team color logic could go here; hardcoding a slick secondary color for now */}
-                                                    <stop offset="5%" stopColor="#3880fa" stopOpacity={0.4}/>
-                                                    <stop offset="95%" stopColor="#3880fa" stopOpacity={0}/>
+                                                    <stop offset="5%" stopColor={chartPrimary} stopOpacity={0.4}/>
+                                                    <stop offset="95%" stopColor={chartPrimary} stopOpacity={0}/>
                                                 </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" vertical={false} />
@@ -278,23 +306,26 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                             <Tooltip
                                                 content={({ active, payload }) => {
                                                     if (active && payload && payload.length) {
-                                                        const data = payload[0].payload;
+                                                        const d = payload[0].payload;
                                                         return (
                                                             <div className="bg-neutral-900 border border-neutral-800 p-3 rounded-lg shadow-xl">
                                                                 <div className="text-[10px] font-black uppercase text-slate-400 mb-1 border-b border-neutral-800 pb-1">
-                                                                    {data.date} • {data.game}
+                                                                    {d.date} &bull; {d.game}
                                                                 </div>
                                                                 <div className="flex items-center gap-3 mt-2">
-                                                                    <div className={`text-xs font-black px-1.5 py-0.5 rounded ${data.result === 'W' ? 'bg-primary/20 text-primary' : 'bg-red-500/20 text-red-400'}`}>
-                                                                        {data.result}
+                                                                    <div className="text-xs font-black px-1.5 py-0.5 rounded" style={{
+                                                                        backgroundColor: d.result === 'W' ? `${chartPrimary}33` : '#ef444433',
+                                                                        color: d.result === 'W' ? chartPrimary : '#ef4444'
+                                                                    }}>
+                                                                        {d.result}
                                                                     </div>
                                                                     <div className="flex flex-col">
-                                                                        <span className="text-white font-bold text-sm">vs {data.opponent}</span>
+                                                                        <span className="text-white font-bold text-sm">vs {d.opponent}</span>
                                                                         <span className="text-slate-400 text-xs font-medium">
-                                                                            {data.result === 'W' ? 'Won' : 'Lost'} {data.actualScore} - {data.oppScore}
+                                                                            {d.result === 'W' ? 'Won' : 'Lost'} {d.actualScore} - {d.oppScore}
                                                                         </span>
-                                                                        <span className="text-[10px] text-accent-purple font-black mt-1 uppercase tracking-widest">
-                                                                            Margin: {data.margin} PTS
+                                                                        <span className="text-[10px] font-black mt-1 uppercase tracking-widest" style={{ color: chartSecondary }}>
+                                                                            Margin: {d.margin} PTS
                                                                         </span>
                                                                     </div>
                                                                 </div>
@@ -304,14 +335,10 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                                     return null;
                                                 }}
                                             />
-                                            {/* ZAxis handles the sizing of the bubbles for the Scatter graphic */}
                                             <ZAxis dataKey="margin" range={[50, 400]} name="Margin" />
-                                            {/* Area chart uses Primary Color */}
                                             <Area type="monotone" dataKey="winProbability" name="Expected Form" fill="url(#colorPrimary)" stroke="none" />
-                                            {/* Line chart uses Secondary Color */}
-                                            <Line type="monotone" dataKey="actualScore" name="Actual Score" stroke="#3880fa" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#11f8b7', strokeWidth: 0 }} />
-                                            {/* Scatter overlay creates variable-sized bubbles representing the point margin */}
-                                            <Scatter dataKey="actualScore" fill="#9b4ff5" fillOpacity={0.6} />
+                                            <Line type="monotone" dataKey="actualScore" name="Actual Score" stroke={chartSecondary} strokeWidth={3} dot={false} activeDot={{ r: 6, fill: chartPrimary, strokeWidth: 0 }} />
+                                            <Scatter dataKey="actualScore" fill={chartSecondary} fillOpacity={0.6} />
                                         </ComposedChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -519,12 +546,13 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
 
 
                             {/* Top Predictions */}
-                            <h2 className="text-lg font-black uppercase text-white tracking-wider flex items-center gap-2">
-                                <span className="material-symbols-outlined text-primary">auto_awesome</span> Top Predictions for Your Teams
-                            </h2>
-                            <div className="bg-neutral-900 border border-primary/30 rounded-2xl relative overflow-hidden shadow-[0_0_30px_rgba(13,242,13,0.1)] mb-6">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[50px] rounded-full pointer-events-none"></div>
-                                <div className="p-6 relative z-10">
+                            <section>
+                                <h2 className="text-lg font-black uppercase text-white tracking-wider flex items-center gap-2 mb-4">
+                                    <span className="material-symbols-outlined text-primary">auto_awesome</span> Top Predictions for Your Teams
+                                </h2>
+                                <div className="bg-neutral-900 border border-primary/30 rounded-2xl relative overflow-hidden shadow-[0_0_30px_rgba(13,242,13,0.1)] mb-6">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[50px] rounded-full pointer-events-none"></div>
+                                    <div className="p-6 relative z-10">
                                     <div className="flex items-center justify-between mb-6">
                                         <div className="text-xs font-black uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full">
                                             Generated for you
@@ -544,24 +572,25 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                         ))}
                                     </div>
 
-                                    <button className="w-full py-3 bg-white text-black text-xs font-black uppercase tracking-widest rounded-lg hover:bg-primary transition-colors">
-                                        Add to Betslip
+                                        <button className="w-full py-3 bg-white text-black text-xs font-black uppercase tracking-widest rounded-lg hover:bg-primary transition-colors">
+                                            Add to Betslip
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Explore the Board */}
+                                <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 p-6 rounded-2xl border border-neutral-700 relative overflow-hidden mb-6">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] rounded-full pointer-events-none"></div>
+                                    <h3 className="text-lg font-black uppercase italic mb-2">Explore the Board</h3>
+                                    <p className="text-sm text-slate-400 mb-6 font-medium">Dive into the full slate of games, predictive analytics, and deep stats.</p>
+                                    <button
+                                        onClick={() => onNavigate('live-board')}
+                                        className="px-6 py-2.5 bg-neutral-800 border border-neutral-600 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-neutral-700 hover:text-white transition-all flex items-center gap-2"
+                                    >
+                                        Go to Live Board <ChevronRight className="w-4 h-4" />
                                     </button>
                                 </div>
-                            </div>
-
-                            {/* Explore the Board */}
-                            <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 p-6 rounded-2xl border border-neutral-700 relative overflow-hidden mb-6">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] rounded-full pointer-events-none"></div>
-                                <h3 className="text-lg font-black uppercase italic mb-2">Explore the Board</h3>
-                                <p className="text-sm text-slate-400 mb-6 font-medium">Dive into the full slate of games, predictive analytics, and deep stats.</p>
-                                <button
-                                    onClick={() => onNavigate('live-board')}
-                                    className="px-6 py-2.5 bg-neutral-800 border border-neutral-600 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-neutral-700 hover:text-white transition-all flex items-center gap-2"
-                                >
-                                    Go to Live Board <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
+                            </section>
 
                             {/* News & Injuries */}
                             <section>
@@ -594,7 +623,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                             {/* Performance Radar */}
                             <section className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 mb-8">
                                 <h2 className="text-lg font-black uppercase text-white tracking-wider mb-2 flex items-center gap-2">
-                                    <BarChart2 className="w-5 h-5 text-accent-blue" /> Performance Radar
+                                    <BarChart2 className="w-5 h-5" style={{ color: chartPrimary }} /> Performance Radar
                                 </h2>
                                 <p className="text-xs text-slate-400 font-medium mb-4">Aggregated specific team metrics against league average.</p>
                                 <div className="h-[260px] w-full -ml-2">
@@ -603,18 +632,17 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                             <PolarGrid stroke="#2c2c2c" />
                                             <PolarAngleAxis dataKey="subject" tick={{ fill: '#8c8c8c', fontSize: 10, fontWeight: 'bold' }} />
                                             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                            <Radar name="Team Metrics" dataKey="A" stroke="#3880fa" strokeWidth={2} fill="#3880fa" fillOpacity={0.3} />
+                                            <Radar name="Team Metrics" dataKey="A" stroke={chartPrimary} strokeWidth={2} fill={chartPrimary} fillOpacity={0.3} />
                                             <Tooltip
                                                 contentStyle={{ backgroundColor: '#161616', borderColor: '#2c2c2c', borderRadius: '8px' }}
-                                                itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: '#3880fa' }}
+                                                itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: chartPrimary }}
                                             />
                                         </RadarChart>
                                     </ResponsiveContainer>
                                 </div>
-                            </section>
+                            </div>
                         </div>
-                    </div>
-                ) : (
+                    ) : (
                     // ZERO STATE: No favorite teams
                     <div className="flex flex-col items-center justify-center p-12 text-center bg-neutral-900 border border-neutral-800 rounded-2xl">
                         <div className="w-20 h-20 rounded-full bg-neutral-800 flex items-center justify-center mb-6">
