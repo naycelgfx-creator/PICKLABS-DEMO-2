@@ -438,6 +438,9 @@ export async function fetchESPNRoster(sport: string, teamId: string): Promise<ES
         'Soccer.Ligue1': 'soccer/fra.1',
         'Soccer.UCL': 'soccer/uefa.champions',
         'Soccer.LIGAMX': 'soccer/mex.1',
+        // WBC
+        WBC: 'baseball/wbc',
+        'Baseball.WBC': 'baseball/wbc',
         // Plain fallbacks
         Soccer: 'soccer/eng.1',
     };

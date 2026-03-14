@@ -7,6 +7,7 @@ import { FreeModeQuotaMeter } from '../ui/FreeModeQuotaMeter';
 import { ViewType } from '../shared/PremiumLockView';
 import { getCurrentUser, isAdminEmail, logout } from '../../data/PickLabsAuthDB';
 import { clearAuth } from '../../utils/auth';
+import { BugReportModal } from '../common/BugReportModal';
 
 interface HeaderProps {
     currentView: ViewType;
@@ -43,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
 
     const [isBookieOpen, setIsBookieOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isBugReportOpen, setIsBugReportOpen] = useState(false);
 
     // Accent color theme
     const ACCENT_COLORS = [
@@ -454,7 +456,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                     {/* Actions */}
                                     <button
                                         onClick={() => {
-                                            alert("Bug Reporter opening... (Developer Hook)");
+                                            setIsBugReportOpen(true);
                                             setIsSettingsOpen(false);
                                         }}
                                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
@@ -771,7 +773,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                                     <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
                                     <span className="text-[9px] font-bold uppercase tracking-widest">Account</span>
                                 </button>
-                                <button onClick={() => alert("Bug Reporter opening...")} className="w-full flex flex-col items-center justify-center gap-1 p-2 active:bg-white/5 text-orange-400">
+                                <button onClick={() => { setIsBugReportOpen(true); setIsMobileMenuOpen(false); }} className="w-full flex flex-col items-center justify-center gap-1 p-2 active:bg-white/5 text-orange-400">
                                     <span className="material-symbols-outlined text-[18px]">bug_report</span>
                                     <span className="text-[9px] font-bold uppercase tracking-widest">Report Bug</span>
                                 </button>
@@ -823,6 +825,10 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                         </div>
                     </div>
                 </div>
+            )}
+
+            {isBugReportOpen && (
+                <BugReportModal onClose={() => setIsBugReportOpen(false)} />
             )}
         </header>
     );

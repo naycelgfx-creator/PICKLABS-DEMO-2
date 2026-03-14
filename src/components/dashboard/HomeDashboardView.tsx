@@ -6,7 +6,44 @@ import { Player, generateMockPlayers, getSportStatLabels } from '../../data/mock
 import { fetchESPNRosterBySport } from '../../data/espnService';
 import { fetchMultiSportScoreboard, ESPNGame } from '../../data/espnScoreboard';
 import { SGPBet, generateSGP } from '../popular/PopularBetsView';
-import { ChevronRight, ChevronDown, TrendingUp, AlertCircle, Calendar, User, Ticket } from 'lucide-react';
+import { ChevronRight, ChevronDown, TrendingUp, AlertCircle, Calendar, User, Ticket, Activity, BarChart2 } from 'lucide-react';
+import { ComposedChart, Area, Line, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { WinningTicker } from './WinningTicker';
+
+const TEAM_TREND_DATA = Array.from({ length: 20 }).map((_, i) => {
+    const isWin = Math.random() > 0.4;
+    const opponent = ['LAL', 'PHX', 'BOS', 'MIA', 'GSW', 'DEN', 'DAL', 'NYK'][Math.floor(Math.random() * 8)];
+    
+    // Generate dates working backwards from today
+    const date = new Date();
+    date.setDate(date.getDate() - (20 - i) * 2);
+    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    
+    // Realistic basketball-ish scores
+    const teamScore = isWin ? 105 + Math.floor(Math.random() * 20) : 95 + Math.floor(Math.random() * 10);
+    const oppScore = isWin ? teamScore - Math.floor(Math.random() * 15 + 1) : teamScore + Math.floor(Math.random() * 15 + 1);
+    const margin = Math.abs(teamScore - oppScore);
+
+    return {
+        game: `G${i+1}`,
+        date: dateStr,
+        opponent: opponent,
+        winProbability: 40 + Math.random() * 20 + (i * 0.5), // For Area chart trend
+        actualScore: teamScore, // For Line chart actual value
+        oppScore: oppScore,
+        margin: margin,
+        result: isWin ? 'W' : 'L'
+    }
+});
+
+const TEAM_RADAR_DATA = [
+    { subject: 'Offense', A: 85, fullMark: 100 },
+    { subject: 'Defense', A: 92, fullMark: 100 },
+    { subject: 'Pace', A: 78, fullMark: 100 },
+    { subject: 'Rebounding', A: 88, fullMark: 100 },
+    { subject: 'Shooting', A: 82, fullMark: 100 },
+    { subject: 'Discipline', A: 65, fullMark: 100 },
+];
 
 interface HomeDashboardViewProps {
     onNavigate: (view: ViewType) => void;
@@ -15,6 +52,7 @@ interface HomeDashboardViewProps {
 export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate }) => {
     const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
     const [statsCollapsed, setStatsCollapsed] = useState(true);
+    const [trendRange, setTrendRange] = useState(20);
 
     const getLastGameStats = (sport: string) => {
         switch (sport?.toUpperCase()) {
@@ -147,6 +185,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
 
     return (
         <div className="flex-1 w-full bg-background-dark min-h-screen text-slate-100 overflow-y-auto font-display">
+            <WinningTicker />
             <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
                 <header className="flex items-center justify-between mb-8">
                     <div>
@@ -192,6 +231,89 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            </section>
+
+                            {/* TREND CHART: 5-10-20 Game Performance */}
+                            <section className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                                    <h2 className="text-lg font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                        <Activity className="w-5 h-5 text-primary" /> Team Form & Trends
+                                    </h2>
+                                    <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg p-1 w-fit">
+                                        {[5, 10, 20].map(span => (
+                                            <button
+                                                key={span}
+                                                onClick={() => setTrendRange(span)}
+                                                className={cn(
+                                                    "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all",
+                                                    trendRange === span 
+                                                        ? "bg-primary text-black shadow-[0_0_10px_rgba(17,248,183,0.3)]" 
+                                                        : "text-slate-400 hover:text-white"
+                                                )}
+                                            >
+                                                Last {span}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="h-[250px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <ComposedChart data={TEAM_TREND_DATA.slice(-trendRange)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                            <defs>
+                                                <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
+                                                    {/* Using the user's primary theme color as primary */}
+                                                    <stop offset="5%" stopColor="#11f8b7" stopOpacity={0.4}/>
+                                                    <stop offset="95%" stopColor="#11f8b7" stopOpacity={0}/>
+                                                </linearGradient>
+                                                <linearGradient id="colorSecondary" x1="0" y1="0" x2="0" y2="1">
+                                                    {/* Alternative team color logic could go here; hardcoding a slick secondary color for now */}
+                                                    <stop offset="5%" stopColor="#3880fa" stopOpacity={0.4}/>
+                                                    <stop offset="95%" stopColor="#3880fa" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" vertical={false} />
+                                            <XAxis dataKey="date" stroke="#8c8c8c" fontSize={10} tickLine={false} axisLine={false} tickMargin={10} />
+                                            <YAxis stroke="#8c8c8c" fontSize={10} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                                            <Tooltip
+                                                content={({ active, payload }) => {
+                                                    if (active && payload && payload.length) {
+                                                        const data = payload[0].payload;
+                                                        return (
+                                                            <div className="bg-neutral-900 border border-neutral-800 p-3 rounded-lg shadow-xl">
+                                                                <div className="text-[10px] font-black uppercase text-slate-400 mb-1 border-b border-neutral-800 pb-1">
+                                                                    {data.date} • {data.game}
+                                                                </div>
+                                                                <div className="flex items-center gap-3 mt-2">
+                                                                    <div className={`text-xs font-black px-1.5 py-0.5 rounded ${data.result === 'W' ? 'bg-primary/20 text-primary' : 'bg-red-500/20 text-red-400'}`}>
+                                                                        {data.result}
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-white font-bold text-sm">vs {data.opponent}</span>
+                                                                        <span className="text-slate-400 text-xs font-medium">
+                                                                            {data.result === 'W' ? 'Won' : 'Lost'} {data.actualScore} - {data.oppScore}
+                                                                        </span>
+                                                                        <span className="text-[10px] text-accent-purple font-black mt-1 uppercase tracking-widest">
+                                                                            Margin: {data.margin} PTS
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }}
+                                            />
+                                            {/* ZAxis handles the sizing of the bubbles for the Scatter graphic */}
+                                            <ZAxis dataKey="margin" range={[50, 400]} name="Margin" />
+                                            {/* Area chart uses Primary Color */}
+                                            <Area type="monotone" dataKey="winProbability" name="Expected Form" fill="url(#colorPrimary)" stroke="none" />
+                                            {/* Line chart uses Secondary Color */}
+                                            <Line type="monotone" dataKey="actualScore" name="Actual Score" stroke="#3880fa" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#11f8b7', strokeWidth: 0 }} />
+                                            {/* Scatter overlay creates variable-sized bubbles representing the point margin */}
+                                            <Scatter dataKey="actualScore" fill="#9b4ff5" fillOpacity={0.6} />
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </section>
 
@@ -331,9 +453,9 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                     <h2 className="text-lg font-black uppercase text-white tracking-wider mb-4 flex items-center gap-2">
                                         <Ticket className="w-5 h-5 text-orange-500" /> Popular Tickets For You
                                     </h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x">
                                         {aiPicks.map(bet => (
-                                            <div key={bet.id} className="bg-neutral-900 border border-neutral-800 hover:border-orange-500/50 transition-colors rounded-xl p-5 flex flex-col h-full relative overflow-hidden group">
+                                            <div key={bet.id} className="min-w-[280px] sm:min-w-[320px] shrink-0 bg-neutral-900 border border-neutral-800 hover:border-orange-500/50 transition-colors rounded-xl p-5 flex flex-col h-full relative overflow-hidden group snap-start">
                                                 <div className="absolute -top-10 -right-10 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 transition-colors pointer-events-none"></div>
 
                                                 <div className="flex justify-between items-start mb-4 relative z-10">
@@ -466,6 +588,28 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            </section>
+
+                            {/* Performance Radar */}
+                            <section className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 mb-8">
+                                <h2 className="text-lg font-black uppercase text-white tracking-wider mb-2 flex items-center gap-2">
+                                    <BarChart2 className="w-5 h-5 text-accent-blue" /> Performance Radar
+                                </h2>
+                                <p className="text-xs text-slate-400 font-medium mb-4">Aggregated specific team metrics against league average.</p>
+                                <div className="h-[260px] w-full -ml-2">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RadarChart cx="50%" cy="50%" outerRadius="65%" data={TEAM_RADAR_DATA}>
+                                            <PolarGrid stroke="#2c2c2c" />
+                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#8c8c8c', fontSize: 10, fontWeight: 'bold' }} />
+                                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                            <Radar name="Team Metrics" dataKey="A" stroke="#3880fa" strokeWidth={2} fill="#3880fa" fillOpacity={0.3} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#161616', borderColor: '#2c2c2c', borderRadius: '8px' }}
+                                                itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: '#3880fa' }}
+                                            />
+                                        </RadarChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </section>
                         </div>

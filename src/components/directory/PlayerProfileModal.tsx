@@ -1,9 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { ESPNAthleteListItem } from '../../data/espnScoreboard';
+import { clsx } from 'clsx';
 
 // ─── Stat parsing (sport-aware) ───────────────────────────────────────────────
 export interface StatItem { label: string; value: string | undefined; }
 export interface ParsedStats { items: StatItem[]; seasonLabel: string; }
+
+export interface InjuryStatus {
+    status: string;
+    shortComment: string;
+    date: string;
+    details?: {
+        type?: string;
+        location?: string;
+        side?: string;
+        returnDate?: string;
+    };
+}
+
+export interface SplitCategory {
+    name: string;
+    displayName: string;
+    splits: {
+        displayName: string;
+        stats: string[];
+    }[];
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mostRecent = (entries: any[]): { stats: string[]; season?: { displayName?: string } } => {
@@ -170,18 +192,42 @@ interface PlayerProfileModalProps {
 
 export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete, sport, league, onClose }) => {
     const [parsed, setParsed] = useState<ParsedStats>({ items: [], seasonLabel: '' });
+    const [injury, setInjury] = useState<InjuryStatus | null>(null);
+    const [splits, setSplits] = useState<SplitCategory[]>([]);
+    
+    // For the UI split tabs
+    const [activeTab, setActiveTab] = useState<'season' | 'matchup' | 'location'>('season');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         setLoading(true);
         (async () => {
             try {
-                const res = await fetch(`https://site.web.api.espn.com/apis/common/v3/sports/${sport}/${league}/athletes/${athlete.id}/stats`);
-                if (res.ok) {
-                    const data = await res.json();
+                const [statsRes, athleteRes, splitsRes] = await Promise.all([
+                    fetch(`https://site.web.api.espn.com/apis/common/v3/sports/${sport}/${league}/athletes/${athlete.id}/stats`),
+                    fetch(`https://site.api.espn.com/apis/common/v3/sports/${sport}/${league}/athletes/${athlete.id}`),
+                    fetch(`https://site.web.api.espn.com/apis/common/v3/sports/${sport}/${league}/athletes/${athlete.id}/splits`)
+                ]);
+
+                if (statsRes.ok) {
+                    const data = await statsRes.json();
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const cats: any[] = data?.categories ?? [];
                     setParsed(parseStats(cats, sport, athlete.position?.abbreviation ?? ''));
+                }
+
+                if (athleteRes.ok) {
+                    const data = await athleteRes.json();
+                    if (data.athlete?.injuries && data.athlete.injuries.length > 0) {
+                        setInjury(data.athlete.injuries[0]);
+                    }
+                }
+
+                if (splitsRes.ok) {
+                    const data = await splitsRes.json();
+                    if (data.splitCategories) {
+                        setSplits(data.splitCategories);
+                    }
                 }
             } catch { /* leave empty */ }
             setLoading(false);
@@ -201,13 +247,29 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
     const textClr = contrastColor(athlete.teamColor);
     const hasStats = parsed.items.some(s => s.value);
 
+    // Filter relevant splits
+    const matchupSplits = splits.find(s => s.name === 'byOpponent')?.splits || [];
+    const locationSplits = splits.find(s => s.name === 'byLocation')?.splits || [];
+
+    // Map stats indices based on sport
+    const getSplitStatVal = (sport: string, statIdx: number, item: any) => {
+        if (!item.stats) return '—';
+        if (sport === 'basketball') {
+            // In splits: points is 16, reb is 10, ast is 11 for NBA
+            const idxMap: Record<number, number> = { 0: 16, 1: 10, 2: 11, 3: 4, 4: 6, 5: 8, 6: 14, 7: 13 };
+            return item.stats[idxMap[statIdx] ?? 0] ?? '—';
+        }
+        // Add other sports split mappings if needed, for now fallback to the same array idx
+        return item.stats[statIdx] ?? '—';
+    };
+
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto pt-24 pb-12"
             onClick={onClose}
         >
             <div
-                className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.8)]"
+                className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.8)] my-auto flex-shrink-0"
                 style={{ background: primaryBg, border: `3px solid ${borderClr}` }}
                 onClick={e => e.stopPropagation()}
             >
@@ -216,8 +278,8 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                     onClick={onClose}
                     title="Close"
                     aria-label="Close"
-                    className="absolute top-3 right-3 z-30 w-8 h-8 rounded-full flex items-center justify-center transition-all"
-                    style={{ background: 'rgba(0,0,0,0.45)', border: `1px solid ${borderClr}`, color: textClr }}
+                    className="absolute top-3 right-3 z-30 w-8 h-8 rounded-full flex items-center justify-center transition-all bg-black/45 border hover:bg-black/60"
+                    style={{ borderColor: borderClr, color: textClr }}
                 >
                     <span className="material-symbols-outlined text-[16px]" aria-hidden="true">close</span>
                 </button>
@@ -281,34 +343,40 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                         )}
                     </div>
 
-                    {/* Physical bio */}
-                    <div
-                        className="grid grid-cols-3 gap-3 text-center rounded-xl p-3 bg-black/40"
-                        style={{ border: `1px solid ${borderClr}44` }}
-                    >
-                        {[
-                            { lbl: 'Birthday', val: fmtDOB(athlete.dateOfBirth) },
-                            { lbl: 'Height', val: athlete.displayHeight || 'N/A' },
-                            { lbl: 'Weight', val: athlete.displayWeight || 'N/A' },
-                        ].map(({ lbl, val }) => (
-                            <div key={lbl}>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-white/50 mb-0.5">{lbl}</p>
-                                <p className="text-[11px] font-bold text-white">{val}</p>
+                    {/* Injury Banner */}
+                    {injury && (
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 relative overflow-hidden flex gap-3 text-red-50">
+                            <div className="shrink-0 pt-0.5">
+                                <span className="material-symbols-outlined text-red-400 text-[18px]">medical_services</span>
                             </div>
+                            <div className="flex-1">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-0.5">{injury.status} {injury.details?.type ? `- ${injury.details.type}` : ''}</h4>
+                                <p className="text-xs leading-tight font-medium text-red-100/90">{injury.shortComment}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Tabs */}
+                    <div className="flex gap-1 p-1 bg-black/40 rounded-lg border" style={{ borderColor: `${borderClr}44` }}>
+                        {(['season', 'matchup', 'location'] as const).map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={clsx(
+                                    "flex-1 text-[10px] font-black uppercase tracking-wider py-2 rounded transition-colors text-center",
+                                    activeTab === tab 
+                                        ? "bg-white/10 text-white shadow-sm" 
+                                        : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                                )}
+                            >
+                                {tab}
+                            </button>
                         ))}
                     </div>
 
-                    {/* Stats */}
-                    <div>
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="h-px flex-1" style={{ background: borderClr + '66' }} />
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60">
-                                {parsed.seasonLabel ? `${parsed.seasonLabel} Stats` : 'Season Stats'}
-                            </span>
-                            <div className="h-px flex-1" style={{ background: borderClr + '66' }} />
-                        </div>
-
-                        {loading ? (
+                    {/* Tab Content */}
+                    <div className="min-h-[160px]">
+                        {loading && (
                             <div className="grid grid-cols-4 gap-2">
                                 {Array.from({ length: 8 }).map((_, i) => (
                                     <div key={i} className="flex flex-col items-center gap-1">
@@ -317,23 +385,110 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                                     </div>
                                 ))}
                             </div>
-                        ) : hasStats ? (
-                            <div className="grid grid-cols-4 gap-2">
-                                {parsed.items.map(({ label, value }) => (
-                                    <div
-                                        key={label}
-                                        className="flex flex-col items-center text-center rounded-lg py-2 px-1 bg-black/30"
-                                        style={{ border: `1px solid ${borderClr}55` }}
-                                    >
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-white/50 mb-1">{label}</span>
-                                        <span className="text-base font-black text-white leading-none">{value ?? '—'}</span>
+                        )}
+
+                        {!loading && activeTab === 'season' && (
+                            <div className="animate-in fade-in duration-300">
+                                {/* Physical bio */}
+                                <div
+                                    className="grid grid-cols-3 gap-3 text-center rounded-xl p-3 bg-black/40 mb-4"
+                                    style={{ border: `1px solid ${borderClr}44` }}
+                                >
+                                    {[
+                                        { lbl: 'Birthday', val: fmtDOB(athlete.dateOfBirth) },
+                                        { lbl: 'Height', val: athlete.displayHeight || 'N/A' },
+                                        { lbl: 'Weight', val: athlete.displayWeight || 'N/A' },
+                                    ].map(({ lbl, val }) => (
+                                        <div key={lbl}>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/50 mb-0.5">{lbl}</p>
+                                            <p className="text-[11px] font-bold text-white">{val}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="h-px flex-1" style={{ background: borderClr + '66' }} />
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60">
+                                        {parsed.seasonLabel ? `${parsed.seasonLabel} Stats` : 'Season Stats'}
+                                    </span>
+                                    <div className="h-px flex-1" style={{ background: borderClr + '66' }} />
+                                </div>
+                                {hasStats ? (
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {parsed.items.map(({ label, value }) => (
+                                            <div
+                                                key={label}
+                                                className="flex flex-col items-center text-center rounded-lg py-2 px-1 bg-black/30"
+                                                style={{ border: `1px solid ${borderClr}55` }}
+                                            >
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-white/50 mb-1">{label}</span>
+                                                <span className="text-base font-black text-white leading-none">{value ?? '—'}</span>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                ) : (
+                                    <div className="flex items-center justify-center gap-2 py-3 text-white/40 text-xs">
+                                        <span className="material-symbols-outlined text-base">bar_chart</span>
+                                        Stats not available
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="flex items-center justify-center gap-2 py-3 text-white/40 text-xs">
-                                <span className="material-symbols-outlined text-base">bar_chart</span>
-                                Stats not available
+                        )}
+
+                        {!loading && activeTab === 'matchup' && (
+                            <div className="animate-in fade-in slide-in-from-right-2 duration-300 flex flex-col gap-2 overflow-y-auto max-h-[300px] pr-1 pb-4 custom-scrollbar">
+                                {matchupSplits.length > 0 ? matchupSplits.map((split, i) => (
+                                    <div key={i} className="bg-black/40 border rounded-lg p-3" style={{ borderColor: `${borderClr}44` }}>
+                                        <div className="text-[11px] font-black uppercase tracking-wide text-white mb-2 pb-2 border-b border-white/10">
+                                            {split.displayName}
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {parsed.items.slice(0, 4).map((pi, idx) => (
+                                                <div key={idx} className="flex flex-col items-center">
+                                                    <span className="text-[8px] font-bold text-white/40 uppercase">{pi.label}</span>
+                                                    <span className="text-sm font-black text-white">{getSplitStatVal(sport, idx, split)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="text-center text-white/40 text-xs py-8">No matchup data available</div>
+                                )}
+                            </div>
+                        )}
+
+                        {!loading && activeTab === 'location' && (
+                            <div className="animate-in fade-in slide-in-from-right-2 duration-300 flex flex-col gap-2">
+                                {locationSplits.length > 0 ? locationSplits.map((split, i) => (
+                                    <div key={i} className="bg-black/40 border rounded-lg p-3" style={{ borderColor: `${borderClr}44` }}>
+                                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
+                                            <span className="material-symbols-outlined text-[16px] text-white/60">
+                                                {split.displayName === 'Home' ? 'home' : 'flight_takeoff'}
+                                            </span>
+                                            <span className="text-[11px] font-black uppercase tracking-wide text-white">
+                                                {split.displayName} Splits
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-2 border-t border-b border-black/20 py-1 bg-black/20 rounded">
+                                            {parsed.items.slice(0, 4).map((pi, idx) => (
+                                                <div key={idx} className="flex flex-col items-center">
+                                                    <span className="text-[8px] font-bold text-white/40 uppercase">{pi.label}</span>
+                                                    <span className="text-sm font-black text-white">{getSplitStatVal(sport, idx, split)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-2 pt-2">
+                                            {parsed.items.slice(4, 8).map((pi, idx) => (
+                                                <div key={idx} className="flex flex-col items-center">
+                                                    <span className="text-[8px] font-bold text-white/40 uppercase">{pi.label}</span>
+                                                    <span className="text-[11px] font-black text-white/80">{getSplitStatVal(sport, idx+4, split)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="text-center text-white/40 text-xs py-8">No location splits available</div>
+                                )}
                             </div>
                         )}
                     </div>
