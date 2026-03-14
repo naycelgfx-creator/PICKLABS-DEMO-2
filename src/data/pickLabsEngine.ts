@@ -174,3 +174,207 @@ export function confidenceColor(c: 'HIGH' | 'MED' | 'LOW'): string {
         : c === 'MED' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-400/40'
             : 'bg-red-500/20 text-red-400 border-red-400/40';
 }
+
+// ─── NEW: PickLabsEngine (translated from Python) ──────────────────────────────
+
+export interface GameLog {
+    game_id: string;
+    date: string;
+    player_id: string;
+    opp_id?: string;
+    pos?: string;
+    days_rest?: number;
+    status?: string;
+    pts?: number;
+    reb?: number;
+    ast?: number;
+    stl?: number;
+    blk?: number;
+    pra?: number; // pts+reb+ast combined
+    [key: string]: number | string | undefined;
+}
+
+export interface PropLine {
+    id: string;
+    name: string;
+    stat: string;
+    line: number;
+}
+
+export interface PlayerAnalysis {
+    L5_hit: number;
+    L10_hit: number;
+    Season_hit: number;
+    b2b_hit: number;
+    home_hit: number;
+    away_hit: number;
+    prop_type: string;
+    line: number;
+}
+
+export interface MarketMover {
+    name: string;
+    stat: string;
+    line: number;
+    avg_l5: number;
+    diff: number; // % above/below the line
+    direction: 'OVER' | 'UNDER';
+}
+
+export type MatchupGrade = 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
+
+export interface GradedMatchup {
+    grade: MatchupGrade;
+    opp_def_avg: number;
+    league_avg: number;
+    score: number;
+}
+
+/**
+ * Calculates what percentage of the time a player exceeded a given line.
+ * Equivalent to PickLabsEngine.calculate_hit_rate() in Python.
+ */
+export function calculateHitRate(logs: GameLog[], stat: string, line: number): number {
+    if (logs.length === 0) return 0;
+    const hits = logs.filter(g => {
+        const val = g[stat];
+        return typeof val === 'number' && val > line;
+    }).length;
+    return Math.round((hits / logs.length) * 1000) / 10;
+}
+
+/**
+ * Full player prop analysis across multiple timeframes and situational splits.
+ * Mirrors PickLabsEngine.get_player_analysis() from Python.
+ */
+export function getPlayerAnalysis(
+    gameLog: GameLog[],
+    playerId: string,
+    propType: string,
+    line: number
+): PlayerAnalysis {
+    const playerGames = gameLog
+        .filter(g => g.player_id === playerId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const b2bGames = playerGames.filter(g => g.days_rest === 0);
+    const homeGames = playerGames.filter(g => g.is_home === 1);
+    const awayGames = playerGames.filter(g => g.is_home === 0);
+
+    return {
+        L5_hit: calculateHitRate(playerGames.slice(0, 5), propType, line),
+        L10_hit: calculateHitRate(playerGames.slice(0, 10), propType, line),
+        Season_hit: calculateHitRate(playerGames, propType, line),
+        b2b_hit: calculateHitRate(b2bGames, propType, line),
+        home_hit: calculateHitRate(homeGames, propType, line),
+        away_hit: calculateHitRate(awayGames, propType, line),
+        prop_type: propType,
+        line,
+    };
+}
+
+/**
+ * Finds overperformers vs their prop line based on L5 average.
+ * Mirrors PickLabsEngine.get_market_movers() from Python.
+ */
+export function getMarketMovers(gameLog: GameLog[], props: PropLine[]): MarketMover[] {
+    return props.map(p => {
+        const playerLast5 = gameLog
+            .filter(g => g.player_id === p.id)
+            .slice(0, 5);
+        const avg = playerLast5.length > 0
+            ? playerLast5.reduce((sum, g) => sum + ((g[p.stat] as number) || 0), 0) / playerLast5.length
+            : 0;
+        const diff = p.line > 0 ? Math.round(((avg - p.line) / p.line) * 1000) / 10 : 0;
+        return {
+            name: p.name,
+            stat: p.stat,
+            line: p.line,
+            avg_l5: Math.round(avg * 10) / 10,
+            diff,
+            direction: diff >= 0 ? 'OVER' : 'UNDER',
+        } as MarketMover;
+    }).sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+}
+
+/**
+ * Grades a matchup from A+ (great for the player) to F (terrible).
+ * Mirrors PickLabsEngine.generate_matchup_grade() from Python.
+ */
+export function generateMatchupGrade(
+    gameLog: GameLog[],
+    playerPos: string,
+    opponentId: string,
+    propType: string
+): GradedMatchup {
+    const oppDefGames = gameLog.filter(g => g.opp_id === opponentId && g.pos === playerPos);
+    const leagueGames = gameLog.filter(g => g.pos === playerPos);
+
+    const avg = (arr: GameLog[]) => {
+        if (arr.length === 0) return 0;
+        return arr.reduce((s, g) => s + ((g[propType] as number) || 0), 0) / arr.length;
+    };
+
+    const oppDefAvg = avg(oppDefGames);
+    const leagueAvg = avg(leagueGames) || 1;
+    const score = oppDefAvg / leagueAvg;
+
+    let grade: MatchupGrade = 'C';
+    if (score >= 1.25) grade = 'A+';
+    else if (score >= 1.10) grade = 'A';
+    else if (score >= 1.00) grade = 'B';
+    else if (score >= 0.90) grade = 'C';
+    else if (score >= 0.80) grade = 'D';
+    else grade = 'F';
+
+    return {
+        grade,
+        opp_def_avg: Math.round(oppDefAvg * 10) / 10,
+        league_avg: Math.round(leagueAvg * 10) / 10,
+        score: Math.round(score * 100) / 100,
+    };
+}
+
+/** Returns the CSS color classes for a matchup grade badge. */
+export function gradeColor(grade: MatchupGrade): string {
+    if (grade === 'A+' || grade === 'A') return 'bg-primary/20 text-primary border-primary/40';
+    if (grade === 'B') return 'bg-blue-500/20 text-blue-400 border-blue-400/40';
+    if (grade === 'C') return 'bg-yellow-500/20 text-yellow-400 border-yellow-400/40';
+    if (grade === 'D') return 'bg-orange-500/20 text-orange-400 border-orange-400/40';
+    return 'bg-red-500/20 text-red-400 border-red-400/40'; // F
+}
+
+/**
+ * Generates a seeded mock game log for a player (20 games).
+ * Used for demo rendering of the Analytics tab when real data isn't available.
+ */
+export function generateMockGameLogFull(
+    playerId: string,
+    opponentId = 'OPP',
+    baseline: { pts?: number; reb?: number; ast?: number } = { pts: 22, reb: 6, ast: 4 }
+): GameLog[] {
+    let h = 0;
+    for (let i = 0; i < playerId.length; i++) h = Math.imul(31, h) + playerId.charCodeAt(i) | 0;
+    const rng = () => { h ^= h << 13; h ^= h >> 17; h ^= h << 5; return (h >>> 0) / 4294967296; };
+    const now = new Date();
+    return Array.from({ length: 20 }, (_, i) => {
+        const d = new Date(now);
+        d.setDate(d.getDate() - (i * 3));
+        const pts = Math.max(0, Math.round((baseline.pts ?? 20) * (0.7 + rng() * 0.6)));
+        const reb = Math.max(0, Math.round((baseline.reb ?? 5) * (0.7 + rng() * 0.6)));
+        const ast = Math.max(0, Math.round((baseline.ast ?? 4) * (0.7 + rng() * 0.6)));
+        return {
+            game_id: `g-${playerId}-${i}`,
+            date: d.toISOString().split('T')[0],
+            player_id: playerId,
+            opp_id: opponentId,
+            pos: 'PG',
+            days_rest: i % 3 === 0 ? 0 : 1,
+            is_home: rng() > 0.5 ? 1 : 0,
+            pts,
+            reb,
+            ast,
+            pra: pts + reb + ast,
+        };
+    });
+}

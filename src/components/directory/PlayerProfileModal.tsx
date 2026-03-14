@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ESPNAthleteListItem } from '../../data/espnScoreboard';
 import { clsx } from 'clsx';
+import {
+    generateMockGameLogFull, getPlayerAnalysis, gradeColor, generateMatchupGrade,
+    type GameLog,
+} from '../../data/pickLabsEngine';
 
 // ─── Stat parsing (sport-aware) ───────────────────────────────────────────────
 export interface StatItem { label: string; value: string | undefined; }
@@ -194,10 +198,32 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
     const [parsed, setParsed] = useState<ParsedStats>({ items: [], seasonLabel: '' });
     const [injury, setInjury] = useState<InjuryStatus | null>(null);
     const [splits, setSplits] = useState<SplitCategory[]>([]);
-    
+
     // For the UI split tabs
-    const [activeTab, setActiveTab] = useState<'season' | 'matchup' | 'location'>('season');
+    const [activeTab, setActiveTab] = useState<'season' | 'matchup' | 'location' | 'analytics'>('season');
     const [loading, setLoading] = useState(true);
+
+    // Analytics tab state
+    const PROP_OPTIONS = ['pts', 'reb', 'ast', 'pra'] as const;
+    type PropKey = typeof PROP_OPTIONS[number];
+    const PROP_LINES: Record<PropKey, number> = { pts: 22.5, reb: 6.5, ast: 4.5, pra: 32.5 };
+    const [activeProp, setActiveProp] = useState<PropKey>('pts');
+
+    // Generate seeded mock game log for this player
+    const mockGameLog: GameLog[] = useMemo(() => generateMockGameLogFull(
+        athlete.id,
+        'OPP',
+        { pts: 22, reb: 7, ast: 5 }
+    ), [athlete.id]);
+
+    const analytics = useMemo(() => getPlayerAnalysis(
+        mockGameLog, athlete.id, activeProp, PROP_LINES[activeProp]
+    ), [mockGameLog, athlete.id, activeProp]);
+
+    const matchupGrade = useMemo(() => generateMatchupGrade(
+        mockGameLog, athlete.position?.abbreviation ?? 'PG', 'OPP', activeProp
+    ), [mockGameLog, athlete.position?.abbreviation, activeProp]);
+
 
     useEffect(() => {
         setLoading(true);
@@ -358,18 +384,18 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
 
                     {/* Tabs */}
                     <div className="flex gap-1 p-1 bg-black/40 rounded-lg border" style={{ borderColor: `${borderClr}44` }}>
-                        {(['season', 'matchup', 'location'] as const).map(tab => (
+                        {(['season', 'matchup', 'location', 'analytics'] as const).map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={clsx(
                                     "flex-1 text-[10px] font-black uppercase tracking-wider py-2 rounded transition-colors text-center",
-                                    activeTab === tab 
-                                        ? "bg-white/10 text-white shadow-sm" 
+                                    activeTab === tab
+                                        ? "bg-white/10 text-white shadow-sm"
                                         : "text-white/40 hover:text-white/70 hover:bg-white/5"
                                 )}
                             >
-                                {tab}
+                                {tab === 'analytics' ? '📊' : tab}
                             </button>
                         ))}
                     </div>
@@ -491,9 +517,119 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
                                 )}
                             </div>
                         )}
+
+                        {/* ── ANALYTICS TAB (PickLabs Engine) ── */}
+                        {activeTab === 'analytics' && (
+                            <div className="animate-in fade-in duration-300 flex flex-col gap-4">
+
+                                {/* Prop type selector */}
+                                <div className="flex gap-1.5">
+                                    {(['pts', 'reb', 'ast', 'pra'] as const).map(p => (
+                                        <button
+                                            key={p}
+                                            onClick={() => setActiveProp(p)}
+                                            className={clsx(
+                                                'flex-1 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border transition-all',
+                                                activeProp === p
+                                                    ? 'bg-white/10 text-white border-white/30'
+                                                    : 'text-white/40 border-white/10 hover:border-white/20 hover:text-white/70'
+                                            )}
+                                        >
+                                            {p.toUpperCase()}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Line label */}
+                                <div className="text-center">
+                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Line: </span>
+                                    <span className="text-sm font-black text-white">{PROP_LINES[activeProp]}</span>
+                                </div>
+
+                                {/* Hit-rate bars (The "Greening" Charts) */}
+                                <div className="flex flex-col gap-3 bg-black/40 rounded-xl p-4 border" style={{ borderColor: `${borderClr}44` }}>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Hit Rate</div>
+                                    {([
+                                        { label: 'L5', value: analytics.L5_hit },
+                                        { label: 'L10', value: analytics.L10_hit },
+                                        { label: 'Season', value: analytics.Season_hit },
+                                    ] as { label: string; value: number }[]).map(({ label, value }) => (
+                                        <div key={label} className="flex items-center gap-3">
+                                            <span className="w-12 text-[10px] font-black uppercase text-white/60 shrink-0">{label}</span>
+                                            <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full transition-all duration-700"
+                                                    style={{
+                                                        width: `${value}%`,
+                                                        background: value >= 70
+                                                            ? 'linear-gradient(90deg, #0df20d, #11f8b7)'
+                                                            : value >= 50
+                                                            ? 'linear-gradient(90deg, #facc15, #f97316)'
+                                                            : 'linear-gradient(90deg, #ef4444, #dc2626)',
+                                                    }}
+                                                />
+                                            </div>
+                                            <span className={clsx(
+                                                'text-xs font-black w-10 text-right',
+                                                value >= 70 ? 'text-primary' : value >= 50 ? 'text-yellow-400' : 'text-red-400'
+                                            )}>{value}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Situational Splits */}
+                                <div className="bg-black/40 rounded-xl p-4 border" style={{ borderColor: `${borderClr}44` }}>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-3">Situational Splits</div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {([
+                                            { label: 'B2B', value: analytics.b2b_hit, icon: 'sports' },
+                                            { label: 'Home', value: analytics.home_hit, icon: 'home' },
+                                            { label: 'Away', value: analytics.away_hit, icon: 'flight_takeoff' },
+                                        ] as { label: string; value: number; icon: string }[]).map(({ label, value, icon }) => (
+                                            <div key={label} className="flex flex-col items-center gap-1 bg-black/30 rounded-lg p-2">
+                                                <span className="material-symbols-outlined text-[14px] text-white/40">{icon}</span>
+                                                <span className="text-[9px] font-bold uppercase text-white/40">{label}</span>
+                                                <span className={clsx(
+                                                    'text-sm font-black',
+                                                    value >= 70 ? 'text-primary' : value >= 50 ? 'text-yellow-400' : 'text-red-400'
+                                                )}>{value}%</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Matchup Grade */}
+                                <div className="flex items-center gap-4 bg-black/40 rounded-xl p-4 border" style={{ borderColor: `${borderClr}44` }}>
+                                    <div className="flex flex-col items-center shrink-0">
+                                        <div className={clsx(
+                                            'w-14 h-14 rounded-xl flex items-center justify-center text-2xl font-black border',
+                                            gradeColor(matchupGrade.grade)
+                                        )}>
+                                            {matchupGrade.grade}
+                                        </div>
+                                        <span className="text-[9px] font-black uppercase text-white/40 mt-1">Matchup</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1 flex-1">
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Opponent Defense vs Position</div>
+                                        <div className="text-xs text-white font-bold">
+                                            Opp allows <span className="text-primary font-black">{matchupGrade.opp_def_avg}</span> avg vs position
+                                        </div>
+                                        <div className="text-[10px] text-white/50 font-medium">
+                                            League avg: {matchupGrade.league_avg} • Difficulty: {matchupGrade.score}x
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Disclaimer */}
+                                <p className="text-[9px] text-white/25 text-center font-medium">
+                                    ⚡ Powered by PickLabs Engine — mock data used for demonstration
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
         </div>
     );
 };
+
