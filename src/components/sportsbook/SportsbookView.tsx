@@ -785,6 +785,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
     const [selectedAIGames, setSelectedAIGames] = useState<Set<string>>(new Set());
     const [selectedAIPlayers, setSelectedAIPlayers] = useState<Set<string>>(new Set());
     const [generatedAIPicks, setGeneratedAIPicks] = useState<Omit<BetPick, 'id'>[] | null>(null);
+    const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
     // focusedGame is always the top (first) game; future: let user click a game card to focus it
     const AI_TABS: { id: AITab; label: string; icon: string; color: string }[] = [
         { id: 'full', label: 'Full AI', icon: 'auto_awesome', color: 'text-primary border-primary/40 bg-primary/10' },
@@ -1480,6 +1481,44 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
         });
     };
 
+    // ── Date grouping helpers ─────────────────────────────────────────────────
+    const toggleDateCollapse = (dateKey: string) => {
+        setCollapsedDates(prev => {
+            const next = new Set(prev);
+            if (next.has(dateKey)) next.delete(dateKey);
+            else next.add(dateKey);
+            return next;
+        });
+    };
+
+    const formatDateLabel = (dateKey: string): string => {
+        const todayD = new Date();
+        todayD.setHours(0, 0, 0, 0);
+        const yesterdayD = new Date(todayD);
+        yesterdayD.setDate(todayD.getDate() - 1);
+        const tomorrowD2 = new Date(todayD);
+        tomorrowD2.setDate(todayD.getDate() + 1);
+        const [y, m, d] = dateKey.split('-').map(Number);
+        const target = new Date(y, m - 1, d);
+        target.setHours(0, 0, 0, 0);
+        if (target.getTime() === todayD.getTime()) return 'TODAY';
+        if (target.getTime() === yesterdayD.getTime()) return 'YESTERDAY';
+        if (target.getTime() === tomorrowD2.getTime()) return 'TOMORROW';
+        return target.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+    };
+
+    // Group sorted games by date key (YYYY-MM-DD)
+    const dateGroups: { dateKey: string; games: ESPNGame[] }[] = useMemo(() => {
+        const map = new Map<string, ESPNGame[]>();
+        sortedGames.forEach(g => {
+            const dk = (g.date || '').slice(0, 10) || 'unknown';
+            if (!map.has(dk)) map.set(dk, []);
+            map.get(dk)!.push(g);
+        });
+        return Array.from(map.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([dateKey, games]) => ({ dateKey, games }));
+    }, [sortedGames]);
     return (
         <div className="flex flex-col min-h-screen bg-background-dark">
             {/* ── Sticky Header ───────────────────────────────────── */}
@@ -1739,51 +1778,64 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                             <div key={i} className="h-48 terminal-panel bg-black/10 animate-pulse" />
                                         ))}
                                     </div>
-                                ) : sortedGames.length > 0 ? (
-                                    <>
-                                        {(['in', 'pre', 'post'] as const).map(status => {
-                                            const sectionGames = sortedGames.filter(g => g.status === status);
-                                            if (sectionGames.length === 0) return null;
-                                            const cfg = {
-                                                in: { label: 'LIVE NOW — Bets Still Open', dot: 'green', color: 'text-green-400' },
-                                                pre: { label: 'UPCOMING', dot: 'yellow', color: 'text-yellow-400' },
-                                                post: { label: 'FINAL — Team Lines Closed', dot: 'grey', color: 'text-neutral-500' },
-                                            }[status];
+                                ) : dateGroups.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {dateGroups.map(({ dateKey, games: dGames }) => {
+                                            const isCollapsed = collapsedDates.has(dateKey);
+                                            const liveInDate = dGames.filter(g => g.status === 'in').length;
+                                            const label = formatDateLabel(dateKey);
+                                            const fullDate = (() => {
+                                                const [y, m, d] = dateKey.split('-').map(Number);
+                                                return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                                            })();
                                             return (
-                                                <div key={status} className="mb-6 space-y-3">
-                                                    <div className="flex items-center gap-2.5 border-b border-neutral-800 pb-2">
-                                                        {cfg.dot === 'green' && (
-                                                            <span className="relative flex h-2.5 w-2.5">
-                                                                <span className="animate-ping absolute inset-0 rounded-full bg-green-400 opacity-75" />
-                                                                <span className="relative rounded-full h-2.5 w-2.5 bg-green-500 inline-flex" />
-                                                            </span>
-                                                        )}
-                                                        {cfg.dot === 'yellow' && <span className="inline-flex h-2.5 w-2.5 rounded-full bg-yellow-400" />}
-                                                        {cfg.dot === 'grey' && <span className="inline-flex h-2.5 w-2.5 rounded-full bg-neutral-500" />}
-                                                        <span className={`text-[11px] font-black uppercase tracking-widest ${cfg.color}`}>{cfg.label}</span>
-                                                        <span className="text-[10px] text-neutral-600 font-bold">({sectionGames.length})</span>
-                                                    </div>
-                                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                                                        {sectionGames.map(game => (
-                                                            <TeamOddsCard
-                                                                key={game.id}
-                                                                game={game}
-                                                                sport={activeSport}
-                                                                aiMode={aiMode}
-                                                                rookieMode={isRookieModeActive}
-                                                                betSlip={betSlip}
-                                                                onAddBet={onAddBet}
-                                                                aiPrediction={aiPredictions[game.id]}
-                                                                onAIAnalyzeBet={runBetAIAnalysis}
-                                                                isSelectedForAI={selectedAIGames.has(game.id)}
-                                                                onToggleAI={() => toggleAIGame(game.id)}
-                                                            />
-                                                        ))}
-                                                    </div>
+                                                <div key={dateKey}>
+                                                    {/* Date header with collapse toggle */}
+                                                    <button
+                                                        onClick={() => toggleDateCollapse(dateKey)}
+                                                        className="w-full flex items-center gap-3 mb-3 group"
+                                                    >
+                                                        <div className="flex items-center gap-2.5 flex-1">
+                                                            {liveInDate > 0 && (
+                                                                <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                                                                    <span className="animate-ping absolute inset-0 rounded-full bg-red-400 opacity-75" />
+                                                                    <span className="relative rounded-full h-2.5 w-2.5 bg-red-500 inline-flex" />
+                                                                </span>
+                                                            )}
+                                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">{label}</span>
+                                                            <span className="text-[10px] text-neutral-600 font-medium">{fullDate}</span>
+                                                            <span className="text-[9px] font-black text-neutral-500 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full">{dGames.length} games</span>
+                                                            {liveInDate > 0 && (
+                                                                <span className="text-[9px] font-black text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">{liveInDate} LIVE</span>
+                                                            )}
+                                                        </div>
+                                                        <span className={`material-symbols-outlined text-neutral-500 group-hover:text-primary transition-all text-[18px] ${isCollapsed ? 'rotate-180' : ''}`}>expand_less</span>
+                                                    </button>
+                                                    <div className="h-px bg-neutral-800 mb-3" />
+
+                                                    {!isCollapsed && (
+                                                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                                            {dGames.map(game => (
+                                                                <TeamOddsCard
+                                                                    key={game.id}
+                                                                    game={game}
+                                                                    sport={activeSport}
+                                                                    aiMode={aiMode}
+                                                                    rookieMode={isRookieModeActive}
+                                                                    betSlip={betSlip}
+                                                                    onAddBet={onAddBet}
+                                                                    aiPrediction={aiPredictions[game.id]}
+                                                                    onAIAnalyzeBet={runBetAIAnalysis}
+                                                                    isSelectedForAI={selectedAIGames.has(game.id)}
+                                                                    onToggleAI={() => toggleAIGame(game.id)}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })}
-                                    </>
+                                    </div>
                                 ) : (
                                     <div className="py-20 flex flex-col items-center text-center border border-dashed border-border-muted rounded-xl">
                                         <span className="material-symbols-outlined text-4xl text-text-muted/30 mb-3">event_busy</span>
@@ -1803,22 +1855,57 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                             <div key={i} className="h-64 rounded-xl bg-neutral-900 border border-neutral-800 animate-pulse" />
                                         ))}
                                     </div>
-                                ) : sortedGames.length > 0 ? (
-                                    sortedGames.map(game => (
-                                        <RosterPanel
-                                            key={game.id}
-                                            game={game}
-                                            sport={activeSport}
-                                            betSlip={betSlip}
-                                            onAddBet={onAddBet}
-                                            aiMode={aiMode}
-                                            rookieMode={isRookieModeActive}
-                                            searchQuery={searchQuery}
-                                            onAIAnalyzePropBet={runPropAIAnalysis}
-                                            selectedAIPlayers={selectedAIPlayers}
-                                            onToggleAI={(playerId) => toggleAIPlayer(playerId)}
-                                        />
-                                    ))
+                                ) : dateGroups.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {dateGroups.map(({ dateKey, games: dGames }) => {
+                                            const isCollapsed = collapsedDates.has(dateKey);
+                                            const label = formatDateLabel(dateKey);
+                                            const fullDate = (() => {
+                                                const [y, m, d] = dateKey.split('-').map(Number);
+                                                return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                                            })();
+                                            const liveInDate = dGames.filter(g => g.status === 'in').length;
+                                            return (
+                                                <div key={dateKey}>
+                                                    {/* Date header with collapse toggle */}
+                                                    <button
+                                                        onClick={() => toggleDateCollapse(dateKey)}
+                                                        className="w-full flex items-center gap-3 mb-3 group"
+                                                    >
+                                                        <div className="flex items-center gap-2.5 flex-1">
+                                                            {liveInDate > 0 && (
+                                                                <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                                                                    <span className="animate-ping absolute inset-0 rounded-full bg-red-400 opacity-75" />
+                                                                    <span className="relative rounded-full h-2.5 w-2.5 bg-red-500 inline-flex" />
+                                                                </span>
+                                                            )}
+                                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">{label}</span>
+                                                            <span className="text-[10px] text-neutral-600 font-medium">{fullDate}</span>
+                                                            <span className="text-[9px] font-black text-neutral-500 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full">{dGames.length} games</span>
+                                                        </div>
+                                                        <span className={`material-symbols-outlined text-neutral-500 group-hover:text-primary transition-all text-[18px] ${isCollapsed ? 'rotate-180' : ''}`}>expand_less</span>
+                                                    </button>
+                                                    <div className="h-px bg-neutral-800 mb-3" />
+
+                                                    {!isCollapsed && dGames.map(game => (
+                                                        <RosterPanel
+                                                            key={game.id}
+                                                            game={game}
+                                                            sport={activeSport}
+                                                            betSlip={betSlip}
+                                                            onAddBet={onAddBet}
+                                                            aiMode={aiMode}
+                                                            rookieMode={isRookieModeActive}
+                                                            searchQuery={searchQuery}
+                                                            onAIAnalyzePropBet={runPropAIAnalysis}
+                                                            selectedAIPlayers={selectedAIPlayers}
+                                                            onToggleAI={(playerId) => toggleAIPlayer(playerId)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 ) : (
                                     <div className="py-20 flex flex-col items-center text-center border border-dashed border-border-muted rounded-xl">
                                         <span className="material-symbols-outlined text-4xl text-text-muted/30 mb-3">person_off</span>
