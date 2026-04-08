@@ -3,10 +3,6 @@ import { getCurrentUser } from '../../data/PickLabsAuthDB';
 import { getUserBets } from '../../data/PickLabsBetsDB';
 
 export const AIDashboardView: React.FC = () => {
-    const [isCrunching, setIsCrunching] = useState(false);
-    const [buttonText, setButtonText] = useState('✨ AI Pick My Bets ⚡️');
-    const [isSuccess, setIsSuccess] = useState(false);
-    const [isError, setIsError] = useState(false);
 
     const [kpis, setKpis] = useState({
         total_picks: 0,
@@ -81,49 +77,7 @@ export const AIDashboardView: React.FC = () => {
                 </div>
             </div>
 
-            <button
-                onClick={async () => {
-                    if (isCrunching) return;
-                    setIsCrunching(true);
-                    setIsSuccess(false);
-                    setIsError(false);
-                    setButtonText('⚙️ Scanning DraftKings & FanDuel...');
-
-                    try {
-                        await new Promise(resolve => setTimeout(resolve, 1500));
-                        setButtonText('🧠 Calculating Expected Value (+EV)...');
-                        await new Promise(resolve => setTimeout(resolve, 1500));
-
-                        setIsCrunching(false);
-                        setIsSuccess(true);
-                        setButtonText('✅ 5 Massive Edges Found!');
-
-                        setTimeout(() => {
-                            setButtonText('✨ AI Pick My Bets ⚡️');
-                            setIsSuccess(false);
-                        }, 3000);
-                    } catch {
-                        setIsCrunching(false);
-                        setIsError(true);
-                        setButtonText('❌ Connection Error. Try Again.');
-
-                        setTimeout(() => {
-                            setButtonText('✨ AI Pick My Bets ⚡️');
-                            setIsError(false);
-                        }, 3000);
-                    }
-                }}
-                disabled={isCrunching}
-                className={`font-mono font-bold py-3 px-8 rounded flex items-center justify-center mx-auto mb-8 transition-all duration-300 uppercase tracking-widest text-sm
-                    ${!isSuccess && !isError && !isCrunching ? 'bg-primary text-black hover:bg-primary/90 hover:scale-[1.02] shadow-[0_0_20px_rgba(191,255,0,0.2)]' : ''}
-                    ${isCrunching ? 'bg-neutral-800 text-primary border border-primary/30 is-crunching' : ''}
-                    ${isSuccess ? 'bg-primary text-black' : ''}
-                    ${isError ? 'bg-red-500 text-white' : ''}
-                `}
-            >
-                {buttonText}
-            </button>
-
+    
             {/* KPI Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
                 <div className="lab-card p-5">
@@ -160,7 +114,7 @@ export const AIDashboardView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
                 {top_picks.map((pick, i) => (
                     <div key={i} className={`lab-card p-5 relative group
-                        ${i === 0 && isSuccess ? '!border-primary shadow-[0_0_20px_rgba(191,255,0,0.2)]' : ''}
+                        ${i === 0 ? '!border-primary/20' : ''}
                     `}>
                         <div className="flex justify-between items-center mb-4">
                             <div className="flex items-center gap-2">

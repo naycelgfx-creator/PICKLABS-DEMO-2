@@ -119,7 +119,7 @@ export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport
                                 className={`sport-chip shrink-0 snap-start flex-1 flex flex-col items-center justify-center text-center gap-1.5 p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer border hover:-translate-y-1 hover:shadow-lg hover:grayscale-0 hover:opacity-100 ${activeSport === sport
                                         ? 'bg-neutral-800 border-primary shadow-[0_0_15px_rgba(13,242,13,0.15)] text-white grayscale-0 opacity-100'
                                         : 'bg-[#111] border-neutral-800 text-slate-400 hover:text-white hover:bg-neutral-800 hover:border-neutral-700'
-                                    } ${isInactive && activeSport !== sport ? 'grayscale opacity-30' : ''} aspect-square min-w-[76px] sm:min-w-[85px] max-w-[90px] sm:max-w-[110px]`}
+                                    } aspect-square min-w-[76px] sm:min-w-[85px] max-w-[90px] sm:max-w-[110px]`}
                                 onClick={() => onSelectSport(sport)}
                                 title={isInactive ? 'No games scheduled' : ''}
                             >

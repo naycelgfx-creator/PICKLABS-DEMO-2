@@ -206,7 +206,6 @@ interface TeamOddsCardProps {
     betSlip: BetPick[];
     onAddBet: (bet: Omit<BetPick, 'id'>) => void;
     sport: string;
-    onAIAnalyzeBet?: (betType: 'ML' | 'Spread' | 'Over' | 'Under' | 'Props', game: ESPNGame) => void;
     aiPrediction?: {
         ai_probability: number;
         edge: number;
@@ -216,7 +215,7 @@ interface TeamOddsCardProps {
     onToggleAI?: (gameId: string) => void;
 }
 
-const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport, onAIAnalyzeBet, aiPrediction, isSelectedForAI, onToggleAI }) => {
+const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport, aiPrediction, isSelectedForAI, onToggleAI }) => {
     // Generate fallback prediction for standard odds formatting, but use AI prediction if available
     const pred = useMemo(() => generateAIPrediction(
         game.homeTeam.record, game.awayTeam.record, sport, [], []
@@ -327,26 +326,6 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                             onClick={() => addBet('Spread', `${team.displayName} ${spreadVal}`, '-110')}
                         />
                     </div>
-                    {onAIAnalyzeBet && (
-                        <div className="flex flex-col gap-1">
-                            <button
-                                onClick={() => onAIAnalyzeBet('ML', game)}
-                                title="AI: Moneyline analysis for this match"
-                                className="flex items-center gap-0.5 px-1.5 py-1 rounded border border-primary/30 bg-primary/5 hover:bg-primary/15 hover:border-primary/60 text-primary transition-all group text-[8px] font-black uppercase tracking-wider"
-                            >
-                                <span className="material-symbols-outlined text-[10px] group-hover:animate-pulse">bolt</span>
-                                ML
-                            </button>
-                            <button
-                                onClick={() => onAIAnalyzeBet('Spread', game)}
-                                title="AI: Spread analysis for this match"
-                                className="flex items-center gap-0.5 px-1.5 py-1 rounded border border-blue-400/30 bg-blue-400/5 hover:bg-blue-400/15 hover:border-blue-400/60 text-blue-400 transition-all group text-[8px] font-black uppercase tracking-wider"
-                            >
-                                <span className="material-symbols-outlined text-[10px] group-hover:animate-pulse">bolt</span>
-                                SPR
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
         );
@@ -439,16 +418,6 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                         rookieTip={ROOKIE_TIPS['UNDER']}
                         onClick={() => addBet('Under', `Under ${applyOddsShift(pred.total, shifts.totalShift)}`, '-110')}
                     />
-                    {onAIAnalyzeBet && (
-                        <button
-                            onClick={() => onAIAnalyzeBet('Over', game)}
-                            title="AI: Over/Under analysis for this game"
-                            className="flex items-center gap-0.5 px-1.5 py-1.5 rounded border border-purple-400/30 bg-purple-400/5 hover:bg-purple-400/15 hover:border-purple-400/60 text-purple-400 transition-all group text-[8px] font-black uppercase tracking-wider self-center"
-                        >
-                            <span className="material-symbols-outlined text-[10px] group-hover:animate-pulse">bolt</span>
-                            O/U
-                        </button>
-                    )}
                 </div>
             </div>
 
@@ -483,13 +452,12 @@ interface PlayerPropCardProps {
     onAddBet: (bet: Omit<BetPick, 'id'>) => void;
     aiMode: boolean;
     rookieMode: boolean;
-    onAIAnalyzePropBet?: (player: ESPNRosterPlayer, statLabel: string, line: string, teamName: string) => void;
     isSelectedForAI?: boolean;
     onToggleAI?: (playerId: string) => void;
 }
 
 const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
-    player, sport, gameId, gameStatus, gameDate, matchupStr, teamName, teamLogo, betSlip, onAddBet, aiMode, rookieMode, onAIAnalyzePropBet, isSelectedForAI, onToggleAI
+    player, sport, gameId, gameStatus, gameDate, matchupStr, teamName, teamLogo, betSlip, onAddBet, aiMode, rookieMode, isSelectedForAI, onToggleAI
 }) => {
     const isPitcher = (sport === 'MLB' || sport === 'WBC') && ['P', 'SP', 'RP'].includes(player.position.toUpperCase());
     const props = isPitcher ? [
@@ -610,17 +578,7 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
                                     rookieTip={`Under ${line} ${label} — you win if ${player.displayName.split(' ')[0]} gets LESS than ${line}.`}
                                     onClick={() => onAddBet({ gameId, type: 'Prop', team: underKey, odds: odds[1], matchupStr, stake: 25, gameStatus, gameDate })}
                                 />
-                                {onAIAnalyzePropBet && (
-                                    <button
-                                        onClick={() => onAIAnalyzePropBet(player, label, line, teamName)}
-                                        title={`AI: Analyze ${player.displayName} ${label}`}
-                                        className="flex items-center gap-0.5 px-1.5 py-1.5 rounded border border-purple-400/30 bg-purple-400/5 hover:bg-purple-400/15 hover:border-purple-400/60 text-purple-400 transition-all group text-[8px] font-black uppercase tracking-wider self-center ml-1"
-                                    >
-                                        <span className="material-symbols-outlined text-[10px] group-hover:animate-pulse">bolt</span>
-                                        Prop
-                                    </button>
-                                )}
-                            </div>
+                                </div>
                         </div>
                     );
                 })}
@@ -638,10 +596,9 @@ const RosterPanel: React.FC<{
     aiMode: boolean;
     rookieMode: boolean;
     searchQuery: string;
-    onAIAnalyzePropBet?: (player: ESPNRosterPlayer, statLabel: string, line: string, teamName: string) => void;
     selectedAIPlayers?: Set<string>;
     onToggleAI?: (playerId: string) => void;
-}> = ({ game, sport, betSlip, onAddBet, aiMode, rookieMode, searchQuery, onAIAnalyzePropBet, selectedAIPlayers, onToggleAI }) => {
+}> = ({ game, sport, betSlip, onAddBet, aiMode, rookieMode, searchQuery, selectedAIPlayers, onToggleAI }) => {
     const [homePlayers, setHomePlayers] = useState<ESPNRosterPlayer[]>([]);
     const [awayPlayers, setAwayPlayers] = useState<ESPNRosterPlayer[]>([]);
     const [activeTeam, setActiveTeam] = useState<'home' | 'away'>('home');
@@ -738,7 +695,6 @@ const RosterPanel: React.FC<{
                             onAddBet={onAddBet}
                             aiMode={aiMode}
                             rookieMode={rookieMode}
-                            onAIAnalyzePropBet={onAIAnalyzePropBet}
                             isSelectedForAI={selectedAIPlayers?.has(player.id)}
                             onToggleAI={onToggleAI}
                         />
@@ -763,7 +719,6 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
     const [games, setGames] = useState<ESPNGame[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [aiMode, setAiMode] = useState(false);
     const [showLiveTickets, setShowLiveTickets] = useState(true);
     const [showBetSlip, setShowBetSlip] = useState(() => window.innerWidth >= 1280);
     const [activePanel, setActivePanel] = useState<'teams' | 'players'>('teams');
@@ -777,573 +732,12 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
     }
     const [aiPredictions, setAiPredictions] = useState<Record<string, AIPredictionData>>({});
 
-    // ── AI Analysis Tab State ──────────────────────────────────────────────────
-    type AITab = 'full' | 'game' | 'props' | 'underdog' | 'weather' | 'expert';
-    const [aiTab, setAiTab] = useState<AITab | null>(null);
-    const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
-    const [aiAnalysisContent, setAiAnalysisContent] = useState<React.ReactNode>(null);
+    // ── AI Analysis State ──────────────────────────────────────────────────
+    const [allGamesAI, setAllGamesAI] = useState(false);
+    const [allPlayersAI, setAllPlayersAI] = useState(false);
     const [selectedAIGames, setSelectedAIGames] = useState<Set<string>>(new Set());
     const [selectedAIPlayers, setSelectedAIPlayers] = useState<Set<string>>(new Set());
-    const [generatedAIPicks, setGeneratedAIPicks] = useState<Omit<BetPick, 'id'>[] | null>(null);
     const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
-    // focusedGame is always the top (first) game; future: let user click a game card to focus it
-    const AI_TABS: { id: AITab; label: string; icon: string; color: string }[] = [
-        { id: 'full', label: 'Full AI', icon: 'auto_awesome', color: 'text-primary border-primary/40 bg-primary/10' },
-        { id: 'game', label: 'Game', icon: 'sports_score', color: 'text-blue-400 border-blue-400/40 bg-blue-400/10' },
-        { id: 'props', label: 'Props', icon: 'bar_chart', color: 'text-purple-400 border-purple-400/40 bg-purple-400/10' },
-        { id: 'underdog', label: 'Underdog', icon: 'bolt', color: 'text-yellow-400 border-yellow-400/40 bg-yellow-400/10' },
-        { id: 'weather', label: 'Weather', icon: 'cloud', color: 'text-sky-400 border-sky-400/40 bg-sky-400/10' },
-        { id: 'expert', label: 'Expert', icon: 'record_voice_over', color: 'text-orange-400 border-orange-400/40 bg-orange-400/10' },
-    ];
-
-    const runAIAnalysis = async (tab: AITab, game: ESPNGame | null) => {
-        setAiTab(tab);
-        setAiMode(true);
-        setAiAnalysisLoading(true);
-        setAiAnalysisContent(null);
-        setGeneratedAIPicks(null);
-        await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
-
-        const home = game?.homeTeam.displayName ?? 'Home Team';
-        const away = game?.awayTeam.displayName ?? 'Away Team';
-        const score = game?.status === 'in' ? ` · ${game.awayTeam.score}–${game.homeTeam.score}` : '';
-        const matchup = `${away} @ ${home}${score}`;
-        const homeWin = 45 + Math.floor(Math.random() * 20);
-        const awayWin = 100 - homeWin;
-        const spread = (Math.random() * 7 + 1).toFixed(1);
-        const totalBase = game?.sport === 'NFL' || game?.sport === 'CFB' ? 45 : game?.sport === 'MLB' ? 8.5 : game?.sport === 'NHL' ? 5.5 : game?.sport === 'CBB' || game?.sport === 'NCAAW' ? 140 : 210;
-        const total = (totalBase + (Math.random() * 10 - 5)).toFixed(1);
-        const edge = (Math.random() * 3.5 + 0.5).toFixed(2);
-
-        let node: React.ReactNode;
-
-        if (tab === 'full' || selectedAIGames.size > 0 || selectedAIPlayers.size > 0) {
-            // New Full AI Workflow: Focus on User-Selected Entries
-            if (selectedAIGames.size === 0 && selectedAIPlayers.size === 0) {
-                node = (
-                    <div className="rounded-xl border border-primary/30 bg-neutral-950 p-6 flex flex-col items-center justify-center space-y-4 shadow-[0_0_20px_rgba(13,242,13,0.05)] animate-in fade-in slide-in-from-top-2">
-                        <span className="material-symbols-outlined text-4xl text-primary/50">touch_app</span>
-                        <h3 className="text-white font-black text-lg">No Games Selected</h3>
-                        <p className="text-slate-400 text-[11px] text-center max-w-xs">Please select the games or players you want to analyze using the <span className="font-bold text-white">+</span> button on each card, then click your AI action again to run the model.</p>
-                        <button onClick={() => setAiAnalysisContent(null)} className="text-primary text-[10px] uppercase font-black tracking-widest mt-2 hover:underline">Dismiss</button>
-                    </div>
-                );
-                setAiAnalysisContent(node);
-                setAiAnalysisLoading(false);
-                return;
-            }
-
-            // Generate picks for selected matches
-            const picks: Omit<BetPick, 'id'>[] = [];
-            const sortedGamesToUse = [...games].sort((a,b) => {
-                if (a.status === 'in' && b.status !== 'in') return -1;
-                if (a.status !== 'in' && b.status === 'in') return 1;
-                return 0;
-            });
-            const selGames = sortedGamesToUse.filter(g => selectedAIGames.has(g.id));
-            selGames.forEach(g => {
-                const hw = 50 + Math.floor(Math.random() * 20);
-                const aw = 100 - hw;
-                const totalBase = g.sport === 'NFL' || g.sport === 'CFB' ? 45 : g.sport === 'MLB' ? 8.5 : g.sport === 'NHL' ? 5.5 : g.sport === 'CBB' || g.sport === 'NCAAW' ? 140 : 210;
-                const tot = (totalBase + (Math.random() * 10 - 5)).toFixed(1);
-                picks.push({
-                    gameId: `espn-${g.id}`,
-                    type: 'ML',
-                    team: hw > aw ? `${g.homeTeam.displayName} ML` : `${g.awayTeam.displayName} ML`,
-                    odds: '-110',
-                    matchupStr: `${g.awayTeam.displayName} @ ${g.homeTeam.displayName}`,
-                    stake: 50,
-                    gameStatus: g.status,
-                    gameDate: g.date
-                });
-                picks.push({
-                    gameId: `espn-${g.id}`,
-                    type: Math.random() > 0.5 ? 'Over' : 'Under',
-                    team: `${Math.random() > 0.5 ? 'Over' : 'Under'} ${tot}`,
-                    odds: '-110',
-                    matchupStr: `${g.awayTeam.displayName} @ ${g.homeTeam.displayName}`,
-                    stake: 50,
-                    gameStatus: g.status,
-                    gameDate: g.date
-                });
-            });
-
-            if (selectedAIPlayers.size > 0) {
-               Array.from(selectedAIPlayers).forEach((pid, i) => {
-                    picks.push({
-                        gameId: `espn-props-${i}`,
-                        type: 'Prop',
-                        team: `Top AI Prop (Player ${pid.substring(0,4)}) Over 20.5`,
-                        odds: '-110',
-                        matchupStr: `Prop Edge`,
-                        stake: 25,
-                        gameStatus: 'pre',
-                        gameDate: new Date().toISOString()
-                    });
-                });
-            }
-
-            setGeneratedAIPicks(picks);
-            setAiAnalysisLoading(false);
-            return;
-        } else if (tab === 'game') {
-            const gamePicks = betSlip.filter(b => ['ML', 'Spread', 'Over', 'Under'].includes(b.type)).slice(0, 5);
-            if (gamePicks.length === 0) {
-                node = (
-                    <div className="rounded-xl border border-blue-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-blue-400/10 border-blue-400/40 text-blue-400">🎯 Game Prediction</span>
-                                <span className="text-xs font-bold text-white">{matchup}</span>
-                            </div>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2"><span className="text-[11px] font-black text-white w-28 truncate">{home}</span><div className="flex-1 h-2 bg-neutral-800 rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${homeWin}%` }} /></div><span className="text-[11px] font-black text-primary w-8">{homeWin}%</span></div>
-                            <div className="flex items-center gap-2"><span className="text-[11px] font-black text-white w-28 truncate">{away}</span><div className="flex-1 h-2 bg-neutral-800 rounded-full overflow-hidden"><div className="h-full bg-blue-400 rounded-full" style={{ width: `${awayWin}%` }} /></div><span className="text-[11px] font-black text-blue-400 w-8">{awayWin}%</span></div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                            {[['Moneyline', homeWin > 50 ? `-${Math.floor(homeWin * 1.6)}` : `+${Math.floor(awayWin * 1.3)}`], ['Spread', `${home.split(' ').pop()} -${spread}`], ['Total', `OVER ${total}`]].map(([l, v]) => (
-                                <div key={l} className="bg-neutral-900 rounded-lg border border-neutral-800 p-2.5 text-center"><div className="text-[9px] text-slate-500 uppercase font-bold mb-1">{l}</div><div className="text-sm font-black text-white">{v}</div></div>
-                            ))}
-                        </div>
-                        <p className="text-[10px] text-slate-400 italic">➕ Add ML, Spread, or O/U picks to your slip — AI will analyze your specific picks.</p>
-                    </div>
-                );
-            } else {
-                const analyses = gamePicks.map(b => {
-                    const conf = 48 + Math.floor(Math.random() * 42);
-                    const good = conf >= 58;
-                    const verdict = good ? 'GOOD PICK ✓' : 'RISKY ⚠';
-                    const why = b.type === 'ML'
-                        ? good ? `Win probability: ${conf}%. Recent 5-game trend favors this moneyline.`
-                            : `ML juice at ${b.odds} is steep. Spread offers better value.`
-                        : b.type === 'Spread'
-                            ? good ? `Spread covers in ${conf}% of similar matchups. Solid value.`
-                                : `Line is at a key number — push risk elevated. Consider alternate.`
-                            : b.type === 'Over'
-                                ? good ? `Both teams avg ${(parseFloat(total) / 2 + 3).toFixed(0)} pts each last 5. OVER hit 4 of 5.`
-                                    : `Defensive pace expected — UNDER is contrarian edge.`
-                                : good ? `Slow-paced game expected. UNDER hit ${conf}% of similar matchups.`
-                                    : `High-scoring offenses make tonight's total lean OVER.`;
-                    return { b, conf, good, verdict, why };
-                });
-                node = (
-                    <div className="rounded-xl border border-blue-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-blue-400/10 border-blue-400/40 text-blue-400">🎯 Your Game Picks — AI Verdict</span>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                            {analyses.map(({ b, conf, good, verdict, why }) => (
-                                <div key={b.id} className={`rounded-lg border p-3 ${good ? 'border-blue-400/30 bg-blue-400/5' : 'border-orange-400/30 bg-orange-400/5'}`}>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${b.type === 'ML' ? 'bg-primary/10 border-primary/30 text-primary' : b.type === 'Spread' ? 'bg-blue-400/10 border-blue-400/30 text-blue-400' : 'bg-purple-400/10 border-purple-400/30 text-purple-400'}`}>{b.type}</span>
-                                            <span className="text-[10px] font-black text-white truncate max-w-[140px]">{b.team}</span>
-                                        </div>
-                                        <span className={`text-[9px] font-black ${good ? 'text-green-400' : 'text-orange-400'}`}>{verdict} · {conf}%</span>
-                                    </div>
-                                    <p className="text-[10px] text-slate-400">{why}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
-            }
-        } else if (tab === 'props') {
-            const myPropBets = betSlip.filter(b => b.type === 'Prop');
-            const playerNames = [...new Set(myPropBets.map(b => b.team.split(' Over ')[0].split(' Under ')[0]))].slice(0, 4);
-            const NBA_STATS = ['Points', 'Assists', '3-Pointers Made', 'Rebounds'];
-            const NFL_STATS = ['Pass Yards', 'Rush Yards', 'TDs', 'Receptions'];
-            const MLB_STATS = ['Hits', 'RBIs', 'Strikeouts', 'Total Bases'];
-            const statLabels = ['NBA', 'NCAAM', 'NCAAW'].includes(activeSport) ? NBA_STATS : ['NFL', 'CFB'].includes(activeSport) ? NFL_STATS : MLB_STATS;
-            if (playerNames.length === 0) {
-                node = (
-                    <div className="rounded-xl border border-purple-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-purple-400/10 border-purple-400/40 text-purple-400">📈 Player Props</span>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="flex flex-col items-center gap-2 py-4 text-center">
-                            <span className="material-symbols-outlined text-3xl text-purple-400/30">person_search</span>
-                            <p className="text-sm font-black text-slate-400">No player props in your slip yet.</p>
-                            <p className="text-[10px] text-slate-600">Click the <span className="text-purple-400 font-bold">Players</span> tab below → add player props → come back here for AI analysis.</p>
-                        </div>
-                    </div>
-                );
-            } else {
-                node = (
-                    <div className="rounded-xl border border-purple-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-purple-400/10 border-purple-400/40 text-purple-400">📈 Props — Your Players</span>
-                                <span className="text-[10px] text-slate-400">{playerNames.length} player{playerNames.length !== 1 ? 's' : ''}</span>
-                            </div>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                            {playerNames.map((playerName, pi) => {
-                                const seed = playerName.length + pi;
-                                return (
-                                    <div key={playerName} className="bg-neutral-900 rounded-lg border border-neutral-800 p-3 space-y-2">
-                                        <div className="flex items-center gap-2 border-b border-neutral-800 pb-2">
-                                            <span className="w-7 h-7 rounded-full bg-purple-400/10 border border-purple-400/30 flex items-center justify-center text-[10px] font-black text-purple-400 shrink-0">
-                                                {playerName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
-                                            </span>
-                                            <span className="text-[11px] font-black text-white">{playerName}</span>
-                                        </div>
-                                        {statLabels.map((stat, si) => {
-                                            const conf = 44 + ((seed + si * 7) % 46);
-                                            const good = conf >= 58;
-                                            const baseLines: Record<string, number> = { Points: 20, Assists: 6, Rebounds: 7, '3-Pointers Made': 2.5, 'Pass Yards': 220, 'Rush Yards': 65, TDs: 1.5, Receptions: 5, Hits: 1.5, RBIs: 0.5, Strikeouts: 6, 'Total Bases': 1.5 };
-                                            const lineBase = baseLines[stat] ?? 10;
-                                            const line = (lineBase + ((seed + si) % 6) * 0.5).toFixed(1);
-                                            const pick = good ? 'OVER' : 'UNDER';
-                                            const whyMap: Record<string, [string, string]> = {
-                                                Points: [`Avg ${(parseFloat(line) + 2.1).toFixed(1)} pts L5. Favorable defensive matchup.`, `Low usage game script expected. Tough defensive matchup.`],
-                                                Assists: [`Ball movement high — pace creates extra dime opportunities.`, `Primary ball handler likely to dominate. Fewer assists expected.`],
-                                                Rebounds: [`Opponent ranks 28th in def rebound rate. Board work available.`, `Frontcourt depth limits rebounding ceiling tonight.`],
-                                                '3-Pointers Made': [`Shooting 42%+ from 3 on high-volume logs.`, `Defender closes out hard on the perimeter tonight.`],
-                                            };
-                                            const [goodReason, badReason] = whyMap[stat] ?? [`${stat} trending up last 5 games.`, `${stat} likely suppressed by defensive scheme.`];
-                                            return (
-                                                <div key={stat} className="flex items-center justify-between gap-2">
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-[10px] font-black text-slate-300">{stat}</span>
-                                                            <span className={`text-[8px] font-black px-1 rounded ${good ? 'bg-green-500/15 text-green-400' : 'bg-orange-400/15 text-orange-400'}`}>{pick} {line}</span>
-                                                        </div>
-                                                        <p className="text-[9px] text-slate-500 mt-0.5">{good ? goodReason : badReason}</p>
-                                                    </div>
-                                                    <div className="text-right shrink-0">
-                                                        <div className="text-[9px] text-slate-600 uppercase font-bold">Conf</div>
-                                                        <div className={`text-[11px] font-black ${conf >= 70 ? 'text-green-400' : conf >= 55 ? 'text-yellow-400' : 'text-slate-400'}`}>{conf}%</div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <p className="text-[10px] text-slate-400 italic">🟢 Analyzing your players across <span className="text-purple-400 font-bold">Points · Assists · 3PT · Rebounds</span>.</p>
-                    </div>
-                );
-            }
-        } else if (tab === 'underdog') {
-            const dogPicks = betSlip.slice(0, 5);
-            if (dogPicks.length === 0) {
-                const dog = awayWin > homeWin ? home : away;
-                const reasons = [
-                    `Line moved 2.5 pts since open — sharp money on ${dog}`,
-                    `${dog} covers ATS at 71% as double-digit underdog (L10)`,
-                    'Public 64% against — reverse line movement detected',
-                    'Key injury to star player on favored side (game-time Q)',
-                ];
-                node = (
-                    <div className="rounded-xl border border-yellow-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-yellow-400/10 border-yellow-400/40 text-yellow-400">⚡ Underdog</span>
-                                <span className="text-xs font-bold text-white">{dog} upset alert</span>
-                            </div>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="space-y-1.5">{reasons.map(r => <div key={r} className="flex items-start gap-2 text-[11px] text-slate-300"><span className="text-yellow-400 font-black shrink-0">→</span>{r}</div>)}</div>
-                        <div className="bg-yellow-400/10 border border-yellow-400/25 rounded-lg p-2.5 flex justify-between items-center">
-                            <div><div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Play</div><div className="text-sm font-black text-white">{dog} +Spread</div></div>
-                            <div className="text-right"><div className="text-[9px] text-slate-500 uppercase font-bold">Edge</div><div className="text-lg font-black text-yellow-400">+{edge}</div></div>
-                        </div>
-                        <p className="text-[10px] text-slate-400 italic">➕ Add picks to your slip to see multiple underdog predictions.</p>
-                    </div>
-                );
-            } else {
-                node = (
-                    <div className="rounded-xl border border-yellow-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-yellow-400/10 border-yellow-400/40 text-yellow-400">⚡ Underdog Radar — Your Slip</span>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                            {dogPicks.map(b => {
-                                const isDogPlay = Math.random() > 0.5;
-                                const dogEdge = (Math.random() * 3.5 + 0.5).toFixed(2);
-                                return (
-                                    <div key={b.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-[11px] font-black text-white w-2/3 truncate">{b.team}</span>
-                                            {isDogPlay ? <span className="text-[10px] font-black text-yellow-400">Dog Value +{dogEdge}</span> : <span className="text-[10px] font-black text-slate-500">Not a Dog Play</span>}
-                                        </div>
-                                        {isDogPlay ? <p className="text-[10px] text-slate-400">Sharp money backing {b.team.split(' ')[0]} as an underdog value spot. Cover rate is 65%.</p> : <p className="text-[10px] text-slate-500">Pick is favored or neutral. No underdog edge.</p>}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            }
-        } else if (tab === 'weather') {
-            const isOutdoor = ['NFL', 'MLB', 'CFB', 'Soccer', 'WBC'].includes(activeSport);
-            const weatherPicks = betSlip.slice(0, 5);
-            if (weatherPicks.length === 0) {
-                const impact = isOutdoor ? 'HIGH' : 'N/A';
-                const wind = `${Math.floor(Math.random() * 25) + 3} mph`;
-                const temp = `${Math.floor(Math.random() * 40) + 32}°F`;
-                const precip = `${Math.floor(Math.random() * 30)}%`;
-                const note = isOutdoor
-                    ? parseInt(wind) > 15
-                        ? `⚠️ ${parseInt(wind)}mph winds — fade passing/kicking props, lean UNDER on totals.`
-                        : `✅ Mild conditions — no weather edge. Focus on matchup stats.`
-                    : `🏟️ Indoor arena — weather has no impact on ${activeSport} odds.`;
-                node = (
-                    <div className="rounded-xl border border-sky-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-sky-400/10 border-sky-400/40 text-sky-400">☁️ Weather</span>
-                                <span className="text-xs font-bold text-white">{matchup}</span>
-                            </div>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2">
-                            {[['Temp', temp], ['Wind', wind], ['Precip', precip], ['Impact', impact]].map(([l, v]) => (
-                                <div key={l} className="bg-neutral-900 rounded-lg border border-neutral-800 p-2.5 text-center">
-                                    <div className="text-[9px] text-slate-500 uppercase font-bold mb-1">{l}</div>
-                                    <div className={`text-sm font-black ${l === 'Impact' && v === 'HIGH' ? 'text-red-400' : 'text-white'}`}>{v}</div>
-                                </div>
-                            ))}
-                        </div>
-                        <p className="text-[11px] text-slate-300 italic">{note}</p>
-                        <p className="text-[10px] text-slate-400 italic">➕ Add picks to see weather impact per game.</p>
-                    </div>
-                );
-            } else {
-                node = (
-                    <div className="rounded-xl border border-sky-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-sky-400/10 border-sky-400/40 text-sky-400">☁️ Weather Impact — Your Slip</span>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                            {weatherPicks.map(b => {
-                                const wind = `${Math.floor(Math.random() * 20) + 5} mph`;
-                                const impact = isOutdoor && parseInt(wind) > 15 ? 'HIGH' : isOutdoor ? 'LOW' : 'N/A';
-                                const note = isOutdoor
-                                    ? (impact === 'HIGH' ? "High winds affect passing/totals." : "Mild weather, no significant edge.")
-                                    : "Indoor game, no weather impact.";
-                                return (
-                                    <div key={b.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-[11px] font-black text-white w-2/3 truncate">{b.team}</span>
-                                            <span className={`text-[10px] font-black ${impact === 'HIGH' ? 'text-red-400' : 'text-sky-400'}`}>Impact: {impact}</span>
-                                        </div>
-                                        <p className="text-[10px] text-slate-400">{note}</p>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            }
-        } else if (tab === 'expert') {
-            const expertPicks = betSlip.slice(0, 5);
-            if (expertPicks.length === 0) {
-                node = (
-                    <div className="rounded-xl border border-orange-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-orange-400/10 border-orange-400/40 text-orange-400">📰 Expert Intel</span>
-                                <span className="text-xs font-bold text-white">{matchup}</span>
-                            </div>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="space-y-2">
-                            {[
-                                { src: 'Sharp Report', pick: `${homeWin > awayWin ? home : away} ML`, note: `Steam move: line moved 2+ pts toward ${homeWin > awayWin ? home : away}. Sharp books followed.` },
-                                { src: 'Injury Intel', pick: 'Check Availability', note: 'Two key starters listed Q — check final injury report 90min before tip.' },
-                                { src: 'Line Movement', pick: `${home.split(' ').pop()} -${spread}`, note: `Public 58% on ${away} but line moved toward ${home}. Classic reverse line move.` },
-                            ].map(e => (
-                                <div key={e.src} className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
-                                    <div className="flex justify-between items-center mb-1"><span className="text-[11px] font-black text-white">{e.src}</span><span className="text-[10px] font-black text-orange-300">✔ {e.pick}</span></div>
-                                    <p className="text-[10px] text-slate-400">{e.note}</p>
-                                </div>
-                            ))}
-                        </div>
-                        <p className="text-[10px] text-slate-400 italic">➕ Add picks to scan all expert sources for your bets.</p>
-                    </div>
-                );
-            } else {
-                node = (
-                    <div className="rounded-xl border border-orange-400/30 bg-neutral-950 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border bg-orange-400/10 border-orange-400/40 text-orange-400">📰 Expert Intel — Your Slip</span>
-                            <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white"><span className="material-symbols-outlined text-[16px]">close</span></button>
-                        </div>
-                        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                            {expertPicks.map(b => {
-                                const isSharp = Math.random() > 0.4;
-                                const intel = isSharp ? `Sharp consensus backs ${b.team.split(' ')[0]}. Line movement agrees.` : `Public heavily on this side (65%+). Classic fade spot for sharps.`;
-                                return (
-                                    <div key={b.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-[11px] font-black text-white max-w-[60%] truncate">{b.team}</span>
-                                            {isSharp ? <span className="text-[10px] font-black text-orange-400">✔ Sharp Approved</span> : <span className="text-[10px] font-black text-red-400">⚠ Public Heavy</span>}
-                                        </div>
-                                        <p className="text-[10px] text-slate-400">{intel}</p>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            }
-        }
-
-        setAiAnalysisContent(node);
-        setAiAnalysisLoading(false);
-    };
-
-    const runBetAIAnalysis = async (betType: 'ML' | 'Spread' | 'Over' | 'Under' | 'Props', game: ESPNGame) => {
-        // Set up the panel
-        setAiTab('game'); // Reuse the game tab style for these individual analyses
-        setAiMode(true);
-        setAiAnalysisLoading(true);
-        setAiAnalysisContent(null);
-        await new Promise(r => setTimeout(r, 600 + Math.random() * 400)); // slightly faster for single bets
-
-        const home = game.homeTeam.displayName;
-        const away = game.awayTeam.displayName;
-        const score = game.status === 'in' ? ` · ${game.awayTeam.score}–${game.homeTeam.score}` : '';
-        const matchup = `${away} @ ${home}${score}`;
-
-        const conf = 60 + Math.floor(Math.random() * 30);
-        const homeWin = 45 + Math.floor(Math.random() * 20);
-        const awayWin = 100 - homeWin;
-        const spread = (Math.random() * 7 + 1).toFixed(1);
-        const totalBase = game?.sport === 'NFL' || game?.sport === 'CFB' ? 45 : game?.sport === 'MLB' ? 8.5 : game?.sport === 'NHL' ? 5.5 : game?.sport === 'CBB' || game?.sport === 'NCAAW' ? 140 : 210;
-        const total = (totalBase + (Math.random() * 10 - 5)).toFixed(1);
-
-        let title = '';
-        let verdict = '';
-        let why = '';
-        let good = true;
-
-        if (betType === 'ML') {
-            title = 'Moneyline Focus';
-            good = homeWin > 50;
-            verdict = good ? `${home} ML` : `${away} ML`;
-            why = good
-                ? `${home} has a ${homeWin}% win probability based on recent home performance and matchup edge.`
-                : `${away} offers better ML value despite being on the road. Model shows ${awayWin}% win prob.`;
-        } else if (betType === 'Spread') {
-            title = 'Spread Focus';
-            good = Math.random() > 0.5;
-            verdict = good ? `${home.split(' ').pop()} -${spread}` : `${away.split(' ').pop()} +${spread}`;
-            why = good
-                ? `${home} covers this number in 68% of similar home-favorite scenarios.`
-                : `Line feels inflated. ${away} keeps it close in these divisional matchups.`;
-        } else if (betType === 'Over' || betType === 'Under') {
-            title = 'Total Focus';
-            good = betType === 'Over' ? Math.random() > 0.4 : Math.random() > 0.6;
-            verdict = good ? `OVER ${total}` : `UNDER ${total}`;
-            why = good
-                ? `Pace of play for both teams suggests a high-possession game. Lean OVER.`
-                : `Half-court defensive slugfest expected. UNDER is the sharp side.`;
-        } else {
-            // Props (though we only added buttons to ML/Spread/OU on TeamOddsCard so far)
-            title = 'Prop Focus';
-            verdict = 'Check Players Tab';
-            why = 'Head to the players tab to analyze specific prop matchups.';
-        }
-
-        const node = (
-            <div className={`rounded-xl border ${good ? 'border-primary/30 bg-primary/5 shadow-[0_0_15px_rgba(13,242,13,0.05)]' : 'border-blue-400/30 bg-blue-400/5 shadow-[0_0_15px_rgba(96,165,250,0.05)]'} p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300`}>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border ${good ? 'bg-primary/10 border-primary/40 text-primary' : 'bg-blue-400/10 border-blue-400/40 text-blue-400'}`}>
-                            ⚡ {title}
-                        </span>
-                        <span className="text-xs font-bold text-white">{matchup}</span>
-                    </div>
-                    <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white">
-                        <span className="material-symbols-outlined text-[16px]">close</span>
-                    </button>
-                </div>
-
-                <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">AI Target</span>
-                        <span className={`text-[11px] font-black ${good ? 'text-primary' : 'text-blue-400'}`}>{conf}% Conf</span>
-                    </div>
-                    <div className="text-lg font-black text-white mb-2">{verdict}</div>
-                    <div className="flex items-start gap-2 text-[11px] text-slate-300">
-                        <span className={`${good ? 'text-primary' : 'text-blue-400'} font-black shrink-0`}>→</span>
-                        {why}
-                    </div>
-                </div>
-            </div>
-        );
-
-        setAiAnalysisContent(node);
-        setAiAnalysisLoading(false);
-    };
-
-    const runPropAIAnalysis = async (player: ESPNRosterPlayer, statLabel: string, line: string, teamName: string) => {
-        setAiTab('props');
-        setAiMode(true);
-        setAiAnalysisLoading(true);
-        setAiAnalysisContent(null);
-        await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
-
-        const conf = 60 + Math.floor(Math.random() * 30);
-        const good = Math.random() > 0.4;
-        const pick = good ? 'OVER' : 'UNDER';
-
-        // Make the reason contextual to the stat
-        let why = '';
-        if (statLabel.includes('Points') || statLabel.includes('Yards') || statLabel.includes('Hits')) {
-            why = good
-                ? `High volume expected for ${teamName} tonight. Usage rate supports clearing ${line}.`
-                : `Tough matchup against elite defense. Expect regression below ${line}.`;
-        } else if (statLabel.includes('Rebounds') || statLabel.includes('Assists') || statLabel.includes('Receptions')) {
-            why = good
-                ? `Pace of play creates extra opportunities for ${teamName}. Cleared this line in 4 of last 5.`
-                : `Role reduction or bad matchup limits peripheral stats tonight.`;
-        } else {
-            why = good ? `Strong trend supporting the over.` : `Data leans heavily toward the under.`;
-        }
-
-        const node = (
-            <div className={`rounded-xl border ${good ? 'border-primary/30 bg-primary/5 shadow-[0_0_15px_rgba(13,242,13,0.05)]' : 'border-purple-400/30 bg-purple-400/5 shadow-[0_0_15px_rgba(192,132,252,0.05)]'} p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300`}>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full border ${good ? 'bg-primary/10 border-primary/40 text-primary' : 'bg-purple-400/10 border-purple-400/40 text-purple-400'}`}>
-                            ⚡ Prop Focus
-                        </span>
-                        <span className="text-xs font-bold text-white">{player.displayName}</span>
-                    </div>
-                    <button onClick={() => setAiAnalysisContent(null)} className="text-slate-600 hover:text-white">
-                        <span className="material-symbols-outlined text-[16px]">close</span>
-                    </button>
-                </div>
-
-                <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{statLabel}</span>
-                        <span className={`text-[11px] font-black ${good ? 'text-primary' : 'text-purple-400'}`}>{conf}% Conf</span>
-                    </div>
-                    <div className="text-lg font-black text-white mb-2">{pick} {line}</div>
-                    <div className="flex items-start gap-2 text-[11px] text-slate-300">
-                        <span className={`${good ? 'text-primary' : 'text-purple-400'} font-black shrink-0`}>→</span>
-                        {why}
-                    </div>
-                </div>
-            </div>
-        );
-
-        setAiAnalysisContent(node);
-        setAiAnalysisLoading(false);
-    };
 
     const today = (() => {
         const d = new Date();
@@ -1424,9 +818,9 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
 
     // Removed local rookie mode sync
 
-    // Fetch AI predictions when in aiMode
+    // Fetch AI predictions when AI mode is active
     useEffect(() => {
-        if (!aiMode || games.length === 0) return;
+        if ((!allGamesAI && selectedAIGames.size === 0) || games.length === 0) return;
 
         const gamesToPredict = games.filter(g => !aiPredictions[g.id]).map(g => ({ id: g.id, odds: 1.90 }));
         if (gamesToPredict.length === 0) return;
@@ -1443,7 +837,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                 }
             })
             .catch(console.error);
-    }, [aiMode, games, aiPredictions]);
+    }, [allGamesAI, selectedAIGames.size, games, aiPredictions]);
 
     // Search-filtered games
     const filteredGames = useMemo(() => {
@@ -1539,29 +933,24 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                         </div>
 
                         <div className="flex items-center gap-2 flex-wrap">
-                            {/* ── AI Analysis Tabs (replaces old AI Picks button) ── */}
+                            {/* ── AI Analysis Toggles (replaces old AI Tabs) ── */}
                             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                                {AI_TABS.map(t => (
-                                    <button
-                                        key={t.id}
-                                        title={t.label}
-                                        onClick={() => runAIAnalysis(t.id, sortedGames[0] ?? null)}
-                                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${aiTab === t.id && aiMode ? t.color : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
-                                            }`}
-                                    >
-                                        <span className="material-symbols-outlined text-[13px]">{t.icon}</span>
-                                        <span className="hidden sm:inline">{t.label}</span>
-                                        {aiTab === t.id && aiMode && <span className="w-1 h-1 rounded-full bg-current animate-pulse" />}
-                                    </button>
-                                ))}
-                                {aiMode && (
-                                    <button
-                                        onClick={() => { setAiMode(false); setAiTab(null); setAiAnalysisContent(null); }}
-                                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 hover:bg-red-500/10"
-                                    >
-                                        <span className="material-symbols-outlined text-[13px]">close</span>
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => setAllGamesAI(!allGamesAI)}
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${allGamesAI ? 'bg-primary/20 border-primary/50 text-primary' : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
+                                        }`}
+                                >
+                                    <span className="material-symbols-outlined text-[13px]">psychology</span>
+                                    <span className="hidden sm:inline">AI: ALL GAMES</span>
+                                </button>
+                                <button
+                                    onClick={() => setAllPlayersAI(!allPlayersAI)}
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${allPlayersAI ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
+                                        }`}
+                                >
+                                    <span className="material-symbols-outlined text-[13px]">person_search</span>
+                                    <span className="hidden sm:inline">AI: ALL PLAYERS</span>
+                                </button>
                             </div>
 
                             {/* Rookie Mode */}
@@ -1647,71 +1036,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                         <RookieGuideBanner />
                         {showLiveTickets && <LiveTicketPanel activeTickets={activeTickets} onRemoveTicket={(idx) => setActiveTickets?.(prev => prev.filter((_, i) => i !== idx))} />}
 
-                        {/* ── AI Analysis Result Panel ── */}
-                        {(aiAnalysisLoading || aiAnalysisContent || generatedAIPicks) && (
-                            <div className="mb-4">
-                                {aiAnalysisLoading ? (
-                                    <div className="rounded-xl border border-primary/30 bg-neutral-950 p-6 flex flex-col items-center justify-center space-y-4 shadow-[0_0_20px_rgba(13,242,13,0.05)]">
-                                        <div className="w-10 h-10 border-4 border-neutral-800 border-t-primary rounded-full animate-spin" />
-                                        <p className="text-primary font-black text-[10px] uppercase tracking-wider animate-pulse">Running AI Model Engine...</p>
-                                    </div>
-                                ) : generatedAIPicks ? (
-                                    <div className="rounded-xl border border-primary/30 bg-neutral-950 p-4 space-y-3 shadow-[0_0_20px_rgba(13,242,13,0.08)] animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-black uppercase tracking-[0.1em] px-2.5 py-1.5 rounded-md border bg-primary/20 border-primary/50 text-primary flex items-center justify-center gap-1"><span className="material-symbols-outlined text-[14px]">psychology</span> Prediction Box</span>
-                                                <span className="text-[10px] text-slate-400 font-medium">{generatedAIPicks.length} picks generated from your selections</span>
-                                            </div>
-                                            <button onClick={() => { setGeneratedAIPicks(null); setSelectedAIGames(new Set()); setSelectedAIPlayers(new Set()); setAiMode(false); }} className="text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined text-[18px]">cancel</span></button>
-                                        </div>
-                                        {generatedAIPicks.length > 0 ? (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
-                                                {generatedAIPicks.map((pick, i) => (
-                                                    <div key={i} className="flex flex-col bg-neutral-900 border border-neutral-800 hover:border-primary/40 rounded-xl p-3 relative group transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] overflow-hidden">
-                                                        <div className="absolute top-0 left-0 w-1 h-full bg-primary/50" />
-                                                        <button 
-                                                            onClick={() => setGeneratedAIPicks(p => p ? p.filter((_, idx) => idx !== i) : null)}
-                                                            className="absolute top-2 right-2 text-slate-600 hover:text-red-400 p-1 bg-black/40 rounded-full opacity-60 group-hover:opacity-100 transition-all flex items-center justify-center"
-                                                            title="Remove prediction"
-                                                        >
-                                                            <span className="material-symbols-outlined text-[14px]">close</span>
-                                                        </button>
-                                                        <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5 tracking-wider">{pick.matchupStr}</div>
-                                                        <div className="text-sm font-black text-white pr-6">{pick.team} <span className="text-slate-400 font-medium text-xs">({pick.odds})</span></div>
-                                                        <div className="flex items-center gap-1.5 mt-2">
-                                                            <span className="text-[9px] font-black tracking-wider text-primary border border-primary/20 bg-primary/10 px-1.5 rounded uppercase">AI Edge: +{(Math.random() * 3 + 1).toFixed(1)}%</span>
-                                                            <span className="text-[9px] text-slate-500">{pick.type} Pick</span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-6 border-2 border-dashed border-neutral-800 rounded-xl">
-                                                <p className="text-sm font-black text-slate-500 mb-1">No picks remaining.</p>
-                                                <p className="text-xs text-slate-600">You removed all generated picks.</p>
-                                            </div>
-                                        )}
-                                        <div className="pt-3 border-t border-neutral-800/80 mt-2">
-                                            <button 
-                                                onClick={() => {
-                                                    generatedAIPicks.forEach(p => onAddBet(p));
-                                                    setGeneratedAIPicks(null);
-                                                    setSelectedAIGames(new Set());
-                                                    setSelectedAIPlayers(new Set());
-                                                    setAiMode(false);
-                                                }}
-                                                disabled={generatedAIPicks.length === 0}
-                                                className="w-full py-3 rounded-lg bg-primary text-black font-black uppercase tracking-widest text-[12px] hover:bg-[#8aec00] transition-colors disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(163,255,0,0.15)] flex justify-center items-center gap-2"
-                                            >
-                                                <span className="material-symbols-outlined text-[16px]">receipt_long</span> Add All Remaining To Slip
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    aiAnalysisContent
-                                )}
-                            </div>
-                        )}
+                        {/* ── Analysis Panel (Removed) ── */}
 
                         {/* Search + Panel tabs */}
                         <div className="flex items-center gap-3">
@@ -1749,14 +1074,14 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                         </div>
 
                         {/* Status banners */}
-                        {aiMode && (
-                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-green-500/25 bg-green-500/5">
+                        {(allGamesAI || selectedAIGames.size > 0 || allPlayersAI || selectedAIPlayers.size > 0) && (
+                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-green-500/25 bg-green-500/5 mb-4">
                                 <span className="relative flex h-2 w-2 flex-shrink-0">
                                     <span className="animate-ping absolute inset-0 rounded-full bg-green-400 opacity-75" />
                                     <span className="relative rounded-full h-2 w-2 bg-green-500 inline-flex" />
                                 </span>
                                 <p className="text-[11px] text-green-400 font-bold">
-                                    AI Pick Mode — green glow = high-confidence edge. Click to add to slip.
+                                    AI Pick Mode Active — highlighted odds buttons indicate high-confidence edge.
                                 </p>
                             </div>
                         )}
@@ -1820,12 +1145,11 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                                                     key={game.id}
                                                                     game={game}
                                                                     sport={activeSport}
-                                                                    aiMode={aiMode}
+                                                                    aiMode={allGamesAI || selectedAIGames.has(game.id)}
                                                                     rookieMode={isRookieModeActive}
                                                                     betSlip={betSlip}
                                                                     onAddBet={onAddBet}
                                                                     aiPrediction={aiPredictions[game.id]}
-                                                                    onAIAnalyzeBet={runBetAIAnalysis}
                                                                     isSelectedForAI={selectedAIGames.has(game.id)}
                                                                     onToggleAI={() => toggleAIGame(game.id)}
                                                                 />
@@ -1894,10 +1218,9 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                                             sport={activeSport}
                                                             betSlip={betSlip}
                                                             onAddBet={onAddBet}
-                                                            aiMode={aiMode}
+                                                            aiMode={allPlayersAI || selectedAIPlayers.size > 0}
                                                             rookieMode={isRookieModeActive}
                                                             searchQuery={searchQuery}
-                                                            onAIAnalyzePropBet={runPropAIAnalysis}
                                                             selectedAIPlayers={selectedAIPlayers}
                                                             onToggleAI={(playerId) => toggleAIPlayer(playerId)}
                                                         />

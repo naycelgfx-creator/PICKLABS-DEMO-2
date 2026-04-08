@@ -146,7 +146,7 @@ const SCORE_TEMPLATES = [
 ];
 
 const generateGameDates = (count: number): string[] => {
-    const now = new Date(2026, 1, 26); // Feb 26, 2026
+    const now = new Date(2026, 3, 8); // Apr 8, 2026 — end of NBA regular season
     const dates: string[] = [];
     const d = new Date(now);
     for (let i = 0; i < count; i++) {
@@ -631,7 +631,7 @@ const InsightsPanel: React.FC<{
 // ─────────────────────────────────────────────────────────────────────────────
 //  PlayerHero — Top zone with all game/stat info
 // ─────────────────────────────────────────────────────────────────────────────
-type ChartWindow = 'L5' | 'L10' | 'L20' | 'H2H' | '2025';
+type ChartWindow = 'L5' | 'L10' | 'L20' | 'H2H' | '2026';
 
 interface PlayerHeroProps {
     prop: PropLine;
@@ -652,8 +652,8 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
     const baseLine = getPropLine(sport, activePropType, seed);
     const effectiveLine = selectedAltLine?.line ?? baseLine;
 
-    const logCounts: Record<ChartWindow, number> = { L5: 5, L10: 10, L20: 20, H2H: 8, '2025': 15 };
-    const logSeed = chartWindow === 'H2H' ? `${seed}-h2h` : chartWindow === '2025' ? `${seed}-2025` : seed;
+    const logCounts: Record<ChartWindow, number> = { L5: 5, L10: 10, L20: 20, H2H: 8, '2026': 15 };
+    const logSeed = chartWindow === 'H2H' ? `${seed}-h2h` : chartWindow === '2026' ? `${seed}-2026` : seed;
     const logs = generateGameLogs(logSeed, baseLine, sport, activePropType, logCounts[chartWindow]);
 
     const hits = logs.filter(l => l.value >= effectiveLine).length;
@@ -661,12 +661,12 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
 
     const getWindowPct = (win: ChartWindow) => {
         const cnt = logCounts[win];
-        const ws = win === 'H2H' ? `${seed}-h2h` : win === '2025' ? `${seed}-2025` : seed;
+        const ws = win === 'H2H' ? `${seed}-h2h` : win === '2026' ? `${seed}-2026` : seed;
         const wl = generateGameLogs(ws, baseLine, sport, activePropType, cnt);
         return Math.round(wl.filter(l => l.value >= effectiveLine).length / wl.length * 100);
     };
     const pctColor = (pct: number) => pct >= 70 ? 'text-[#a3ff00]' : pct >= 50 ? 'text-yellow-400' : 'text-orange-500';
-    const windows: ChartWindow[] = ['L5', 'L10', 'L20', 'H2H', '2025'];
+    const windows: ChartWindow[] = ['L5', 'L10', 'L20', 'H2H', '2026'];
     const windowPcts = Object.fromEntries(windows.map(w => [w, getWindowPct(w)])) as Record<ChartWindow, number>;
     const altLines = generateAltLineEntries(baseLine, seed);
     const insights = generateInsights(prop.player, effectiveLine, activePropType, logs);
@@ -756,7 +756,7 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[10px] font-bold">
                         <span className="text-slate-500">H2H</span><span className={pctColor(windowPcts['H2H'])}>{windowPcts['H2H']}%</span>
-                        <span className="text-slate-500">2025</span><span className={pctColor(windowPcts['2025'])}>{windowPcts['2025']}%</span>
+                        <span className="text-slate-500">2026</span><span className={pctColor(windowPcts['2026'])}>{windowPcts['2026']}%</span>
                     </div>
                 </div>
             </div>

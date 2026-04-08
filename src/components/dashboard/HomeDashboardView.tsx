@@ -8,7 +8,6 @@ import { fetchMultiSportScoreboard, ESPNGame } from '../../data/espnScoreboard';
 import { SGPBet, generateSGP } from '../popular/PopularBetsView';
 import { ChevronRight, ChevronDown, TrendingUp, AlertCircle, Calendar, User, Ticket, Activity, BarChart2 } from 'lucide-react';
 import { ComposedChart, Area, Line, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { WinningTicker } from './WinningTicker';
 
 const TEAM_COLORS: Record<string, { primary: string; secondary: string }> = {
     // NBA
@@ -219,7 +218,6 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
 
     return (
         <div className="flex-1 w-full bg-background-dark min-h-screen text-slate-100 overflow-y-auto font-display">
-            <WinningTicker />
             <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
                 <header className="flex items-center justify-between mb-8">
                     <div>

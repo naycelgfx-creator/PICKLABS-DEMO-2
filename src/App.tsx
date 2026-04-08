@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { SimulationOverlay } from './components/ui/SimulationOverlay';
+import { WinningTicker } from './components/dashboard/WinningTicker';
 import { LiveBoard } from './components/live-board/LiveBoard';
 import { Game } from './data/mockGames';
 
@@ -533,15 +534,18 @@ function App() {
       <RookieTour />
       <div className={`flex flex-col min-h-screen overflow-x-hidden w-full ${!isMarketingView ? 'pb-10' : ''}`}>
         {!isMarketingView && (
-          <Header
-            currentView={currentView}
-            setCurrentView={setCurrentView}
-            onAIPick={handleAIPicks}
-            isAIPickLoading={isAIPickLoading}
-          />
+          <>
+            <WinningTicker />
+            <Header
+              currentView={currentView}
+              setCurrentView={setCurrentView}
+              onAIPick={handleAIPicks}
+              isAIPickLoading={isAIPickLoading}
+            />
+          </>
         )}
 
-        <main className={`flex-1 ${!isMarketingView ? 'pt-[80px]' : ''}`}>
+        <main className={`flex-1 ${!isMarketingView ? 'pt-[116px]' : ''}`}>
           <Suspense fallback={<div className="flex h-[70vh] w-full items-center justify-center"><div className="w-12 h-12 border-4 border-accent-purple border-t-transparent rounded-full animate-spin"></div></div>}>
           {currentView === 'home' && (
             <HomeDashboardView onNavigate={(view) => setCurrentView(view as ViewType)} />

@@ -28,7 +28,7 @@ const GLOSSARY_TERMS = [
     { term: '+EV (Expected Value)', icon: 'insights', definition: 'A mathematically profitable bet where the sportsbook\'s odds pay out better than the real probability of the event. The sportsbook made a pricing mistake — you capitalize.', example: 'If a coin flip pays +150 but true odds are -100, that\'s a +EV bet.' },
 ];
 
-export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onAIPick, isAIPickLoading = false }) => {
+export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) => {
     const { isRookieModeActive, toggleRookieMode, hasExceededQuota } = useRookieMode();
     const { isLiveBetsActive, toggleLiveBets } = useLiveBets();
     const [shakeRookieMode, setShakeRookieMode] = useState(false);
@@ -84,16 +84,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
 
     const user = getCurrentUser();
     const isPremiumUser = user?.isPremium || (user?.email && isAdminEmail(user.email));
-    const [shakeAIPick, setShakeAIPick] = useState(false);
 
-    const handleAIPickClick = () => {
-        if (!isPremiumUser && hasExceededQuota) {
-            setShakeAIPick(true);
-            setTimeout(() => setShakeAIPick(false), 500);
-            return;
-        }
-        onAIPick?.();
-    };
 
     useEffect(() => {
         if (isDark) {
@@ -150,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
     const enabledCount = Object.values(enabledBooks).filter(Boolean).length;
 
     return (
-        <header className={`fixed top-0 left-0 right-0 z-50 border-b border-border-muted bg-background-dark/90 backdrop-blur-md px-3 md:px-6 py-2 md:py-3 transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-full'} max-w-[100vw]`}>
+        <header className={`fixed top-[36px] left-0 right-0 z-50 border-b border-border-muted bg-background-dark/90 backdrop-blur-md px-3 md:px-6 py-2 md:py-3 transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+36px)]'} max-w-[100vw]`}>
             <div className="max-w-[1536px] mx-auto flex items-center justify-between gap-3 md:gap-4">
 
                 {/* ── Logo ── */}
@@ -222,23 +213,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                     <div className="hidden sm:block">
                     </div>
 
-                    {/* AI Pick My Bets — icon only on < xl, full pill on xl+ */}
-                    <button
-                        onClick={handleAIPickClick}
-                        disabled={isAIPickLoading}
-                        title={isAIPickLoading ? 'Analyzing...' : 'AI Pick My Bets'}
-                        className={`
-                            hidden md:flex items-center justify-center border transition-all transform hover:scale-105 active:scale-95
-                            h-8 w-8 rounded xl:w-auto xl:px-4 xl:py-2 xl:rounded-full xl:gap-2
-                            ${shakeAIPick
-                                ? 'animate-shake border-red-500 text-red-500 bg-red-500/10'
-                                : 'bg-accent-purple/20 border-accent-purple/40 text-accent-purple hover:bg-accent-purple hover:text-white'}
-                            ${isAIPickLoading && !shakeAIPick ? 'opacity-70 cursor-not-allowed' : ''}
-                        `}
-                    >
-                        <span className={`material-symbols-outlined text-sm ${isAIPickLoading ? 'animate-spin' : ''}`}>smart_toy</span>
-                        <span className="hidden xl:inline text-[10px] font-black uppercase tracking-widest">{isAIPickLoading ? 'Analyzing...' : 'AI Pick My Bets'}</span>
-                    </button>
+
 
                     {/* ── SETTINGS & PROFILE ── */}
                     <div className="relative hidden md:block" ref={settingsRef}>
@@ -654,10 +629,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView, onA
                     <div className="h-px bg-border-muted w-full my-1" />
 
                     <div className="flex flex-col gap-2 relative pb-4">
-                        <button title="AI Pick My Bets" aria-label="AI Pick My Bets" onClick={onAIPick} disabled={isAIPickLoading} className={`flex items-center justify-center gap-2 px-4 py-2 bg-accent-purple/20 border border-accent-purple/40 rounded-lg text-accent-purple hover:bg-accent-purple hover:text-white transition text-[10px] font-black uppercase tracking-widest ${isAIPickLoading ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                            <span className={`material-symbols-outlined text-[16px] ${isAIPickLoading ? 'animate-spin' : ''}`}>smart_toy</span>
-                            {isAIPickLoading ? 'Analyzing...' : 'AI Pick My Bets'}
-                        </button>
+
 
                         {/* Mobile Settings Section */}
                         <div className="bg-neutral-900 border border-border-muted rounded-xl overflow-hidden mt-1">
