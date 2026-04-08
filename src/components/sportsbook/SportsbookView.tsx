@@ -810,7 +810,8 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
         const homeWin = 45 + Math.floor(Math.random() * 20);
         const awayWin = 100 - homeWin;
         const spread = (Math.random() * 7 + 1).toFixed(1);
-        const total = (Math.floor(Math.random() * 40) + 175).toFixed(1);
+        const totalBase = game?.sport === 'NFL' || game?.sport === 'CFB' ? 45 : game?.sport === 'MLB' ? 8.5 : game?.sport === 'NHL' ? 5.5 : game?.sport === 'CBB' || game?.sport === 'NCAAW' ? 140 : 210;
+        const total = (totalBase + (Math.random() * 10 - 5)).toFixed(1);
         const edge = (Math.random() * 3.5 + 0.5).toFixed(2);
 
         let node: React.ReactNode;
@@ -842,7 +843,8 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
             selGames.forEach(g => {
                 const hw = 50 + Math.floor(Math.random() * 20);
                 const aw = 100 - hw;
-                const tot = (Math.floor(Math.random() * 40) + 175).toFixed(1);
+                const totalBase = g.sport === 'NFL' || g.sport === 'CFB' ? 45 : g.sport === 'MLB' ? 8.5 : g.sport === 'NHL' ? 5.5 : g.sport === 'CBB' || g.sport === 'NCAAW' ? 140 : 210;
+                const tot = (totalBase + (Math.random() * 10 - 5)).toFixed(1);
                 picks.push({
                     gameId: `espn-${g.id}`,
                     type: 'ML',
@@ -1217,7 +1219,8 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
         const homeWin = 45 + Math.floor(Math.random() * 20);
         const awayWin = 100 - homeWin;
         const spread = (Math.random() * 7 + 1).toFixed(1);
-        const total = (Math.floor(Math.random() * 40) + 175).toFixed(1);
+        const totalBase = game?.sport === 'NFL' || game?.sport === 'CFB' ? 45 : game?.sport === 'MLB' ? 8.5 : game?.sport === 'NHL' ? 5.5 : game?.sport === 'CBB' || game?.sport === 'NCAAW' ? 140 : 210;
+        const total = (totalBase + (Math.random() * 10 - 5)).toFixed(1);
 
         let title = '';
         let verdict = '';

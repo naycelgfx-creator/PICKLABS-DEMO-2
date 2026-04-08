@@ -99,21 +99,47 @@ const kellyStake = (prob: number, ml: string): number => {
 };
 
 // ── Build stats for a player ──────────────────────────────────────────────────
-const buildStats = (sport: string, rng: () => number): Record<StatKey, number> => {
+const buildStats = (sport: string, rng: () => number, leaders?: any[]): Record<StatKey, number> => {
     const r = (lo: number, hi: number, dp = 1) => parseFloat((lo + rng() * (hi - lo)).toFixed(dp));
     const z = 0;
-    if (['NBA', 'NCAAM', 'WNBA'].includes(sport)) return { pts: r(6, 40), reb: r(1, 14), ast: r(0.5, 11), threePt: r(0, 5, 1), blk: r(0, 3, 1), stl: r(0, 2.5, 1), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
-    if (['MLB', 'NCAAB'].includes(sport)) return { avg: parseFloat((0.17 + rng() * 0.22).toFixed(3)), hr: r(0, 1.5, 1), rbi: r(0, 3, 1), sb: r(0, 1.2, 1), k: r(0, 4, 1), era: r(1.5, 6.5), pts: z, reb: z, ast: z, threePt: z, blk: z, stl: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
-    if (['NFL', 'NCAAF'].includes(sport)) return { yds: r(10, 340), td: r(0, 3, 1), int: r(0, 2, 1), rec: r(0, 10, 1), car: r(0, 22, 1), pts: r(4, 30), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, reb: z, ast: z, threePt: z, blk: z, stl: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
-    if (['NHL'].includes(sport)) return { g: r(0, 1.5, 1), a: r(0, 2, 1), ppts: r(0, 3, 1), pm: parseFloat((rng() * 6 - 3).toFixed(1)), shots: r(0, 5.5, 1), svpct: parseFloat((0.88 + rng() * 0.1).toFixed(3)), pts: z, reb: z, ast: z, threePt: z, blk: z, stl: z, avg: z, hr: z, rbi: z, sb: z, k: z, era: z, yds: z, td: z, int: z, rec: z, car: z, goals: z, apg: z, sog: z };
-    return { goals: r(0, 2, 1), apg: r(0, 1.5, 1), shots: r(0, 5, 1), sog: r(0, 3, 1), pts: r(3, 15), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, reb: z, ast: z, threePt: z, blk: z, stl: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, svpct: z };
+    const real: any = {};
+    if (leaders) {
+        leaders.forEach(l => {
+            const v = parseFloat(l.displayValue);
+            if (!isNaN(v)) {
+                const c = l.category.toLowerCase();
+                if (c.includes('point')) real.pts = v;
+                if (c.includes('rebound')) real.reb = v;
+                if (c.includes('assist')) real.ast = v;
+                if (c.includes('yard')) real.yds = v;
+                if (c.includes('home run')) real.hr = v;
+                if (c.includes('run')) real.rbi = v;
+                if (c.includes('goal')) real.goals = v;
+                if (c.includes('average')) real.avg = v;
+                if (c.includes('strikeout')) real.k = v;
+            }
+        });
+    }
+
+    if (['NBA', 'NCAAM', 'WNBA'].includes(sport)) return { pts: real.pts ?? r(12, 28), reb: real.reb ?? r(3, 11), ast: real.ast ?? r(2, 8), threePt: r(0, 4, 1), blk: r(0, 2, 1), stl: r(0, 2, 1), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
+    if (['MLB', 'NCAAB'].includes(sport)) return { avg: real.avg ?? parseFloat((0.240 + rng() * 0.080).toFixed(3)), hr: real.hr ?? r(0, 1.5, 1), rbi: real.rbi ?? r(0, 2, 1), sb: r(0, 1, 1), k: real.k ?? r(0, 7, 1), era: r(2.5, 5.0), pts: z, reb: z, ast: z, threePt: z, blk: z, stl: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
+    if (['NFL', 'NCAAF'].includes(sport)) return { yds: real.yds ?? r(40, 280), td: r(0, 2, 1), int: r(0, 1.5, 1), rec: r(2, 8, 1), car: r(5, 20, 1), pts: real.pts ?? r(8, 22), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, reb: z, ast: z, threePt: z, blk: z, stl: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
+    if (['NHL'].includes(sport)) return { g: real.goals ?? r(0, 1.5, 1), a: real.ast ?? r(0, 2, 1), ppts: real.pts ?? r(0, 2.5, 1), pm: parseFloat((rng() * 4 - 2).toFixed(1)), shots: r(1.5, 4.5, 1), svpct: parseFloat((0.89 + rng() * 0.05).toFixed(3)), pts: z, reb: z, ast: z, threePt: z, blk: z, stl: z, avg: z, hr: z, rbi: z, sb: z, k: z, era: z, yds: z, td: z, int: z, rec: z, car: z, goals: z, apg: z, sog: z };
+    return { goals: real.goals ?? r(0, 1.5, 1), apg: r(0, 1, 1), shots: r(1, 4, 1), sog: r(0.5, 2.5, 1), pts: real.pts ?? r(5, 12), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, reb: z, ast: z, threePt: z, blk: z, stl: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, svpct: z };
 };
 
 // ── Build last-game stats (stable, pre-game) ──────────────────────────────────
-const buildLastGame = (sport: string, rng: () => number, today: string): Record<StatKey, number> => {
-    // use yesterday's seed so it's different from today's prediction
+const buildLastGame = (rng: () => number, today: string, statsObj: Record<StatKey, number>): Record<StatKey, number> => {
+    // vary the predicted stats by a little bit to create the "Last Game" stats
     const lgRng = seededRng(`lastgame-${today}-${rng()}`);
-    return buildStats(sport, lgRng);
+    const r = (v: number) => {
+        if (v === 0) return 0;
+        const diff = v * 0.3; // 30% variance
+        return parseFloat((v - diff + lgRng() * (diff * 2)).toFixed(1));
+    };
+    const o: Record<string, number> = {};
+    for (const k in statsObj) o[k] = r(statsObj[k as StatKey]);
+    return o as Record<StatKey, number>;
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -337,8 +363,8 @@ export const PrecisionHubView: React.FC = () => {
                 gameId: game.id, sport: game.sport, sportLabel,
                 homeTeam: { name: game.homeTeam.displayName, abbr: game.homeTeam.abbreviation, logo: game.homeTeam.logo, record: game.homeTeam.record, color: game.homeTeam.color },
                 awayTeam: { name: game.awayTeam.displayName, abbr: game.awayTeam.abbreviation, logo: game.awayTeam.logo, record: game.awayTeam.record, color: game.awayTeam.color },
-                homePoints: parseFloat((base * (aiHP / 100)).toFixed(1)),
-                awayPoints: parseFloat((base * (aiAP / 100)).toFixed(1)),
+                homePoints: parseFloat(((base - sv) / 2).toFixed(1)),
+                awayPoints: parseFloat(((base + sv) / 2).toFixed(1)),
                 homeSpread: pred.spread,
                 awaySpread: sv >= 0 ? `-${Math.abs(sv).toFixed(1)}` : `+${Math.abs(sv).toFixed(1)}`,
                 homeEdge, awayEdge: -homeEdge,
@@ -374,15 +400,19 @@ export const PrecisionHubView: React.FC = () => {
                 const t = teamMap[leader.teamId];
                 if (!t) continue;
 
+                // Grab all categories for this player to fuel realistic projections
+                const playerRealStats = game.leaders.filter(l => l.name === leader.name);
+
                 const rng = seededRng(`${leader.name}-${leader.teamId}-${todayISO}-${sportLabel}`);
+                const stats = buildStats(sportLabel, rng, playerRealStats);
                 pRows.push({
                     id: dedupKey,
                     gameId: game.id, sport: game.sport, sportLabel,
                     team: t.abbreviation, teamLogo: t.logo,
                     name: leader.name, shortName: leader.shortName || leader.name,
                     headshot: leader.headshot || '',
-                    stats: buildStats(sportLabel, rng),
-                    lastGame: buildLastGame(sportLabel, rng, todayISO),
+                    stats,
+                    lastGame: buildLastGame(rng, todayISO, stats),
                     confidence: Math.round(55 + rng() * 35),
                 });
             }
