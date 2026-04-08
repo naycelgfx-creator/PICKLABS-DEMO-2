@@ -3,6 +3,7 @@ import { PricingSection } from "../ui/pricing-section";
 import { Sparkles, Zap, Shield, Star } from "lucide-react";
 import { ViewType } from "../shared/PremiumLockView";
 import { redirectToStripeCheckout } from "../../data/stripeCheckout";
+import { getCurrentUser } from "../../data/PickLabsAuthDB";
 
 interface PricingPageViewProps {
   onNavigate: (view: ViewType) => void;
@@ -227,10 +228,20 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
       {/* Top Navigation */}
       <header className="px-6 py-6 flex items-center justify-between border-b border-border-muted/30 max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              const user = getCurrentUser();
+              onNavigate(user ? "home" : "landing-page");
+            }}
+            className="flex items-center justify-center text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 w-10 h-10 rounded-full"
+            title="Go Back"
+          >
+            <span className="material-symbols-outlined text-xl">arrow_back</span>
+          </button>
           <img
             src="/picklabs-full-logo.svg"
             alt="PickLabs Logo"
-            className="h-16 md:h-24 w-auto cursor-pointer"
+            className="h-16 md:h-24 w-auto cursor-pointer ml-2"
             onClick={() => onNavigate("landing-page")}
           />
         </div>

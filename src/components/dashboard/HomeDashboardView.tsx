@@ -640,8 +640,9 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                         </RadarChart>
                                     </ResponsiveContainer>
                                 </div>
-                            </div>
+                            </section>
                         </div>
+                    </div>
                     ) : (
                     // ZERO STATE: No favorite teams
                     <div className="flex flex-col items-center justify-center p-12 text-center bg-neutral-900 border border-neutral-800 rounded-2xl">

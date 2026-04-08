@@ -72,10 +72,45 @@ const VIEW_URLS: Partial<Record<ViewType, string>> = {
 
 function App() {
   const [currentView, setCurrentViewRaw] = useState<ViewType>(() => {
-    if (!getCurrentUser()) return 'landing-page';
     try {
+      // First, prioritize the URL if it maps to a valid view
+      let linkPath = window.location.hash.replace('#', '');
+      if (!linkPath && window.location.pathname && window.location.pathname !== '/') {
+        linkPath = window.location.pathname;
+      }
+      const path = linkPath || '/';
+      
+      let urlView = Object.keys(VIEW_URLS).find(k => VIEW_URLS[k as ViewType] === path) as ViewType | undefined;
+      if (!urlView && path.length > 1) {
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        urlView = cleanPath as ViewType;
+      }
+      
+      const user = getCurrentUser();
+      
+      // If user is not logged in and it's a protected view, fallback to landing page
+      // Allow them to visit login-page directly though!
+      if (!user) {
+        if (urlView === 'login-page') return 'login-page';
+        if (urlView === 'pricing-page') return 'pricing-page';
+        return 'landing-page';
+      }
+
+      // If they are logged in and just hit "/", default to their saved view or home
+      if (path === '/') {
+        const saved = localStorage.getItem('picklabs_last_view') as ViewType;
+        if (saved && saved !== 'login-page' && saved !== 'landing-page') {
+          return saved;
+        }
+        return 'home';
+      }
+
+      if (urlView) {
+        return urlView;
+      }
+
+      // Then fallback to local storage
       const saved = localStorage.getItem('picklabs_last_view') as ViewType;
-      // Do not restore marketing views if already logged in
       if (saved && saved !== 'login-page' && saved !== 'landing-page') {
         return saved;
       }
@@ -103,8 +138,32 @@ function App() {
 
   // ── URL sync — parse path to set initial view ────────────────────────────
   useEffect(() => {
-    const path = window.location.pathname;
-    const view = Object.keys(VIEW_URLS).find(k => VIEW_URLS[k as ViewType] === path) as ViewType;
+    let linkPath = window.location.hash.replace('#', '');
+    if (!linkPath && window.location.pathname && window.location.pathname !== '/') {
+      linkPath = window.location.pathname;
+    }
+    const path = linkPath || '/';
+    
+    let view = Object.keys(VIEW_URLS).find(k => VIEW_URLS[k as ViewType] === path) as ViewType;
+    if (!view && path.length > 1) {
+      const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+      view = cleanPath as ViewType;
+    }
+    
+    // If it's root and user is logged in, don't force them back to landing page
+    if (path === '/') {
+        const user = getCurrentUser();
+        if (user) {
+            const saved = localStorage.getItem('picklabs_last_view') as ViewType;
+            if (saved && saved !== 'login-page' && saved !== 'landing-page') {
+                setCurrentViewRaw(saved);
+                return;
+            }
+            setCurrentViewRaw('home');
+            return;
+        }
+    }
+    
     if (view) {
       setCurrentViewRaw(view); // Use setCurrentViewRaw here to avoid quota check on initial load
     }
@@ -114,8 +173,9 @@ function App() {
   useEffect(() => {
     localStorage.setItem('picklabs_last_view', currentView);
     const path = VIEW_URLS[currentView as ViewType] ?? `/${currentView}`;
-    if (window.location.pathname !== path) {
-      window.history.replaceState({ view: currentView }, '', path);
+    const targetHash = `#${path}`;
+    if (window.location.hash !== targetHash) {
+      window.history.replaceState({ view: currentView }, '', targetHash);
     }
   }, [currentView]);
 

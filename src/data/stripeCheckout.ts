@@ -43,5 +43,7 @@ export function redirectToStripeCheckout(
         return;
     }
 
-    window.location.href = url;
+    // Open in a new tab so the user doesn't lose their place in the app
+    // and can easily return by closing the checkout window if they change their mind.
+    window.open(url, '_blank');
 }
