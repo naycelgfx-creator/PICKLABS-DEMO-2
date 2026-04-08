@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchESPNScoreboardByDate, ESPNGame, ESPNTeamInfo, SportKey } from '../../data/espnScoreboard';
+import { fetchESPNScoreboardByDate, ESPNGame, ESPNTeamInfo, SportKey, fetchESPNRoster, ESPNRosterPlayer } from '../../data/espnScoreboard';
 import { generateAIPrediction } from '../../data/espnTeams';
 
 
@@ -378,8 +378,22 @@ export const PrecisionHubView: React.FC = () => {
             };
         });
 
-        // ── Player Rows: ESPN game leaders only (correct names + headshots guaranteed) ──
+        // ── Player Rows: ESPN game leaders + top 6 roster players ──
         const pRows: PlayerRow[] = [];
+
+        const fetchedRosters = new Map<string, ESPNRosterPlayer[]>();
+        const rosterPromises: Promise<void>[] = [];
+        for (const { game, sportKey } of allGames) {
+            if (!fetchedRosters.has(game.homeTeam.id)) {
+                fetchedRosters.set(game.homeTeam.id, []);
+                rosterPromises.push(fetchESPNRoster(sportKey, game.homeTeam.id).then(r => { fetchedRosters.set(game.homeTeam.id, r); }));
+            }
+            if (!fetchedRosters.has(game.awayTeam.id)) {
+                fetchedRosters.set(game.awayTeam.id, []);
+                rosterPromises.push(fetchESPNRoster(sportKey, game.awayTeam.id).then(r => { fetchedRosters.set(game.awayTeam.id, r); }));
+            }
+        }
+        await Promise.allSettled(rosterPromises);
 
         // De-duplicate leaders by name so we don't show the same player twice
         // (ESPN sometimes lists the same player under multiple stat categories)
@@ -391,7 +405,19 @@ export const PrecisionHubView: React.FC = () => {
                 [game.awayTeam.id]: game.awayTeam,
             };
 
-            for (const leader of game.leaders) {
+            const homePlayers = fetchedRosters.get(game.homeTeam.id)?.slice(0, 6) || [];
+            const awayPlayers = fetchedRosters.get(game.awayTeam.id)?.slice(0, 6) || [];
+            const combinedPlayers = [
+                ...game.leaders,
+                ...homePlayers.map(p => ({
+                    name: p.displayName, shortName: p.displayName, headshot: p.headshot, teamId: game.homeTeam.id
+                })),
+                ...awayPlayers.map(p => ({
+                    name: p.displayName, shortName: p.displayName, headshot: p.headshot, teamId: game.awayTeam.id
+                }))
+            ];
+
+            for (const leader of combinedPlayers) {
                 if (!leader.name || !leader.teamId) continue;
                 const dedupKey = `${game.id}-${leader.teamId}-${leader.name}`;
                 if (seenPlayerKey.has(dedupKey)) continue;
