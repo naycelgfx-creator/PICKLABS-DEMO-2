@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { fetchESPNScoreboardByDate, ESPNGame, ESPNTeamInfo, SportKey, fetchESPNRoster, ESPNRosterPlayer } from '../../data/espnScoreboard';
 import { generateAIPrediction } from '../../data/espnTeams';
 
@@ -143,9 +143,9 @@ const buildLastGame = (rng: () => number, today: string, statsObj: Record<StatKe
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-interface TeamRow { gameId: string; sport: string; sportLabel: string; homeTeam: { name: string; abbr: string; logo: string; record: string; color: string }; awayTeam: { name: string; abbr: string; logo: string; record: string; color: string }; homePoints: number; awayPoints: number; homeSpread: string; awaySpread: string; homeEdge: number; awayEdge: number; total: string; homeWinProb: number; awayWinProb: number; kellyHome: number; kellyAway: number; aiMLHome: string; aiMLAway: string; vegasMLHome: string; vegasMLAway: string; status: string; rec: 'HOME' | 'AWAY' | 'PUSH'; conf: number }
+interface TeamRow { gameId: string; sport: string; sportLabel: string; gameDate: string; homeTeam: { name: string; abbr: string; logo: string; record: string; color: string }; awayTeam: { name: string; abbr: string; logo: string; record: string; color: string }; homePoints: number; awayPoints: number; homeSpread: string; awaySpread: string; homeEdge: number; awayEdge: number; total: string; homeWinProb: number; awayWinProb: number; kellyHome: number; kellyAway: number; aiMLHome: string; aiMLAway: string; vegasMLHome: string; vegasMLAway: string; status: string; rec: 'HOME' | 'AWAY' | 'PUSH'; conf: number }
 
-interface PlayerRow { id: string; gameId: string; sport: string; sportLabel: string; team: string; teamLogo: string; teamAltColor?: string; name: string; shortName: string; headshot: string; stats: Record<StatKey, number>; lastGame: Record<StatKey, number>; confidence: number }
+interface PlayerRow { id: string; gameId: string; sport: string; sportLabel: string; gameDate: string; team: string; teamLogo: string; teamAltColor?: string; name: string; shortName: string; headshot: string; stats: Record<StatKey, number>; lastGame: Record<StatKey, number>; confidence: number }
 
 // ── Interfaces / sub-components ───────────────────────────────────────────────
 const WinGauge: React.FC<{ prob: number; abbr: string }> = ({ prob, abbr }) => {
@@ -320,36 +320,58 @@ export const PrecisionHubView: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [updatedAt, setUpdatedAt] = useState('');
     const [popup, setPopup] = useState<{ player: PlayerRow; rect: DOMRect } | null>(null);
+    const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
 
-    const getBettingDate = () => {
+    const getDateISO = (offset: number) => {
         const d = new Date();
-        if (d.getHours() < 6) {
-            d.setDate(d.getDate() - 1);
-        }
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
+        if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+        d.setDate(d.getDate() + offset);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
 
-    const todayISO = getBettingDate();
+    const todayISO = getDateISO(0);
     const todayDisplay = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+    const toggleDateCollapse = (dateKey: string) => {
+        setCollapsedDates(prev => {
+            const next = new Set(prev);
+            if (next.has(dateKey)) next.delete(dateKey);
+            else next.add(dateKey);
+            return next;
+        });
+    };
+
+    const formatDateLabel = (dateKey: string): string => {
+        const todayD = new Date(); todayD.setHours(0,0,0,0);
+        const yestD = new Date(todayD); yestD.setDate(todayD.getDate() - 1);
+        const tomD = new Date(todayD); tomD.setDate(todayD.getDate() + 1);
+        const [y, m, dd] = dateKey.split('-').map(Number);
+        const t = new Date(y, m - 1, dd); t.setHours(0,0,0,0);
+        if (t.getTime() === todayD.getTime()) return 'TODAY';
+        if (t.getTime() === yestD.getTime()) return 'YESTERDAY';
+        if (t.getTime() === tomD.getTime()) return 'TOMORROW';
+        return t.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+    };
 
     const load = useCallback(async () => {
         setLoading(true);
-        const allGames: { game: ESPNGame; sportLabel: string; sportKey: string }[] = [];
+        const allGames: { game: ESPNGame; sportLabel: string; sportKey: string; gameDate: string }[] = [];
+
+        const datesToFetch = [getDateISO(-1), getDateISO(0), getDateISO(1)];
 
         await Promise.allSettled(
-            PRECISION_SPORTS.map(async ({ key, label }) => {
-                try {
-                    const games = await fetchESPNScoreboardByDate(key, todayISO);
-                    games.forEach(g => allGames.push({ game: g, sportLabel: label, sportKey: key }));
-                } catch { /* skip */ }
-            })
+            PRECISION_SPORTS.flatMap(({ key, label }) =>
+                datesToFetch.map(async (dateISO) => {
+                    try {
+                        const games = await fetchESPNScoreboardByDate(key, dateISO);
+                        games.forEach(g => allGames.push({ game: g, sportLabel: label, sportKey: key, gameDate: dateISO }));
+                    } catch { /* skip */ }
+                })
+            )
         );
 
         // ── Team Rows ──
-        const tRows: TeamRow[] = allGames.map(({ game, sportLabel }) => {
+        const tRows: TeamRow[] = allGames.map(({ game, sportLabel, gameDate }) => {
             const pred = generateAIPrediction(game.homeTeam.record, game.awayTeam.record, sportLabel, [], []);
             const aiHP = pred.homeWinProb, aiAP = pred.awayWinProb;
             const vegasHP = winProbToML(addVig(aiHP)), vegasAP = winProbToML(addVig(aiAP));
@@ -360,7 +382,7 @@ export const PrecisionHubView: React.FC = () => {
             const homeEdge = parseFloat((aiHP - 52.4).toFixed(1));
             const rec: TeamRow['rec'] = Math.abs(homeEdge) < 1 ? 'PUSH' : homeEdge > 0 ? 'HOME' : 'AWAY';
             return {
-                gameId: game.id, sport: game.sport, sportLabel,
+                gameId: game.id, sport: game.sport, sportLabel, gameDate,
                 homeTeam: { name: game.homeTeam.displayName, abbr: game.homeTeam.abbreviation, logo: game.homeTeam.logo, record: game.homeTeam.record, color: game.homeTeam.color },
                 awayTeam: { name: game.awayTeam.displayName, abbr: game.awayTeam.abbreviation, logo: game.awayTeam.logo, record: game.awayTeam.record, color: game.awayTeam.color },
                 homePoints: parseFloat(((base - sv) / 2).toFixed(1)),
@@ -399,7 +421,7 @@ export const PrecisionHubView: React.FC = () => {
         // (ESPN sometimes lists the same player under multiple stat categories)
         const seenPlayerKey = new Set<string>();
 
-        for (const { game, sportLabel } of allGames) {
+        for (const { game, sportLabel, gameDate } of allGames) {
             const teamMap: Record<string, ESPNTeamInfo> = {
                 [game.homeTeam.id]: game.homeTeam,
                 [game.awayTeam.id]: game.awayTeam,
@@ -429,16 +451,16 @@ export const PrecisionHubView: React.FC = () => {
                 // Grab all categories for this player to fuel realistic projections
                 const playerRealStats = game.leaders.filter(l => l.name === leader.name);
 
-                const rng = seededRng(`${leader.name}-${leader.teamId}-${todayISO}-${sportLabel}`);
+                const rng = seededRng(`${leader.name}-${leader.teamId}-${gameDate}-${sportLabel}`);
                 const stats = buildStats(sportLabel, rng, playerRealStats);
                 pRows.push({
                     id: dedupKey,
-                    gameId: game.id, sport: game.sport, sportLabel,
+                    gameId: game.id, sport: game.sport, sportLabel, gameDate,
                     team: t.abbreviation, teamLogo: t.logo,
                     name: leader.name, shortName: leader.shortName || leader.name,
                     headshot: leader.headshot || '',
                     stats,
-                    lastGame: buildLastGame(rng, todayISO, stats),
+                    lastGame: buildLastGame(rng, gameDate, stats),
                     confidence: Math.round(55 + rng() * 35),
                 });
             }
@@ -477,6 +499,31 @@ export const PrecisionHubView: React.FC = () => {
             .map(s => ({ label: s.label, icon: s.icon, rows: sortedPlayers.filter(p => p.sportLabel === s.label) }))
             .filter(g => g.rows.length > 0)
         : [{ label: sport, icon: PRECISION_SPORTS.find(s => s.label === sport)?.icon ?? 'sports', rows: sortedPlayers }];
+
+    // Group team rows by date
+    const teamDateGroups: { dateKey: string; rows: TeamRow[] }[] = useMemo(() => {
+        const map = new Map<string, TeamRow[]>();
+        filtTeams.forEach(r => {
+            if (!map.has(r.gameDate)) map.set(r.gameDate, []);
+            map.get(r.gameDate)!.push(r);
+        });
+        return Array.from(map.entries()).sort(([a],[b]) => a.localeCompare(b)).map(([dateKey, rows]) => ({ dateKey, rows }));
+    }, [filtTeams]);
+
+    // Group player rows by date
+    const playerDateGroups: { dateKey: string; groups: { label: string; icon: string; rows: PlayerRow[] }[] }[] = useMemo(() => {
+        const dateMap = new Map<string, PlayerRow[]>();
+        sortedPlayers.forEach(p => {
+            if (!dateMap.has(p.gameDate)) dateMap.set(p.gameDate, []);
+            dateMap.get(p.gameDate)!.push(p);
+        });
+        return Array.from(dateMap.entries()).sort(([a],[b]) => a.localeCompare(b)).map(([dateKey, players]) => {
+            const groups = (sport === 'ALL' ? PRECISION_SPORTS : [PRECISION_SPORTS.find(s => s.label === sport)!])
+                .map(s => ({ label: s.label, icon: s.icon, rows: players.filter(p => p.sportLabel === s.label) }))
+                .filter(g => g.rows.length > 0);
+            return { dateKey, groups };
+        }).filter(d => d.groups.length > 0);
+    }, [sortedPlayers, sport]);
 
     const openPopup = (player: PlayerRow, e: React.MouseEvent) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -563,177 +610,160 @@ export const PrecisionHubView: React.FC = () => {
 
                 {/* ══ TEAMS ══ */}
                 {tab === 'teams' && (
-                    <div className="terminal-panel overflow-hidden">
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full min-w-[900px]">
-                                <thead>
-                                    <tr className="border-b border-border-muted bg-neutral-900/80">
-                                        {['#', 'Teams', 'Proj Pts', 'Spread', 'Edge', 'Total', 'AI ML / Vegas', 'Kelly%', 'Win Prob', 'Pick'].map((h, i) => (
-                                            <th key={i} className={`px-3 py-3 text-[8px] font-black uppercase tracking-widest text-text-muted ${i === 0 ? 'w-12 text-center' : i >= 6 && i <= 8 ? 'text-center' : i === 1 ? 'text-left' : 'text-center'}`}>{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {loading
-                                        ? Array.from({ length: 6 }).map((_, i) => <SkelRow key={i} cols={10} />)
-                                        : filtTeams.length === 0
-                                            ? <tr><td colSpan={10} className="py-20 text-center"><span className="material-symbols-outlined text-4xl text-neutral-700 block mb-3">sports_score</span><p className="text-text-muted text-sm font-bold">No games today for this sport.</p></td></tr>
-                                            : filtTeams.map((row, idx) => (
-                                                <React.Fragment key={row.gameId}>
-                                                    {/* Away */}
-                                                    <tr className="stat-grid-row border-b border-border-muted/50">
-                                                        <td className="px-3 py-3 text-center" rowSpan={2}>
-                                                            <div className="flex flex-col items-center gap-0.5">
-                                                                <span className="text-[10px] font-black text-text-muted">{idx + 1}</span>
-                                                                <span className="text-[7px] text-neutral-700 font-bold uppercase">{row.sportLabel}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <img src={row.awayTeam.logo} alt={row.awayTeam.abbr} className="h-6 w-6 object-contain rounded" onError={e => { e.currentTarget.style.opacity = '0' }} />
-                                                                <div>
-                                                                    <p className="text-xs font-black text-text-main">{row.awayTeam.abbr}</p>
-                                                                    {row.awayTeam.record && <p className="text-[8px] text-text-muted">{row.awayTeam.record}</p>}
-                                                                </div>
-                                                                <span className="text-[8px] text-text-muted opacity-50">@</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-center text-xs font-black text-text-main tabular-nums">{row.awayPoints}</td>
-                                                        <td className="px-3 py-3 text-center text-xs font-bold text-text-muted tabular-nums">{row.awaySpread}</td>
-                                                        <td className="px-3 py-3 text-center"><EdgePill v={row.awayEdge} /></td>
-                                                        <td className="px-3 py-3 text-center" rowSpan={2}>
-                                                            <div className="flex flex-col items-center">
-                                                                <span className="text-sm font-black text-text-main tabular-nums">{row.total}</span>
-                                                                <span className="text-[7px] text-text-muted font-bold uppercase">O/U</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-center"><OddsCompare ai={row.aiMLAway} vegas={row.vegasMLAway} /></td>
-                                                        <td className="px-3 py-3 text-center"><KellyBadge pct={row.kellyAway} /></td>
-                                                        <td className="px-3 py-3 text-center" rowSpan={2}><WinGauge prob={row.homeWinProb >= row.awayWinProb ? row.homeWinProb : row.awayWinProb} abbr={row.homeWinProb >= row.awayWinProb ? row.homeTeam.abbr : row.awayTeam.abbr} /></td>
-                                                        <td className="px-3 py-3 text-center" rowSpan={2}><RecBadge rec={row.rec} conf={row.conf} /></td>
-                                                    </tr>
-                                                    {/* Home */}
-                                                    <tr className="border-b border-border-muted">
-                                                        <td className="px-3 py-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <img src={row.homeTeam.logo} alt={row.homeTeam.abbr} className="h-6 w-6 object-contain rounded" onError={e => { e.currentTarget.style.opacity = '0' }} />
-                                                                <div>
-                                                                    <p className="text-xs font-black text-text-muted">{row.homeTeam.abbr}</p>
-                                                                    {row.homeTeam.record && <p className="text-[8px] text-text-muted">{row.homeTeam.record}</p>}
-                                                                </div>
-                                                                <span className="text-[7px] text-primary/30 font-bold uppercase">HM</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-center text-xs font-black text-text-muted tabular-nums">{row.homePoints}</td>
-                                                        <td className="px-3 py-3 text-center text-xs font-bold text-text-muted tabular-nums">{row.homeSpread}</td>
-                                                        <td className="px-3 py-3 text-center"><EdgePill v={row.homeEdge} /></td>
-                                                        <td className="px-3 py-3 text-center"><OddsCompare ai={row.aiMLHome} vegas={row.vegasMLHome} /></td>
-                                                        <td className="px-3 py-3 text-center"><KellyBadge pct={row.kellyHome} /></td>
-                                                    </tr>
-                                                </React.Fragment>
-                                            ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        {!loading && filtTeams.length > 0 && (
-                            <div className="px-4 py-2.5 border-t border-border-muted flex flex-wrap items-center gap-4 text-[8px] text-text-muted font-bold uppercase tracking-widest">
-                                <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-xs text-primary">smart_toy</span>AI ML = PickLabs no-vig line</span>
-                                <span className="text-neutral-700">·</span>
-                                <span>Vegas = FanDuel/DraftKings est. (4.5% vig)</span>
-                                <span className="text-neutral-700">·</span>
-                                <span className="text-accent-purple">Kelly% = recommended stake per unit</span>
-                            </div>
-                        )}
+                    <div className="flex flex-col gap-6">
+                        {loading
+                            ? <div className="terminal-panel overflow-hidden"><div className="overflow-x-auto"><table className="w-full"><tbody>{Array.from({ length: 6 }).map((_, i) => <SkelRow key={i} cols={10} />)}</tbody></table></div></div>
+                            : teamDateGroups.length === 0
+                                ? <div className="terminal-panel py-20 text-center"><span className="material-symbols-outlined text-4xl text-neutral-700 block mb-3">sports_score</span><p className="text-text-muted text-sm font-bold">No games found.</p></div>
+                                : teamDateGroups.map(({ dateKey, rows: dateRows }) => {
+                                    const isCollapsed = collapsedDates.has(dateKey);
+                                    const label = formatDateLabel(dateKey);
+                                    const fullDate = (() => { const [y,m,d] = dateKey.split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}); })();
+                                    return (
+                                        <div key={dateKey}>
+                                            <button onClick={() => toggleDateCollapse(dateKey)} className="w-full flex items-center gap-3 mb-3 group">
+                                                <div className="flex items-center gap-2.5 flex-1">
+                                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">{label}</span>
+                                                    <span className="text-[10px] text-neutral-600 font-medium">{fullDate}</span>
+                                                    <span className="text-[9px] font-black text-neutral-500 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full">{dateRows.length} games</span>
+                                                </div>
+                                                <span className={`material-symbols-outlined text-neutral-500 group-hover:text-primary transition-all text-[18px] ${isCollapsed ? 'rotate-180' : ''}`}>expand_less</span>
+                                            </button>
+                                            <div className="h-px bg-neutral-800 mb-3" />
+                                            {!isCollapsed && (
+                                                <div className="terminal-panel overflow-hidden">
+                                                    <div className="overflow-x-auto custom-scrollbar">
+                                                        <table className="w-full min-w-[900px]">
+                                                            <thead>
+                                                                <tr className="border-b border-border-muted bg-neutral-900/80">
+                                                                    {['#','Teams','Proj Pts','Spread','Edge','Total','AI ML / Vegas','Kelly%','Win Prob','Pick'].map((h,i) => (
+                                                                        <th key={i} className={`px-3 py-3 text-[8px] font-black uppercase tracking-widest text-text-muted ${i===0?'w-12 text-center':i>=6&&i<=8?'text-center':i===1?'text-left':'text-center'}`}>{h}</th>
+                                                                    ))}
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {dateRows.map((row, idx) => (
+                                                                    <React.Fragment key={row.gameId}>
+                                                                        <tr className="stat-grid-row border-b border-border-muted/50">
+                                                                            <td className="px-3 py-3 text-center" rowSpan={2}><div className="flex flex-col items-center gap-0.5"><span className="text-[10px] font-black text-text-muted">{idx+1}</span><span className="text-[7px] text-neutral-700 font-bold uppercase">{row.sportLabel}</span></div></td>
+                                                                            <td className="px-3 py-3"><div className="flex items-center gap-2"><img src={row.awayTeam.logo} alt={row.awayTeam.abbr} className="h-6 w-6 object-contain rounded" onError={e=>{e.currentTarget.style.opacity='0'}} /><div><p className="text-xs font-black text-text-main">{row.awayTeam.abbr}</p>{row.awayTeam.record&&<p className="text-[8px] text-text-muted">{row.awayTeam.record}</p>}</div><span className="text-[8px] text-text-muted opacity-50">@</span></div></td>
+                                                                            <td className="px-3 py-3 text-center text-xs font-black text-text-main tabular-nums">{row.awayPoints}</td>
+                                                                            <td className="px-3 py-3 text-center text-xs font-bold text-text-muted tabular-nums">{row.awaySpread}</td>
+                                                                            <td className="px-3 py-3 text-center"><EdgePill v={row.awayEdge} /></td>
+                                                                            <td className="px-3 py-3 text-center" rowSpan={2}><div className="flex flex-col items-center"><span className="text-sm font-black text-text-main tabular-nums">{row.total}</span><span className="text-[7px] text-text-muted font-bold uppercase">O/U</span></div></td>
+                                                                            <td className="px-3 py-3 text-center"><OddsCompare ai={row.aiMLAway} vegas={row.vegasMLAway} /></td>
+                                                                            <td className="px-3 py-3 text-center"><KellyBadge pct={row.kellyAway} /></td>
+                                                                            <td className="px-3 py-3 text-center" rowSpan={2}><WinGauge prob={row.homeWinProb>=row.awayWinProb?row.homeWinProb:row.awayWinProb} abbr={row.homeWinProb>=row.awayWinProb?row.homeTeam.abbr:row.awayTeam.abbr} /></td>
+                                                                            <td className="px-3 py-3 text-center" rowSpan={2}><RecBadge rec={row.rec} conf={row.conf} /></td>
+                                                                        </tr>
+                                                                        <tr className="border-b border-border-muted">
+                                                                            <td className="px-3 py-3"><div className="flex items-center gap-2"><img src={row.homeTeam.logo} alt={row.homeTeam.abbr} className="h-6 w-6 object-contain rounded" onError={e=>{e.currentTarget.style.opacity='0'}} /><div><p className="text-xs font-black text-text-muted">{row.homeTeam.abbr}</p>{row.homeTeam.record&&<p className="text-[8px] text-text-muted">{row.homeTeam.record}</p>}</div><span className="text-[7px] text-primary/30 font-bold uppercase">HM</span></div></td>
+                                                                            <td className="px-3 py-3 text-center text-xs font-black text-text-muted tabular-nums">{row.homePoints}</td>
+                                                                            <td className="px-3 py-3 text-center text-xs font-bold text-text-muted tabular-nums">{row.homeSpread}</td>
+                                                                            <td className="px-3 py-3 text-center"><EdgePill v={row.homeEdge} /></td>
+                                                                            <td className="px-3 py-3 text-center"><OddsCompare ai={row.aiMLHome} vegas={row.vegasMLHome} /></td>
+                                                                            <td className="px-3 py-3 text-center"><KellyBadge pct={row.kellyHome} /></td>
+                                                                        </tr>
+                                                                    </React.Fragment>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div className="px-4 py-2.5 border-t border-border-muted flex flex-wrap items-center gap-4 text-[8px] text-text-muted font-bold uppercase tracking-widest">
+                                                        <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-xs text-primary">smart_toy</span>AI ML = PickLabs no-vig line</span>
+                                                        <span className="text-neutral-700">·</span><span>Vegas = FanDuel/DraftKings est. (4.5% vig)</span>
+                                                        <span className="text-neutral-700">·</span><span className="text-accent-purple">Kelly% = recommended stake per unit</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                        }
                     </div>
                 )}
 
                 {/* ══ PLAYERS ══ */}
                 {tab === 'players' && (
-                    <div className="flex flex-col gap-5">
+                    <div className="flex flex-col gap-6">
                         {loading
                             ? <div className="terminal-panel overflow-hidden"><table className="w-full"><tbody>{Array.from({ length: 8 }).map((_, i) => <SkelRow key={i} />)}</tbody></table></div>
-                            : groupedPlayers.length === 0
+                            : playerDateGroups.length === 0
                                 ? <div className="terminal-panel py-20 text-center"><span className="material-symbols-outlined text-4xl text-neutral-700 block mb-3">person_off</span><p className="text-text-muted text-sm font-bold">No player data available.</p></div>
-                                : groupedPlayers.map(group => {
-                                    const gCols = getColsForSport(group.label);
+                                : playerDateGroups.map(({ dateKey, groups }) => {
+                                    const isCollapsedP = collapsedDates.has(dateKey);
+                                    const labelP = formatDateLabel(dateKey);
+                                    const fullDateP = (() => { const [y,m,d] = dateKey.split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}); })();
+                                    const totalPlayers = groups.reduce((s, g) => s + g.rows.length, 0);
                                     return (
-                                        <div key={group.label} className="terminal-panel overflow-hidden">
-                                            <div className="px-4 py-2.5 border-b border-border-muted flex items-center gap-2 bg-neutral-900/60">
-                                                <span className="material-symbols-outlined text-primary text-sm">{group.icon}</span>
-                                                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-text-main">{group.label}</span>
-                                                <span className="text-[8px] text-text-muted font-bold ml-1">· {group.rows.length} players · click name for last game</span>
-                                                <div className="ml-auto flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest">
-                                                    <span className="text-emerald-400">▲ = over baseline</span>
-                                                    <span className="text-red-400">▼ = under baseline</span>
+                                        <div key={dateKey}>
+                                            <button onClick={() => toggleDateCollapse(dateKey)} className="w-full flex items-center gap-3 mb-3 group">
+                                                <div className="flex items-center gap-2.5 flex-1">
+                                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">{labelP}</span>
+                                                    <span className="text-[10px] text-neutral-600 font-medium">{fullDateP}</span>
+                                                    <span className="text-[9px] font-black text-neutral-500 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full">{totalPlayers} players</span>
                                                 </div>
-                                            </div>
-                                            <div className="overflow-x-auto custom-scrollbar">
-                                                <table className="w-full min-w-[600px]">
-                                                    <thead>
-                                                        <tr className="border-b border-border-muted bg-neutral-900/40">
-                                                            <th className="px-4 py-2.5 text-left text-[8px] font-black uppercase tracking-widest text-text-muted">Team</th>
-                                                            <th className="px-4 py-2.5 text-left text-[8px] font-black uppercase tracking-widest text-text-muted">Player</th>
-                                                            {gCols.map(c => (<th key={c.key} className="px-2 py-2.5 text-center text-[8px] font-black uppercase tracking-widest text-text-muted">{c.label}</th>))}
-                                                            <th className="px-3 py-2.5 text-center text-[8px] font-black uppercase tracking-widest text-accent-purple">CONF</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {group.rows.map((row) => {
-                                                            const topKey = gCols[0]?.key;
-                                                            const maxTop = topKey ? Math.max(...group.rows.map(p => p.stats[topKey] ?? 0)) : 0;
-                                                            return (
-                                                                <tr key={row.id} className="stat-grid-row border-b border-border-muted/50">
-                                                                    <td className="px-4 py-3">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <img src={row.teamLogo} alt={row.team} className="h-7 w-7 object-contain" onError={e => { e.currentTarget.style.opacity = '0' }} />
-                                                                            <span className="text-[10px] font-black text-text-muted">{row.team}</span>
-                                                                        </div>
-                                                                    </td>
-                                                                    {/* Player cell — clickable */}
-                                                                    <td className="px-4 py-3 min-w-[150px]">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="relative shrink-0">
-                                                                                <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-800">
-                                                                                    {row.headshot
-                                                                                        ? <img src={row.headshot} alt={row.shortName} className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} />
-                                                                                        : <span className="material-symbols-outlined text-neutral-600 text-sm flex items-center justify-center h-full w-full">person</span>
-                                                                                    }
-                                                                                </div>
-                                                                                {/* Team Logo Badge */}
-                                                                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-black rounded-full p-[2px] z-10 flex items-center justify-center shadow-sm border border-neutral-800/80">
-                                                                                    <img src={row.teamLogo} alt={row.team} className="w-full h-full object-contain drop-shadow-md" onError={e => { e.currentTarget.style.opacity = '0' }} />
-                                                                                </div>
-                                                                            </div>
-                                                                            <button
-                                                                                onClick={(e) => openPopup(row, e)}
-                                                                                className="text-xs font-black text-text-main hover:text-primary transition-colors text-left leading-none underline-offset-2 hover:underline"
-                                                                            >
-                                                                                {row.shortName}
-                                                                            </button>
-                                                                        </div>
-                                                                    </td>
-                                                                    {/* Stat cells */}
-                                                                    {gCols.map(c => (
-                                                                        <SC
-                                                                            key={c.key}
-                                                                            v={row.stats[c.key] ?? 0}
-                                                                            baseline={c.baseline}
-                                                                            hi={topKey === c.key && (row.stats[c.key] ?? 0) === maxTop}
-                                                                            fmt={c.key === 'avg' || c.key === 'svpct' ? c.key : undefined}
-                                                                            inverted={c.key === 'era'}
-                                                                        />
-                                                                    ))}
-                                                                    <td className="px-3 py-3 text-center">
-                                                                        <span className={`text-[10px] font-black ${row.confidence >= 80 ? 'text-primary' : row.confidence >= 65 ? 'text-accent-blue' : 'text-text-muted'}`}>
-                                                                            {row.confidence}%
-                                                                        </span>
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                                <span className={`material-symbols-outlined text-neutral-500 group-hover:text-primary transition-all text-[18px] ${isCollapsedP ? 'rotate-180' : ''}`}>expand_less</span>
+                                            </button>
+                                            <div className="h-px bg-neutral-800 mb-3" />
+                                            {!isCollapsedP && (
+                                                <div className="flex flex-col gap-5">
+                                                    {groups.map(group => {
+                                                        const gCols = getColsForSport(group.label);
+                                                        return (
+                                                            <div key={group.label} className="terminal-panel overflow-hidden">
+                                                                <div className="px-4 py-2.5 border-b border-border-muted flex items-center gap-2 bg-neutral-900/60">
+                                                                    <span className="material-symbols-outlined text-primary text-sm">{group.icon}</span>
+                                                                    <span className="text-[10px] font-black uppercase tracking-[0.15em] text-text-main">{group.label}</span>
+                                                                    <span className="text-[8px] text-text-muted font-bold ml-1">· {group.rows.length} players · click name for last game</span>
+                                                                    <div className="ml-auto flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest">
+                                                                        <span className="text-emerald-400">▲ = over baseline</span>
+                                                                        <span className="text-red-400">▼ = under baseline</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="overflow-x-auto custom-scrollbar">
+                                                                    <table className="w-full min-w-[600px]">
+                                                                        <thead>
+                                                                            <tr className="border-b border-border-muted bg-neutral-900/40">
+                                                                                <th className="px-4 py-2.5 text-left text-[8px] font-black uppercase tracking-widest text-text-muted">Team</th>
+                                                                                <th className="px-4 py-2.5 text-left text-[8px] font-black uppercase tracking-widest text-text-muted">Player</th>
+                                                                                {gCols.map(c => (<th key={c.key} className="px-2 py-2.5 text-center text-[8px] font-black uppercase tracking-widest text-text-muted">{c.label}</th>))}
+                                                                                <th className="px-3 py-2.5 text-center text-[8px] font-black uppercase tracking-widest text-accent-purple">CONF</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            {group.rows.map((row) => {
+                                                                                const topKey = gCols[0]?.key;
+                                                                                const maxTop = topKey ? Math.max(...group.rows.map(p => p.stats[topKey] ?? 0)) : 0;
+                                                                                return (
+                                                                                    <tr key={row.id} className="stat-grid-row border-b border-border-muted/50">
+                                                                                        <td className="px-4 py-3"><div className="flex items-center gap-1.5"><img src={row.teamLogo} alt={row.team} className="h-7 w-7 object-contain" onError={e=>{e.currentTarget.style.opacity='0'}} /><span className="text-[10px] font-black text-text-muted">{row.team}</span></div></td>
+                                                                                        <td className="px-4 py-3 min-w-[150px]">
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <div className="relative shrink-0">
+                                                                                                    <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-800">
+                                                                                                        {row.headshot?<img src={row.headshot} alt={row.shortName} className="h-full w-full object-cover" onError={e=>{e.currentTarget.style.display='none'}} />:<span className="material-symbols-outlined text-neutral-600 text-sm flex items-center justify-center h-full w-full">person</span>}
+                                                                                                    </div>
+                                                                                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-black rounded-full p-[2px] z-10 flex items-center justify-center shadow-sm border border-neutral-800/80">
+                                                                                                        <img src={row.teamLogo} alt={row.team} className="w-full h-full object-contain drop-shadow-md" onError={e=>{e.currentTarget.style.opacity='0'}} />
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <button onClick={(e)=>openPopup(row,e)} className="text-xs font-black text-text-main hover:text-primary transition-colors text-left leading-none underline-offset-2 hover:underline">{row.shortName}</button>
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        {gCols.map(c=>(<SC key={c.key} v={row.stats[c.key]??0} baseline={c.baseline} hi={topKey===c.key&&(row.stats[c.key]??0)===maxTop} fmt={c.key==='avg'||c.key==='svpct'?c.key:undefined} inverted={c.key==='era'} />))}
+                                                                                        <td className="px-3 py-3 text-center"><span className={`text-[10px] font-black ${row.confidence>=80?'text-primary':row.confidence>=65?'text-accent-blue':'text-text-muted'}`}>{row.confidence}%</span></td>
+                                                                                    </tr>
+                                                                                );
+                                                                            })}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })
@@ -745,7 +775,8 @@ export const PrecisionHubView: React.FC = () => {
                         )}
                     </div>
                 )}
-            </div>
+
+            </div>{/* end max-w content wrapper */}
 
             {/* ── Player Popup (portal-style fixed) ── */}
             {popup && (
