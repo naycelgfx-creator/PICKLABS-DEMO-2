@@ -383,7 +383,7 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                                     <img
                                         src={SOCCER_LEAGUES.find(l => l.key === activeSoccerLeague)?.logo}
                                         alt=""
-                                        className="h-7 w-7 object-contain opacity-80"
+                                        className="h-7 w-7 object-contain"
                                         onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                     />
                                 </div>
