@@ -215,6 +215,7 @@ interface TeamOddsCardProps {
 }
 
 const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport, weatherAI, aiML, aiSpread, aiOU, isSelectedForAI, onToggleAI }) => {
+    const [showPrediction, setShowPrediction] = useState(false);
     // Generate fallback prediction for standard odds formatting, but use AI prediction if available
     const pred = useMemo(() => generateAIPrediction(
         game.homeTeam.record, game.awayTeam.record, sport, [], []
@@ -445,19 +446,113 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                 </div>
             </div>
 
-            {/* AI Best Pick Row (Always visible) */}
-            <div className="flex items-center justify-center px-4 py-2 border-t border-[#1c2037] bg-green-500/5">
+            {/* AI Best Pick Row — clickable to expand full breakdown */}
+            <button
+                className="w-full flex items-center justify-between px-4 py-2.5 border-t border-[#1c2037] bg-green-500/5 hover:bg-green-500/10 transition-colors group"
+                onClick={() => setShowPrediction(p => !p)}
+            >
                 <div className="flex items-center gap-2 text-[10px] font-black tracking-wider uppercase">
                     <span className="material-symbols-outlined text-[13px] text-[#A3FF00]">psychology</span>
                     <span className="text-[#A3FF00] opacity-80">PickLabs AI Best Pick:</span>
                     <span className="text-white bg-black/30 border border-green-500/30 px-2 py-0.5 rounded shadow-[0_0_8px_rgba(163,255,0,0.15)]">
-                        {confidence > 60
-                            ? (pred.homeWinProb > pred.awayWinProb ? `${game.homeTeam.displayName} ML` : `${game.awayTeam.displayName} ML`)
-                            : `${pred.overUnderPick} ${applyOddsShift(pred.total, shifts.totalShift)}`}
-                        <span className="ml-1 text-[#A3FF00] text-[9px]">({confidence}%)</span>
+                        {pred.homeWinProb > pred.awayWinProb
+                            ? `${game.homeTeam.displayName} ML`
+                            : `${game.awayTeam.displayName} ML`}
+                        <span className="ml-1 text-[#A3FF00] text-[9px]">({confidence}% conf)</span>
                     </span>
                 </div>
-            </div>
+                <span className={`material-symbols-outlined text-neutral-500 group-hover:text-primary text-[16px] transition-transform ${showPrediction ? 'rotate-180' : ''}`}>expand_more</span>
+            </button>
+
+            {/* Expanded AI Prediction Panel */}
+            {showPrediction && (
+                <div className="border-t border-[#1c2037] bg-neutral-950/80 px-4 py-4 space-y-4">
+                    {/* Header */}
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="material-symbols-outlined text-primary text-sm">smart_toy</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">AI Game Analysis</span>
+                        <span className="ml-auto text-[8px] font-black px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">{confidence}% Confidence</span>
+                    </div>
+
+                    {/* Win Probability Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {[{ team: game.awayTeam, prob: pred.awayWinProb, ml: pred.moneylineAway },
+                          { team: game.homeTeam, prob: pred.homeWinProb, ml: pred.moneylineHome }].map(({ team, prob, ml }) => {
+                            const isFav = prob > 50;
+                            return (
+                                <div key={team.id} className={`rounded-xl p-3 border flex flex-col gap-1.5 ${isFav ? 'bg-primary/8 border-primary/25' : 'bg-neutral-900 border-neutral-800'}`}>
+                                    <div className="flex items-center gap-2">
+                                        <img src={team.logo} alt={team.abbreviation} className="w-6 h-6 object-contain" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                                        <span className="text-[10px] font-black text-text-main truncate">{team.abbreviation}</span>
+                                        {isFav && <span className="ml-auto text-[7px] font-black bg-primary/15 text-primary px-1 rounded">FAV</span>}
+                                    </div>
+                                    <div className="text-center">
+                                        <div className={`text-xl font-black tabular-nums ${isFav ? 'text-primary' : 'text-text-muted'}`}>{prob}%</div>
+                                        <div className="text-[8px] text-neutral-500 font-bold uppercase">Win Prob</div>
+                                    </div>
+                                    <div className="h-1 rounded-full bg-neutral-800 overflow-hidden">
+                                        <div className="h-full rounded-full" style={{ width: `${prob}%`, background: isFav ? 'linear-gradient(90deg,#a3ff00,#22d3ee)' : '#525252' }} />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[8px] text-neutral-500 font-bold">AI ML</span>
+                                        <span className={`text-[10px] font-black tabular-nums ${isFav ? 'text-primary' : 'text-text-muted'}`}>{ml}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Spread + O/U + Kelly */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 flex flex-col items-center gap-1">
+                            <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">AI Spread</span>
+                            <span className="text-sm font-black text-accent-blue tabular-nums">{pred.spread}</span>
+                        </div>
+                        <div className={`border rounded-lg p-2.5 flex flex-col items-center gap-1 ${pred.overUnderPick === 'Over' ? 'bg-orange-500/10 border-orange-500/25' : 'bg-cyan-500/10 border-cyan-500/25'}`}>
+                            <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">O/U {pred.total}</span>
+                            <span className={`text-sm font-black tabular-nums ${pred.overUnderPick === 'Over' ? 'text-orange-400' : 'text-cyan-400'}`}>{pred.overUnderPick}</span>
+                        </div>
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 flex flex-col items-center gap-1">
+                            <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">Kelly %</span>
+                            <span className="text-sm font-black text-accent-purple tabular-nums">
+                                {Math.max(0, parseFloat(((pred.homeWinProb - 52.4) * 0.5).toFixed(1)))}%
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Confidence Bar */}
+                    <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">AI Confidence Score</span>
+                            <span className="text-[9px] font-black text-primary">{confidence}/100</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-neutral-800 overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-700"
+                                style={{ width: `${confidence}%`, background: confidence >= 75 ? 'linear-gradient(90deg,#a3ff00,#22d3ee)' : confidence >= 60 ? 'linear-gradient(90deg,#3880fa,#818cf8)' : '#525252' }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* AI Insight Text */}
+                    <div className="bg-neutral-900/60 border border-border-muted rounded-lg px-3 py-2.5 flex items-start gap-2">
+                        <span className="material-symbols-outlined text-accent-purple text-[14px] mt-0.5 shrink-0">tips_and_updates</span>
+                        <p className="text-[10px] text-slate-300 font-medium leading-relaxed">{pred.insight}</p>
+                    </div>
+
+                    {/* Quick-add best pick to slip */}
+                    <button
+                        onClick={() => {
+                            const favTeam = pred.homeWinProb > pred.awayWinProb ? game.homeTeam : game.awayTeam;
+                            const favML = pred.homeWinProb > pred.awayWinProb ? pred.moneylineHome : pred.moneylineAway;
+                            onAddBet({ gameId: `espn-${game.id}`, type: 'ML', team: `${favTeam.displayName} ML`, odds: favML, matchupStr: `${game.awayTeam.displayName} vs ${game.homeTeam.displayName}`, stake: 50, gameStatus: game.status, gameStatusName: game.statusName, gameDate: game.date });
+                        }}
+                        className="w-full py-2.5 rounded-lg bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-[0_0_14px_rgba(163,255,0,0.25)] flex items-center justify-center gap-2"
+                    >
+                        <span className="material-symbols-outlined text-[14px]">add_shopping_cart</span>
+                        Add AI Pick to Bet Slip
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

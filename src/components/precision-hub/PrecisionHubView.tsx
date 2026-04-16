@@ -67,11 +67,11 @@ const SOCCER_COLS: StatCol[] = [
 ];
 
 const getColsForSport = (s: string): StatCol[] => {
-    if (['NBA', 'NCAAM', 'WNBA'].includes(s)) return BBALL_COLS;
+    if (['NBA', 'NCAAM', 'WNBA', 'NCAAW', 'CBB'].includes(s)) return BBALL_COLS;
     if (['MLB', 'NCAAB'].includes(s)) return BASEBALL_COLS;
-    if (['NFL', 'NCAAF'].includes(s)) return FOOTBALL_COLS;
+    if (['NFL', 'NCAAF', 'CFB'].includes(s)) return FOOTBALL_COLS;
     if (['NHL'].includes(s)) return HOCKEY_COLS;
-    if (['EPL', 'MLS'].includes(s)) return SOCCER_COLS;
+    if (['EPL', 'MLS', 'Soccer', 'Soccer.EPL', 'Soccer.MLS'].includes(s)) return SOCCER_COLS;
     return BBALL_COLS;
 };
 
@@ -121,10 +121,11 @@ const buildStats = (sport: string, rng: () => number, leaders?: any[]): Record<S
         });
     }
 
-    if (['NBA', 'NCAAM', 'WNBA'].includes(sport)) return { pts: real.pts ?? r(12, 28), reb: real.reb ?? r(3, 11), ast: real.ast ?? r(2, 8), threePt: r(0, 4, 1), blk: r(0, 2, 1), stl: r(0, 2, 1), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
+    if (['NBA', 'NCAAM', 'WNBA', 'NCAAW', 'CBB'].includes(sport)) return { pts: real.pts ?? r(12, 28), reb: real.reb ?? r(3, 11), ast: real.ast ?? r(2, 8), threePt: r(0, 4, 1), blk: r(0, 2, 1), stl: r(0, 2, 1), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
     if (['MLB', 'NCAAB'].includes(sport)) return { avg: real.avg ?? parseFloat((0.240 + rng() * 0.080).toFixed(3)), hr: real.hr ?? r(0, 1.5, 1), rbi: real.rbi ?? r(0, 2, 1), sb: r(0, 1, 1), k: real.k ?? r(0, 7, 1), era: r(2.5, 5.0), pts: z, reb: z, ast: z, threePt: z, blk: z, stl: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
-    if (['NFL', 'NCAAF'].includes(sport)) return { yds: real.yds ?? r(40, 280), td: r(0, 2, 1), int: r(0, 1.5, 1), rec: r(2, 8, 1), car: r(5, 20, 1), pts: real.pts ?? r(8, 22), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, reb: z, ast: z, threePt: z, blk: z, stl: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
+    if (['NFL', 'NCAAF', 'CFB'].includes(sport)) return { yds: real.yds ?? r(40, 280), td: r(0, 2, 1), int: r(0, 1.5, 1), rec: r(2, 8, 1), car: r(5, 20, 1), pts: real.pts ?? r(8, 22), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, reb: z, ast: z, threePt: z, blk: z, stl: z, g: z, a: z, ppts: z, pm: z, shots: z, svpct: z, goals: z, apg: z, sog: z };
     if (['NHL'].includes(sport)) return { g: real.goals ?? r(0, 1.5, 1), a: real.ast ?? r(0, 2, 1), ppts: real.pts ?? r(0, 2.5, 1), pm: parseFloat((rng() * 4 - 2).toFixed(1)), shots: r(1.5, 4.5, 1), svpct: parseFloat((0.89 + rng() * 0.05).toFixed(3)), pts: z, reb: z, ast: z, threePt: z, blk: z, stl: z, avg: z, hr: z, rbi: z, sb: z, k: z, era: z, yds: z, td: z, int: z, rec: z, car: z, goals: z, apg: z, sog: z };
+    // Soccer (EPL, MLS) + fallback
     return { goals: real.goals ?? r(0, 1.5, 1), apg: r(0, 1, 1), shots: r(1, 4, 1), sog: r(0.5, 2.5, 1), pts: real.pts ?? r(5, 12), avg: z, hr: z, rbi: z, sb: z, k: z, era: z, reb: z, ast: z, threePt: z, blk: z, stl: z, yds: z, td: z, int: z, rec: z, car: z, g: z, a: z, ppts: z, pm: z, svpct: z };
 };
 
@@ -744,11 +745,11 @@ export const PrecisionHubView: React.FC = () => {
         }
         await Promise.allSettled(rosterPromises);
 
-        // De-duplicate leaders by name so we don't show the same player twice
-        // (ESPN sometimes lists the same player under multiple stat categories)
+        // De-duplicate leaders by name+sport so we don't show the same player twice
+        // across sports or multiple stat categories
         const seenPlayerKey = new Set<string>();
 
-        for (const { game, sportLabel, gameDate } of allGames) {
+        for (const { game, sportLabel, sportKey, gameDate } of allGames) {
             const teamMap: Record<string, ESPNTeamInfo> = {
                 [game.homeTeam.id]: game.homeTeam,
                 [game.awayTeam.id]: game.awayTeam,
@@ -756,19 +757,33 @@ export const PrecisionHubView: React.FC = () => {
 
             const homePlayers = fetchedRosters.get(game.homeTeam.id)?.slice(0, 6) || [];
             const awayPlayers = fetchedRosters.get(game.awayTeam.id)?.slice(0, 6) || [];
-            const combinedPlayers = [
-                ...game.leaders,
+
+            // Build a combined list: game leaders first, then top roster players
+            // IMPORTANT: each entry must know which SPORT it belongs to
+            const combinedPlayers: { name: string; shortName: string; headshot: string; teamId: string }[] = [
+                // ESPN game leaders already have teamId
+                ...game.leaders
+                    .filter(l => l.name && l.teamId)
+                    .map(l => ({ name: l.name, shortName: l.shortName || l.name, headshot: l.headshot || '', teamId: l.teamId })),
+                // Roster players for the correct sport only
                 ...homePlayers.map(p => ({
-                    name: p.displayName, shortName: p.displayName, headshot: p.headshot, teamId: game.homeTeam.id
+                    name: p.displayName,
+                    shortName: p.displayName,
+                    headshot: p.headshot || `https://a.espncdn.com/combiner/i?img=/i/headshots/${sportKey.toLowerCase().replace('soccer.', '')}/players/full/${p.id}.png&w=96&h=70&cb=1`,
+                    teamId: game.homeTeam.id
                 })),
                 ...awayPlayers.map(p => ({
-                    name: p.displayName, shortName: p.displayName, headshot: p.headshot, teamId: game.awayTeam.id
+                    name: p.displayName,
+                    shortName: p.displayName,
+                    headshot: p.headshot || `https://a.espncdn.com/combiner/i?img=/i/headshots/${sportKey.toLowerCase().replace('soccer.', '')}/players/full/${p.id}.png&w=96&h=70&cb=1`,
+                    teamId: game.awayTeam.id
                 }))
             ];
 
             for (const leader of combinedPlayers) {
                 if (!leader.name || !leader.teamId) continue;
-                const dedupKey = `${game.id}-${leader.teamId}-${leader.name}`;
+                // Include sportLabel in dedup key to prevent cross-sport player leakage
+                const dedupKey = `${sportLabel}-${leader.teamId}-${leader.name}`;
                 if (seenPlayerKey.has(dedupKey)) continue;
                 seenPlayerKey.add(dedupKey);
 
