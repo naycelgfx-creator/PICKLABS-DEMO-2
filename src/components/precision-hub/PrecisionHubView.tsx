@@ -204,7 +204,7 @@ const buildTeamTrend = (winProb: number, seedBase: string): TeamTrend => {
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface TeamRow { gameId: string; sport: string; sportLabel: string; gameDate: string; homeTeam: { name: string; abbr: string; logo: string; record: string; color: string }; awayTeam: { name: string; abbr: string; logo: string; record: string; color: string }; homePoints: number; awayPoints: number; homeSpread: string; awaySpread: string; homeEdge: number; awayEdge: number; total: string; homeWinProb: number; awayWinProb: number; kellyHome: number; kellyAway: number; aiMLHome: string; aiMLAway: string; vegasMLHome: string; vegasMLAway: string; status: string; rec: 'HOME' | 'AWAY' | 'PUSH'; conf: number; homeTrend: TeamTrend; awayTrend: TeamTrend; }
 
-interface PlayerRow { id: string; gameId: string; sport: string; sportLabel: string; gameDate: string; team: string; teamLogo: string; teamAltColor?: string; name: string; shortName: string; headshot: string; stats: Record<StatKey, number>; lastGame: Record<StatKey, number>; trends: Record<StatKey, GameTrend>; confidence: number }
+interface PlayerRow { id: string; gameId: string; sport: string; sportLabel: string; gameDate: string; team: string; teamLogo: string; teamAltColor?: string; name: string; shortName: string; headshot: string; stats: Record<StatKey, number>; lastGame: Record<StatKey, number>; trends: Record<StatKey, GameTrend>; confidence: number; isTrending: boolean; trendingText: string; }
 
 // ── Interfaces / sub-components ───────────────────────────────────────────────
 const WinGauge: React.FC<{ prob: number; abbr: string }> = ({ prob, abbr }) => {
@@ -579,6 +579,12 @@ export const PrecisionHubView: React.FC = () => {
 
                 const rng = seededRng(`${leader.name}-${leader.teamId}-${gameDate}-${sportLabel}`);
                 const stats = buildStats(sportLabel, rng, playerRealStats);
+                const trends = buildTrends(sportLabel, `${leader.name}-${leader.teamId}-${gameDate}-${sportLabel}`, stats);
+                const isTrending = rng() > 0.75;
+                const topKey = Object.keys(stats).filter(k => stats[k as StatKey] > 0)[0] as StatKey;
+                const trendVal = topKey && trends[topKey] ? trends[topKey].l5 : 0;
+                const trendingText = trendVal > 0 ? `HOT: ${trendVal} avg / L5` : '';
+                
                 pRows.push({
                     id: dedupKey,
                     gameId: game.id, sport: game.sport, sportLabel, gameDate,
@@ -587,8 +593,10 @@ export const PrecisionHubView: React.FC = () => {
                     headshot: leader.headshot || '',
                     stats,
                     lastGame: buildLastGame(rng, gameDate, stats),
-                    trends: buildTrends(sportLabel, `${leader.name}-${leader.teamId}-${gameDate}-${sportLabel}`, stats),
+                    trends,
                     confidence: Math.round(55 + rng() * 35),
+                    isTrending,
+                    trendingText
                 });
             }
         }
@@ -891,7 +899,10 @@ export const PrecisionHubView: React.FC = () => {
                                                                                                         <img src={row.teamLogo} alt={row.team} className="w-full h-full object-contain drop-shadow-md" onError={e=>{e.currentTarget.style.opacity='0'}} />
                                                                                                     </div>
                                                                                                 </div>
-                                                                                                <button onClick={(e)=>openPopup(row,e)} className="text-xs font-black text-text-main hover:text-primary transition-colors text-left leading-none underline-offset-2 hover:underline">{row.shortName}</button>
+                                                                                                <div className="flex flex-col gap-0.5 mt-0.5">
+                                                                                                    <button onClick={(e)=>openPopup(row,e)} className="text-xs font-black text-text-main hover:text-primary transition-colors text-left leading-none underline-offset-2 hover:underline">{row.shortName}</button>
+                                                                                                    {row.isTrending && row.trendingText && <span className="text-[7.5px] font-black text-orange-400 bg-orange-500/10 px-1 py-0.5 rounded flex items-center gap-0.5 w-fit"><span className="material-symbols-outlined text-[9px] animate-pulse">local_fire_department</span>{row.trendingText}</span>}
+                                                                                                </div>
                                                                                             </div>
                                                                                         </td>
                                                                                         {gCols.map(c=>(<SC key={c.key} v={row.stats[c.key]??0} baseline={c.baseline} hi={topKey===c.key&&(row.stats[c.key]??0)===maxTop} fmt={c.key==='avg'||c.key==='svpct'?c.key:undefined} inverted={c.key==='era'} />))}

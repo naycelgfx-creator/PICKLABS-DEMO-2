@@ -496,6 +496,7 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
     // Generate stat line baseline per prop
     const seed = player.displayName.charCodeAt(0) + player.displayName.charCodeAt(player.displayName.length - 1);
     const base = 12 + (seed % 20);
+    const isTrending = (seed % 100) > 75;
 
     const propLines = props.slice(0, 4).map((p, i) => {
         const raw = base * p.baseMultiplier + (i * 1.5) + (seed % 5) * 0.5;
@@ -569,8 +570,14 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
                             <span className="text-[7px] font-black bg-green-500 text-black px-1.5 rounded-full uppercase flex-shrink-0">AI Pick</span>
                         )}
                     </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`text-[10px] font-black font-mono ${positionColor[player.position] || 'text-text-muted'}`}>
+                    {isTrending && propLines[0] && (
+                        <div className="flex items-center gap-1 mt-1 font-black text-[9px] text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded w-fit">
+                            <span className="material-symbols-outlined text-[10px] animate-pulse">local_fire_department</span>
+                            HOT: {Math.max(parseFloat(propLines[0].line) * 1.2, parseFloat(propLines[0].line) + 2).toFixed(1)} {propLines[0].label.replace('Points', 'PTS').replace('Rebounds', 'REB').replace('Assists', 'AST')} avg / L5
+                        </div>
+                    )}
+                    <div className="flex items-center gap-1.5 mt-1">
+                        <span className={`text-[9px] font-black font-mono ${positionColor[player.position] || 'text-text-muted'}`}>
                             #{player.jersey} {player.position}
                         </span>
                         <span className="text-[9px] text-border-muted">·</span>

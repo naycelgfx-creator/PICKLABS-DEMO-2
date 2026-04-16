@@ -696,9 +696,14 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
                         <h2 className="text-xl font-black text-white uppercase italic tracking-tight">{prop.player}</h2>
                         <span className="text-[9px] font-black text-slate-500 bg-neutral-800 border border-border-muted px-1.5 py-0.5 rounded">{prop.position}</span>
+                        {prop.isTrending && (
+                            <span className="text-[9px] font-black text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded flex items-center gap-1 ml-1">
+                                <span className="material-symbols-outlined text-[12px] animate-pulse">local_fire_department</span>
+                                HOT STREAK: {Math.max(parseFloat(effectiveLine.toString()) * 1.2, parseFloat(effectiveLine.toString()) + 2).toFixed(1)} avg / L5
+                            </span>
+                        )}
                         <div className="flex flex-wrap gap-1 ml-1">
                             {allPropTypes.map(pt => (
                                 <button key={pt} onClick={() => { setActivePropType(pt); setSelectedAltLine(null); }}
@@ -975,9 +980,19 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
                                                 {prop.position !== '—' && (
                                                     <span className="text-[8px] font-black text-slate-600 bg-neutral-800 px-1 rounded uppercase">{prop.position}</span>
                                                 )}
-                                                {prop.isTrending && <span className="text-[12px] material-symbols-outlined text-orange-500">local_fire_department</span>}
                                             </div>
-                                            <span className="text-[9px] text-slate-600 font-bold">{prop.propType}</span>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                <span className="text-[9px] text-slate-600 font-bold">{prop.propType}</span>
+                                                {prop.isTrending && (
+                                                    <>
+                                                        <span className="text-[9px] text-slate-600">·</span>
+                                                        <span className="flex items-center gap-0.5 text-[8px] font-black text-orange-400 bg-orange-500/10 px-1 py-[1px] rounded">
+                                                            <span className="text-[10px] material-symbols-outlined animate-pulse">local_fire_department</span>
+                                                            HOT: {Math.max(parseFloat(prop.line.toString()) * 1.2, parseFloat(prop.line.toString()) + 2).toFixed(1)} avg / L5
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
