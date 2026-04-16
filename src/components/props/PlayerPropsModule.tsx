@@ -837,6 +837,7 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
     const [propsData, setPropsData] = useState<PropLine[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [propTypeFilter, setPropTypeFilter] = useState<string>('');
+    const [refreshing, setRefreshing] = useState(false);
     const heroRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -851,6 +852,15 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
     const selectedProp = propsData.find(p => p.id === selectedId);
     const propTypes = getPropTypes(sport);
     const filteredProps = propTypeFilter ? propsData.filter(p => p.propType === propTypeFilter) : propsData;
+
+    const handleRefreshProps = () => {
+        setRefreshing(true);
+        setTimeout(() => {
+            const data = buildPropsFromRoster(players, sport, team.abbr);
+            setPropsData(data);
+            setRefreshing(false);
+        }, 600);
+    };
 
     const handleSelect = (id: string) => {
         setSelectedId(id);
@@ -895,6 +905,15 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
                                 {pt}
                             </button>
                         ))}
+                        <div className="w-px h-4 bg-border-muted mx-1" />
+                        <button 
+                            onClick={handleRefreshProps}
+                            disabled={refreshing || isLoading}
+                            className={`flex items-center justify-center p-1 rounded-md transition-colors ${refreshing ? 'text-primary' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}
+                            title="Refresh Stats Manually"
+                        >
+                            <span className={`material-symbols-outlined text-sm ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
+                        </button>
                     </div>
                 </div>
 

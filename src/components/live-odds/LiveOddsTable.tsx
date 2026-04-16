@@ -8,7 +8,7 @@ import {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const POLL_INTERVAL = 5000;
+const POLL_INTERVAL = 43200000; // 12 hours
 
 // Sportsbooks: 7 books in the comparison table
 const SPORTSBOOK_LABELS = ['FanDuel', 'DraftKings', 'Caesars', 'Bet365', 'BetMGM', 'HardRock', 'TheScore'] as const;

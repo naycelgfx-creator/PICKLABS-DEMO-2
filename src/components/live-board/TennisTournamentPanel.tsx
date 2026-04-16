@@ -288,8 +288,8 @@ export const TennisTournamentPanel: React.FC<TennisTournamentPanelProps> = ({ sp
 
     useEffect(() => {
         fetchMatches();
-        // Auto-refresh every 60s (tennis matches can be long)
-        const interval = setInterval(fetchMatches, 60_000);
+        // Auto-refresh every 12 hours (tennis matches can be long)
+        const interval = setInterval(fetchMatches, 43200000); // 12 hours
         return () => clearInterval(interval);
     }, [fetchMatches]);
 

@@ -56,7 +56,7 @@ export const AITopBets: React.FC<AITopBetsProps> = ({ game, onAddBet }) => {
             }
         };
         loadNews();
-        const interval = setInterval(loadNews, 120_000);
+        const interval = setInterval(loadNews, 43200000);
         return () => { cancelled = true; clearInterval(interval); };
     }, [sport]);
 

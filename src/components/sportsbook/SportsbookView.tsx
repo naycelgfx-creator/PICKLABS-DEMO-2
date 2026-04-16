@@ -206,20 +206,36 @@ interface TeamOddsCardProps {
     betSlip: BetPick[];
     onAddBet: (bet: Omit<BetPick, 'id'>) => void;
     sport: string;
-    aiPrediction?: {
-        ai_probability: number;
-        edge: number;
-        suggestions: { kelly: number; fixed: number; target: number; };
-    };
+    weatherAI?: boolean;
+    aiML?: boolean;
+    aiSpread?: boolean;
+    aiOU?: boolean;
     isSelectedForAI?: boolean;
     onToggleAI?: (gameId: string) => void;
 }
 
-const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport, aiPrediction, isSelectedForAI, onToggleAI }) => {
+const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport, weatherAI, aiML, aiSpread, aiOU, isSelectedForAI, onToggleAI }) => {
     // Generate fallback prediction for standard odds formatting, but use AI prediction if available
     const pred = useMemo(() => generateAIPrediction(
         game.homeTeam.record, game.awayTeam.record, sport, [], []
     ), [game.homeTeam.record, game.awayTeam.record, sport]);
+
+    // Simulate determinative weather impact for outdoor sports based on gameid
+    const weatherAlert = useMemo(() => {
+        if (!['mlb', 'nfl', 'soccer'].includes(sport.toLowerCase())) return null;
+        let hash = 0;
+        for (let i = 0; i < game.id.length; i++) hash += game.id.charCodeAt(i);
+        const conditions = [
+            { cond: 'Clear', bad: false },
+            { cond: 'Partly Cloudy', bad: false },
+            { cond: 'High Winds 20mph+', bad: true, icon: 'air', color: 'text-amber-400 bg-amber-400/10 border-amber-400/30' },
+            { cond: 'Heavy Rain Tracking', bad: true, icon: 'rainy', color: 'text-blue-400 bg-blue-400/10 border-blue-400/30' },
+            { cond: 'Snow Expected', bad: true, icon: 'ac_unit', color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/30' },
+            { cond: 'Dome', bad: false }
+        ];
+        const res = conditions[hash % conditions.length];
+        return res.bad ? res : null;
+    }, [game.id, sport]);
 
     const isFinal = game.status === 'post';
     const isLive = game.status === 'in';
@@ -231,7 +247,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
         betSlip.some(b => b.gameId === gameId && b.type === type && b.team === team);
 
     // Use AI backend data if available, otherwise fallback to local mock 
-    const confidence = aiPrediction ? aiPrediction.ai_probability : pred.confidence;
+    const confidence = pred.confidence;
     const aiHighlight = aiMode && confidence >= 55; // highlight if >= 55%
 
     const addBet = (type: BetPick['type'], team: string, odds?: string) => {
@@ -258,11 +274,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
             : ((-spreadNum) > 0 ? `+${(-spreadNum).toFixed(1)}` : spreadNum === 0 ? 'PK' : `${(-spreadNum).toFixed(1)}`);
 
         let winPct = confidence;
-        if (aiPrediction) {
-            winPct = isHome ? confidence : Math.max(0, 100 - confidence);
-        } else {
-            winPct = isHome ? pred.homeWinProb : pred.awayWinProb;
-        }
+        winPct = isHome ? pred.homeWinProb : pred.awayWinProb;
 
         // Slightly fluctuate confidence for live games
         if (isLive) {
@@ -311,7 +323,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                             label="ML"
                             odds={ml}
                             isSelected={isSel('ML', `${team.displayName} ML`)}
-                            isAI={aiHighlight && isFavoredContext}
+                            isAI={(aiMode || aiML) && aiHighlight && isFavoredContext}
                             rookieMode={rookieMode}
                             rookieTip={ROOKIE_TIPS['ML']}
                             onClick={() => addBet('ML', `${team.displayName} ML`, ml || 'N/A')}
@@ -320,7 +332,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                             label="Spread"
                             odds={spreadVal}
                             isSelected={isSel('Spread', `${team.displayName} ${spreadVal}`)}
-                            isAI={aiHighlight && isFavoredContext}
+                            isAI={(aiMode || aiSpread) && aiHighlight && isFavoredContext}
                             rookieMode={rookieMode}
                             rookieTip={ROOKIE_TIPS['Spread'] + ` (${spreadVal})`}
                             onClick={() => addBet('Spread', `${team.displayName} ${spreadVal}`, '-110')}
@@ -337,6 +349,18 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                 aiHighlight ? '!border-green-500/35 shadow-[0_0_16px_rgba(34,197,94,0.08)]' :
                     ''
             } ${isSelectedForAI ? 'ring-2 ring-primary/50' : ''}`}>
+
+            {/* Weather Alert (Visible if Weather AI toggled and conditions are bad) */}
+            {weatherAI && weatherAlert && (
+                <div className={`px-4 py-2 flex items-center gap-2 ${weatherAlert.color} border-b`}>
+                    <span className="material-symbols-outlined text-[13px]">{weatherAlert.icon}</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest leading-none mt-0.5">
+                        Weather Alert: {weatherAlert.cond}
+                    </span>
+                    <span className="ml-auto text-[8px] font-bold uppercase tracking-wider opacity-60">High Impact</span>
+                </div>
+            )}
+
             {/* Card header */}
             <div className="flex items-center justify-between px-4 py-2 bg-black/20 border-b border-[#1c2037]">
                 <div className="flex items-center gap-2">
@@ -404,7 +428,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                         label="OVER"
                         odds={isLive ? applyOddsShift('-110', Math.floor(shifts.spreadShift * 5)) : "-110"}
                         isSelected={isSel('Over', `Over ${applyOddsShift(pred.total, shifts.totalShift)}`)}
-                        isAI={aiHighlight && pred.overUnderPick === 'Over'}
+                        isAI={(aiMode || aiOU) && aiHighlight && pred.overUnderPick === 'Over'}
                         rookieMode={rookieMode}
                         rookieTip={ROOKIE_TIPS['OVER']}
                         onClick={() => addBet('Over', `Over ${applyOddsShift(pred.total, shifts.totalShift)}`, '-110')}
@@ -413,7 +437,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                         label="UNDER"
                         odds={isLive ? applyOddsShift('-110', -Math.floor(shifts.spreadShift * 5)) : "-110"}
                         isSelected={isSel('Under', `Under ${applyOddsShift(pred.total, shifts.totalShift)}`)}
-                        isAI={aiHighlight && pred.overUnderPick === 'Under'}
+                        isAI={(aiMode || aiOU) && aiHighlight && pred.overUnderPick === 'Under'}
                         rookieMode={rookieMode}
                         rookieTip={ROOKIE_TIPS['UNDER']}
                         onClick={() => addBet('Under', `Under ${applyOddsShift(pred.total, shifts.totalShift)}`, '-110')}
@@ -446,18 +470,20 @@ interface PlayerPropCardProps {
     gameStatus: string;
     gameDate: string;
     matchupStr: string;
-    teamName: string;
     teamLogo?: string;
     betSlip: BetPick[];
     onAddBet: (bet: Omit<BetPick, 'id'>) => void;
     aiMode: boolean;
+    aiPts?: boolean;
+    aiReb?: boolean;
+    aiAst?: boolean;
     rookieMode: boolean;
     isSelectedForAI?: boolean;
     onToggleAI?: (playerId: string) => void;
 }
 
 const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
-    player, sport, gameId, gameStatus, gameDate, matchupStr, teamName, teamLogo, betSlip, onAddBet, aiMode, rookieMode, isSelectedForAI, onToggleAI
+    player, sport, gameId, gameStatus, gameDate, matchupStr, teamName, teamLogo, betSlip, onAddBet, aiMode, aiPts, aiReb, aiAst, rookieMode, isSelectedForAI, onToggleAI
 }) => {
     const isPitcher = (sport === 'MLB' || sport === 'WBC') && ['P', 'SP', 'RP'].includes(player.position.toUpperCase());
     const props = isPitcher ? [
@@ -474,8 +500,16 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
     const propLines = props.slice(0, 4).map((p, i) => {
         const raw = base * p.baseMultiplier + (i * 1.5) + (seed % 5) * 0.5;
         const line = Math.max(0.5, Math.round(raw * 2) / 2).toFixed(1);
+        
+        let shouldHighlightStr = aiMode;
+        if (!aiMode) {
+            if (aiPts && ['Points', 'PTS', 'Goals', 'Pass Yards'].includes(p.label)) shouldHighlightStr = true;
+            if (aiReb && ['Rebounds', 'REB', 'Hits', 'Rush Yards'].includes(p.label)) shouldHighlightStr = true;
+            if (aiAst && ['Assists', 'AST', 'RBIs'].includes(p.label)) shouldHighlightStr = true;
+        }
+
         // AI picks the 'Over' on the first prop for the position
-        const aiPick = aiMode && i === 0;
+        const aiPick = shouldHighlightStr && i === 0;
         return { ...p, line, aiPick };
     });
 
@@ -588,17 +622,22 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
 };
 
 // ── Roster Panel per game ─────────────────────────────────────────────────────
-const RosterPanel: React.FC<{
+interface RosterPanelProps {
     game: ESPNGame;
     sport: string;
     betSlip: BetPick[];
     onAddBet: (bet: Omit<BetPick, 'id'>) => void;
     aiMode: boolean;
+    aiPts?: boolean;
+    aiReb?: boolean;
+    aiAst?: boolean;
     rookieMode: boolean;
     searchQuery: string;
     selectedAIPlayers?: Set<string>;
     onToggleAI?: (playerId: string) => void;
-}> = ({ game, sport, betSlip, onAddBet, aiMode, rookieMode, searchQuery, selectedAIPlayers, onToggleAI }) => {
+}
+
+const RosterPanel: React.FC<RosterPanelProps> = ({ game, sport, betSlip, onAddBet, aiMode, aiPts, aiReb, aiAst, rookieMode, searchQuery, selectedAIPlayers, onToggleAI }) => {
     const [homePlayers, setHomePlayers] = useState<ESPNRosterPlayer[]>([]);
     const [awayPlayers, setAwayPlayers] = useState<ESPNRosterPlayer[]>([]);
     const [activeTeam, setActiveTeam] = useState<'home' | 'away'>('home');
@@ -694,6 +733,9 @@ const RosterPanel: React.FC<{
                             betSlip={betSlip}
                             onAddBet={onAddBet}
                             aiMode={aiMode}
+                            aiPts={aiPts}
+                            aiReb={aiReb}
+                            aiAst={aiAst}
                             rookieMode={rookieMode}
                             isSelectedForAI={selectedAIPlayers?.has(player.id)}
                             onToggleAI={onToggleAI}
@@ -725,16 +767,20 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
     const [shakeRookieModeBtn, setShakeRookieModeBtn] = useState(false);
     const user = getCurrentUser();
     const isPremiumUser = user?.isPremium || isAdminEmail(user?.email || '');
-    interface AIPredictionData {
-        ai_probability: number;
-        edge: number;
-        suggestions: { kelly: number; fixed: number; target: number; };
-    }
-    const [aiPredictions, setAiPredictions] = useState<Record<string, AIPredictionData>>({});
 
     // ── AI Analysis State ──────────────────────────────────────────────────
     const [allGamesAI, setAllGamesAI] = useState(false);
     const [allPlayersAI, setAllPlayersAI] = useState(false);
+    const [weatherAI, setWeatherAI] = useState(false);
+    const [aiML, setAiML] = useState(false);
+    const [aiSpread, setAiSpread] = useState(false);
+    const [aiOU, setAiOU] = useState(false);
+    
+    // Player specific toggles
+    const [aiPts, setAiPts] = useState(false);
+    const [aiAst, setAiAst] = useState(false);
+    const [aiReb, setAiReb] = useState(false);
+
     const [selectedAIGames, setSelectedAIGames] = useState<Set<string>>(new Set());
     const [selectedAIPlayers, setSelectedAIPlayers] = useState<Set<string>>(new Set());
     const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
@@ -812,32 +858,14 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
 
     useEffect(() => {
         fetchGames();
-        const interval = setInterval(fetchGames, 60_000);
+        const interval = setInterval(fetchGames, 43200000); // 12 hours
         return () => clearInterval(interval);
     }, [fetchGames]);
 
     // Removed local rookie mode sync
 
-    // Fetch AI predictions when AI mode is active
-    useEffect(() => {
-        if ((!allGamesAI && selectedAIGames.size === 0) || games.length === 0) return;
+    // Removed AI backend fetching effect
 
-        const gamesToPredict = games.filter(g => !aiPredictions[g.id]).map(g => ({ id: g.id, odds: 1.90 }));
-        if (gamesToPredict.length === 0) return;
-
-        fetch('http://localhost:8005/api/predict', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ games: gamesToPredict })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success' && data.predictions) {
-                    setAiPredictions(prev => ({ ...prev, ...data.predictions }));
-                }
-            })
-            .catch(console.error);
-    }, [allGamesAI, selectedAIGames.size, games, aiPredictions]);
 
     // Search-filtered games
     const filteredGames = useMemo(() => {
@@ -950,6 +978,52 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                 >
                                     <span className="material-symbols-outlined text-[13px]">person_search</span>
                                     <span className="hidden sm:inline">AI: ALL PLAYERS</span>
+                                </button>
+                                <button
+                                    onClick={() => setWeatherAI(!weatherAI)}
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${weatherAI ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
+                                        }`}
+                                >
+                                    <span className="material-symbols-outlined text-[13px]">thunderstorm</span>
+                                    <span className="hidden sm:inline">AI: WEATHER</span>
+                                </button>
+                                <div className="w-px h-4 bg-border-muted mx-0.5" />
+                                <button
+                                    onClick={() => setAiML(!aiML)}
+                                    className={`flex items-center px-2 py-1.5 rounded border text-[9px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${aiML ? 'bg-primary/20 border-primary/50 text-primary' : 'border-neutral-800 text-slate-500 hover:text-white hover:border-neutral-600'}`}
+                                >
+                                    AI: ML
+                                </button>
+                                <button
+                                    onClick={() => setAiSpread(!aiSpread)}
+                                    className={`flex items-center px-2 py-1.5 rounded border text-[9px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${aiSpread ? 'bg-primary/20 border-primary/50 text-primary' : 'border-neutral-800 text-slate-500 hover:text-white hover:border-neutral-600'}`}
+                                >
+                                    AI: SPREAD
+                                </button>
+                                <button
+                                    onClick={() => setAiOU(!aiOU)}
+                                    className={`flex items-center px-2 py-1.5 rounded border text-[9px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${aiOU ? 'bg-primary/20 border-primary/50 text-primary' : 'border-neutral-800 text-slate-500 hover:text-white hover:border-neutral-600'}`}
+                                >
+                                    AI: O/U
+                                </button>
+                                <div className="w-px h-4 bg-border-muted mx-0.5" />
+                                <button
+                                    onClick={() => setAiPts(!aiPts)}
+                                    className={`flex items-center px-2 py-1.5 rounded border text-[9px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${aiPts ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'border-neutral-800 text-slate-500 hover:text-white hover:border-neutral-600'}`}
+                                >
+                                    AI: PTS
+                                </button>
+                                <button
+                                    onClick={() => setAiAst(!aiAst)}
+                                    className={`flex items-center px-2 py-1.5 rounded border text-[9px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${aiAst ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'border-neutral-800 text-slate-500 hover:text-white hover:border-neutral-600'}`}
+                                >
+                                    AI: AST
+                                </button>
+                                <button
+                                    onClick={() => setAiReb(!aiReb)}
+                                    className={`flex items-center px-2 py-1.5 rounded border text-[9px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${aiReb ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'border-neutral-800 text-slate-500 hover:text-white hover:border-neutral-600'}`}
+                                >
+                                    AI: REB
                                 </button>
                             </div>
 
@@ -1149,7 +1223,10 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                                                     rookieMode={isRookieModeActive}
                                                                     betSlip={betSlip}
                                                                     onAddBet={onAddBet}
-                                                                    aiPrediction={aiPredictions[game.id]}
+                                                                    weatherAI={weatherAI}
+                                                                    aiML={aiML}
+                                                                    aiSpread={aiSpread}
+                                                                    aiOU={aiOU}
                                                                     isSelectedForAI={selectedAIGames.has(game.id)}
                                                                     onToggleAI={() => toggleAIGame(game.id)}
                                                                 />

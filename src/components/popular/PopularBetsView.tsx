@@ -149,7 +149,7 @@ export const PopularBetsView: React.FC<PopularBetsViewProps> = ({ onAddBet }) =>
         };
 
         load();
-        const interval = setInterval(load, 120_000); // refresh every 2 min
+        const interval = setInterval(load, 43200000); // refresh every 12 hours
         return () => clearInterval(interval);
     }, []);
 

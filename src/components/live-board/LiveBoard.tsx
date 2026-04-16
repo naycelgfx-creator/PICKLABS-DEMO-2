@@ -405,6 +405,18 @@ export const LiveBoard: React.FC<LiveBoardProps> = ({ setCurrentView, onSelectGa
                         </div>
 
                         <div className="flex flex-wrap sm:flex-nowrap gap-1 w-full sm:w-auto overflow-x-auto scrollbar-hide">
+                            {/* Refresh toggle */}
+                            <button
+                                onClick={() => loadGamesData()}
+                                title="Refresh Data"
+                                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-sm border text-[10px] font-black uppercase tracking-wider transition-all ${loadingEspn
+                                    ? 'bg-primary/10 border-primary/40 text-primary'
+                                    : 'border-border-muted text-text-muted hover:text-text-main hover:bg-neutral-800'
+                                    }`}
+                            >
+                                <span className={`material-symbols-outlined text-sm ${loadingEspn ? 'animate-spin' : ''}`}>refresh</span>
+                                <span className="hidden sm:inline">Refresh</span>
+                            </button>
                             {/* Public Bets toggle */}
                             <button
                                 onClick={() => setShowPublicBets(p => !p)}

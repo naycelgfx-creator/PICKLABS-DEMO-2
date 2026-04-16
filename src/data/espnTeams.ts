@@ -270,14 +270,15 @@ const sportTotal: Record<string, number> = {
 };
 
 export const generateAIPrediction = (
-    homeRecord: string,
-    awayRecord: string,
+    homeRecord: string = '0-0',
+    awayRecord: string = '0-0',
     sport: string,
     homeLastFive: ('W' | 'L' | 'D')[],
     awayLastFive: ('W' | 'L' | 'D')[],
     isNeutral = false
 ): AIPrediction => {
     const parseRecord = (rec: string) => {
+        if (!rec) return { w: 0, l: 0 };
         const [w, l] = rec.split('-').map(Number);
         return { w: w || 0, l: l || 0 };
     };

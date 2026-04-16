@@ -209,6 +209,15 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
 
                 {/* ── Right Controls ── */}
                 <div className="flex items-center gap-2 shrink-0">
+                    <button
+                        onClick={() => window.location.reload()}
+                        title="Refresh All Data"
+                        aria-label="Refresh All Data"
+                        className="h-8 px-3 rounded border flex items-center justify-center gap-1.5 cursor-pointer transition-all bg-neutral-800 border-border-muted text-text-muted hover:bg-neutral-700 hover:text-text-main shrink-0"
+                    >
+                        <span className="material-symbols-outlined text-sm">refresh</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Refresh</span>
+                    </button>
 
                     <div className="hidden sm:block">
                     </div>

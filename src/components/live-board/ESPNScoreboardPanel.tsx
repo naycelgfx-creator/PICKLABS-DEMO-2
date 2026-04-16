@@ -252,7 +252,7 @@ export const ESPNScoreboardPanel: React.FC<ESPNScoreboardPanelProps> = ({ sport,
         doFetch();
         // Only auto-refresh if viewing today
         if (dateToFetch === todayStr) {
-            const interval = setInterval(doFetch, 60_000);
+            const interval = setInterval(doFetch, 43200000); // 12 hours
             return () => clearInterval(interval);
         }
     }, [doFetch, dateToFetch, todayStr]);
