@@ -133,15 +133,15 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
     }, [lastScrollY]);
 
     const navLinkClass = (view: ViewType, hoverColor = 'hover:text-primary') =>
-        `text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors ${currentView === view
-            ? 'text-primary border-b-2 border-primary pb-1'
-            : `text-text-muted ${hoverColor}`}`;
+        `text-xs font-bold uppercase tracking-widest cursor-pointer transition-all duration-150 ${currentView === view
+            ? 'text-primary pb-1 text-glow-green'
+            : `text-text-muted ${hoverColor}`}` + (currentView === view ? ' border-b-2 border-primary' : '');
 
     // Count of enabled books for badge
     const enabledCount = Object.values(enabledBooks).filter(Boolean).length;
 
     return (
-        <header className={`fixed top-[36px] left-0 right-0 z-50 border-b border-border-muted bg-background-dark/90 backdrop-blur-md px-3 md:px-6 py-2 md:py-3 transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+36px)]'} max-w-[100vw]`}>
+        <header className={`fixed top-[36px] left-0 right-0 z-50 border-b border-border-muted bg-background-dark/95 backdrop-blur-xl px-3 md:px-6 py-2 md:py-3 transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+36px)]'} max-w-[100vw]`} style={{ boxShadow: '0 1px 0 rgba(163,255,0,0.06), 0 4px 24px rgba(0,0,0,0.5)' }}>
             <div className="max-w-[1536px] mx-auto flex items-center justify-between gap-3 md:gap-4">
 
                 {/* ── Logo ── */}
@@ -153,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
                         <img
                             src="/picklabs-logo.svg"
                             alt="PickLabs Logo"
-                            className="h-10 md:h-14 w-auto shrink-0 transition-all duration-300 group-hover:scale-105"
+                            className="h-10 md:h-14 w-auto shrink-0 transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_12px_rgba(163,255,0,0.5)]"
                         />
                     </a>
 
@@ -213,7 +213,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
                         onClick={() => window.location.reload()}
                         title="Refresh All Data"
                         aria-label="Refresh All Data"
-                        className="h-8 px-3 rounded border flex items-center justify-center gap-1.5 cursor-pointer transition-all bg-neutral-800 border-border-muted text-text-muted hover:bg-neutral-700 hover:text-text-main shrink-0"
+                        className="h-8 px-3 rounded-lg border flex items-center justify-center gap-1.5 cursor-pointer transition-all bg-neutral-900 border-border-muted text-text-muted hover:border-primary/40 hover:text-primary hover:bg-primary/5 shrink-0"
                     >
                         <span className="material-symbols-outlined text-sm">refresh</span>
                         <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Refresh</span>
@@ -240,7 +240,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
 
                         {/* Settings Dropdown Panel */}
                         {isSettingsOpen && (
-                            <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-white dark:bg-neutral-900 border border-border-muted rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden z-50 animate-in">
+                            <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-neutral-950 border border-border-muted rounded-2xl overflow-hidden z-50" style={{ boxShadow: '0 0 0 1px rgba(163,255,0,0.08), 0 24px 60px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)' }}>
                                 {/* Header / User Info */}
                                 <div className="px-4 py-4 border-b border-border-muted bg-neutral-50 dark:bg-neutral-900/80 flex flex-col gap-1">
                                     <div className="flex items-center gap-3 mb-3">
@@ -488,7 +488,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
 
                         {/* ── Dropdown Panel ── */}
                         {isBookieOpen && (
-                            <div className="absolute right-0 sm:right-0 -mr-12 sm:mr-0 top-[calc(100%+8px)] w-[90vw] sm:w-72 max-w-[320px] bg-white dark:bg-neutral-900 border border-border-muted rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden z-50 animate-in">
+                            <div className="absolute right-0 sm:right-0 -mr-12 sm:mr-0 top-[calc(100%+8px)] w-[90vw] sm:w-72 max-w-[320px] bg-neutral-950 border border-border-muted rounded-2xl overflow-hidden z-50" style={{ boxShadow: '0 0 0 1px rgba(163,255,0,0.08), 0 24px 60px rgba(0,0,0,0.6)' }}>
                                 {/* Header */}
                                 <div className="px-4 py-3 border-b border-border-muted bg-neutral-50 dark:bg-neutral-900/80 flex items-center justify-between">
                                     <div className="flex items-center gap-2">

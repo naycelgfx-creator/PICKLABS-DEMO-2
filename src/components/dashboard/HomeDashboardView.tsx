@@ -221,12 +221,16 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
             <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
                 <header className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-black italic uppercase tracking-tight text-white flex items-center gap-3">
+                        <h1 className="text-3xl font-black italic uppercase tracking-tight flex items-center gap-3 gradient-text-lime">
                             Your Basecamp
                         </h1>
-                        <p className="text-slate-400 mt-1 text-sm font-medium">
+                        <p className="text-text-muted mt-1 text-sm font-medium">
                             Personalized intel, news, and insights based on your favorites.
                         </p>
+                    </div>
+                    <div className="hidden md:flex items-center gap-2 ai-badge animate-glow-pulse">
+                        <span className="material-symbols-outlined text-[12px]">smart_toy</span>
+                        AI Powered
                     </div>
                 </header>
 
@@ -241,7 +245,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                 </h2>
                                 <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x">
                                     {uniqueGames.map((game) => (
-                                        <div key={game.id} className="min-w-[280px] sm:min-w-[320px] shrink-0 bg-neutral-900 border border-neutral-800 rounded-xl p-5 hover:border-neutral-700 transition-colors snap-start">
+                                        <div key={game.id} className="min-w-[280px] sm:min-w-[320px] shrink-0 premium-card p-5 hover:scale-[1.01] snap-start cursor-pointer transition-all duration-200">
                                             <div className="flex justify-between text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">
                                                 <span>{game.sport} • {game.timeLabel}</span>
                                             </div>
@@ -266,8 +270,10 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                 </div>
                             </section>
 
+                            <div className="glow-divider" />
+
                             {/* TREND CHART: 5-10-20 Game Performance */}
-                            <section className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+                            <section className="premium-card p-6">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                                     <h2 className="text-lg font-black uppercase text-white tracking-wider flex items-center gap-2">
                                         <Activity className="w-5 h-5" style={{ color: chartPrimary }} />
@@ -357,7 +363,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                 </div>
                                 <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none">
                                     {favoriteTeamDetails.map(team => (
-                                        <div key={team.id} className="min-w-[120px] bg-neutral-900/50 border border-neutral-800 rounded-xl p-4 flex flex-col items-center gap-3 snap-start">
+                                        <div key={team.id} className="min-w-[120px] premium-card p-4 flex flex-col items-center gap-3 snap-start hover:scale-[1.02] cursor-pointer">
                                             <img
                                                 src={team.url || `https://a.espncdn.com/i/teamlogos/${team.sport.toLowerCase()}/500/${team.abbr?.toLowerCase()}.png`}
                                                 alt={team.name}
@@ -399,7 +405,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
 
 
                                         return (
-                                            <div key={player.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-0 flex relative overflow-hidden group hover:border-neutral-700 transition-colors h-[190px]">
+                                            <div key={player.id} className="premium-card p-0 flex relative overflow-hidden group h-[190px]">
                                                 {/* Number watermark */}
                                                 <div className="absolute top-1/2 -translate-y-1/2 right-4 text-[72px] font-black italic text-neutral-800/60 select-none z-0">
                                                     {jerseyNumber}
@@ -480,7 +486,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                     </h2>
                                     <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x">
                                         {aiPicks.map(bet => (
-                                            <div key={bet.id} className="min-w-[280px] sm:min-w-[320px] shrink-0 bg-neutral-900 border border-neutral-800 hover:border-orange-500/50 transition-colors rounded-xl p-5 flex flex-col h-full relative overflow-hidden group snap-start">
+                                            <div key={bet.id} className="min-w-[280px] sm:min-w-[320px] shrink-0 premium-card hover:scale-[1.01] p-5 flex flex-col h-full relative overflow-hidden group snap-start">
                                                 <div className="absolute -top-10 -right-10 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 transition-colors pointer-events-none"></div>
 
                                                 <div className="flex justify-between items-start mb-4 relative z-10">
@@ -548,7 +554,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                 <h2 className="text-lg font-black uppercase text-white tracking-wider flex items-center gap-2 mb-4">
                                     <span className="material-symbols-outlined text-primary">auto_awesome</span> Top Predictions for Your Teams
                                 </h2>
-                                <div className="bg-neutral-900 border border-primary/30 rounded-2xl relative overflow-hidden shadow-[0_0_30px_rgba(13,242,13,0.1)] mb-6">
+                                <div className="premium-card border-primary/25 relative overflow-hidden mb-6" style={{ boxShadow: '0 0 30px rgba(163,255,0,0.07), 0 0 0 1px rgba(163,255,0,0.08) inset' }}>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[50px] rounded-full pointer-events-none"></div>
                                     <div className="p-6 relative z-10">
                                     <div className="flex items-center justify-between mb-6">
@@ -601,7 +607,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                                         { title: "Point Guard cleared to return after 3-game absence", source: "NBC Sports", time: "5h ago", impact: "Positive" },
                                         { title: "Head coach discusses defensive strategy changes", source: "The Athletic", time: "8h ago", impact: "Low" }
                                     ].map((news, i) => (
-                                        <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex justify-between items-center group cursor-pointer hover:bg-neutral-800 transition-colors">
+                                        <div key={i} className="premium-card p-4 flex justify-between items-center group cursor-pointer hover:border-primary/20">
                                             <div className="space-y-1">
                                                 <h3 className="text-sm font-bold text-slate-200 group-hover:text-primary transition-colors">{news.title}</h3>
                                                 <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">{news.source} • {news.time}</p>
@@ -619,7 +625,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({ onNavigate
                             </section>
 
                             {/* Performance Radar */}
-                            <section className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 mb-8">
+                            <section className="premium-card p-5 mb-8">
                                 <h2 className="text-lg font-black uppercase text-white tracking-wider mb-2 flex items-center gap-2">
                                     <BarChart2 className="w-5 h-5" style={{ color: chartPrimary }} /> Performance Radar
                                 </h2>
