@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { fetchESPNScoreboardByDate, ESPNGame, ESPNTeamInfo, SportKey, fetchESPNRoster, ESPNRosterPlayer } from '../../data/espnScoreboard';
+import { fetchESPNScoreboardByDate, ESPNGame, ESPNTeamInfo, SportKey, fetchESPNRoster, ESPNRosterPlayer, buildESPNHeadshotUrl } from '../../data/espnScoreboard';
 import { generateAIPrediction } from '../../data/espnTeams';
 
 
@@ -205,7 +205,7 @@ const buildTeamTrend = (winProb: number, seedBase: string): TeamTrend => {
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface TeamRow { gameId: string; sport: string; sportLabel: string; gameDate: string; homeTeam: { name: string; abbr: string; logo: string; record: string; color: string }; awayTeam: { name: string; abbr: string; logo: string; record: string; color: string }; homePoints: number; awayPoints: number; homeSpread: string; awaySpread: string; homeEdge: number; awayEdge: number; total: string; homeWinProb: number; awayWinProb: number; kellyHome: number; kellyAway: number; aiMLHome: string; aiMLAway: string; vegasMLHome: string; vegasMLAway: string; status: string; rec: 'HOME' | 'AWAY' | 'PUSH'; conf: number; homeTrend: TeamTrend; awayTrend: TeamTrend; }
 
-interface PlayerRow { id: string; gameId: string; sport: string; sportLabel: string; gameDate: string; team: string; teamLogo: string; teamAltColor?: string; name: string; shortName: string; headshot: string; stats: Record<StatKey, number>; lastGame: Record<StatKey, number>; trends: Record<StatKey, GameTrend>; confidence: number; isTrending: boolean; trendingText: string; }
+interface PlayerRow { id: string; athleteId: string; gameId: string; sport: string; sportLabel: string; gameDate: string; team: string; teamLogo: string; teamAltColor?: string; name: string; shortName: string; headshot: string; stats: Record<StatKey, number>; lastGame: Record<StatKey, number>; trends: Record<StatKey, GameTrend>; confidence: number; isTrending: boolean; trendingText: string; }
 
 // ── Interfaces / sub-components ───────────────────────────────────────────────
 const WinGauge: React.FC<{ prob: number; abbr: string }> = ({ prob, abbr }) => {
@@ -329,8 +329,18 @@ const LastGamePopup: React.FC<{ player: PlayerRow; anchorRect: DOMRect; onClose:
             {/* Header */}
             <div className="px-4 py-3 border-b border-border-muted flex items-center gap-3 bg-gradient-to-r from-neutral-900 to-neutral-950">
                 <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-800 shrink-0 ring-2 ring-primary/30">
-                    {player.headshot
-                        ? <img src={player.headshot} alt={player.shortName} className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} />
+                    {player.headshot || player.athleteId
+                        ? <img
+                            src={player.headshot || buildESPNHeadshotUrl(player.athleteId, player.sport as SportKey)}
+                            alt={player.shortName}
+                            className="h-full w-full object-cover"
+                            onError={e => {
+                                const img = e.currentTarget;
+                                // Try alternate ESPN CDN format if primary fails
+                                const alt = player.athleteId ? buildESPNHeadshotUrl(player.athleteId, player.sport as SportKey) : '';
+                                if (alt && img.src !== alt) { img.src = alt; } else { img.style.display = 'none'; }
+                            }}
+                          />
                         : <span className="material-symbols-outlined text-neutral-600 text-lg flex items-center justify-center h-full w-full">person</span>
                     }
                 </div>
@@ -582,8 +592,17 @@ const HotStreakPlayerCarousel: React.FC<{ players: PlayerRow[] }> = ({ players }
                             <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
                                 <div className={`relative shrink-0`}>
                                     <div className={`w-11 h-11 rounded-full overflow-hidden ring-2 ${isRank1 ? 'ring-yellow-400/50 shadow-[0_0_12px_rgba(234,179,8,0.3)]' : `ring-[var(--ring-col,rgba(249,115,22,0.3))]`}`}>
-                                        {p.headshot
-                                            ? <img src={p.headshot} alt={p.shortName} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                        {p.headshot || p.athleteId
+                                            ? <img
+                                                src={p.headshot || buildESPNHeadshotUrl(p.athleteId, p.sport as SportKey)}
+                                                alt={p.shortName}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    const img = e.currentTarget;
+                                                    const alt = p.athleteId ? buildESPNHeadshotUrl(p.athleteId, p.sport as SportKey) : '';
+                                                    if (alt && img.src !== alt) { img.src = alt; } else { img.style.display = 'none'; }
+                                                }}
+                                              />
                                             : <div className="w-full h-full bg-neutral-800 flex items-center justify-center"><span className="material-symbols-outlined text-neutral-500 text-lg">person</span></div>
                                         }
                                     </div>
@@ -760,23 +779,35 @@ export const PrecisionHubView: React.FC = () => {
 
             // Build a combined list: game leaders first, then top roster players
             // IMPORTANT: each entry must know which SPORT it belongs to
-            const combinedPlayers: { name: string; shortName: string; headshot: string; teamId: string }[] = [
-                // ESPN game leaders already have teamId
+            const combinedPlayers: { name: string; shortName: string; headshot: string; teamId: string; athleteId: string }[] = [
+                // ESPN game leaders already have teamId — athleteId extracted from headshot URL
                 ...game.leaders
                     .filter(l => l.name && l.teamId)
-                    .map(l => ({ name: l.name, shortName: l.shortName || l.name, headshot: l.headshot || '', teamId: l.teamId })),
-                // Roster players for the correct sport only
+                    .map(l => {
+                        // Extract ESPN athlete ID from headshot URL like .../full/4066336.png
+                        const hsMatch = l.headshot?.match(/\/full\/([\d]+)\.png/);
+                        return {
+                            name: l.name,
+                            shortName: l.shortName || l.name,
+                            headshot: l.headshot || '',
+                            teamId: l.teamId,
+                            athleteId: hsMatch?.[1] ?? '',
+                        };
+                    }),
+                // Roster players — ESPN API gives us player IDs directly
                 ...homePlayers.map(p => ({
                     name: p.displayName,
                     shortName: p.displayName,
-                    headshot: p.headshot || `https://a.espncdn.com/combiner/i?img=/i/headshots/${sportKey.toLowerCase().replace('soccer.', '')}/players/full/${p.id}.png&w=96&h=70&cb=1`,
-                    teamId: game.homeTeam.id
+                    headshot: p.headshot || buildESPNHeadshotUrl(p.id, sportKey),
+                    teamId: game.homeTeam.id,
+                    athleteId: p.id,
                 })),
                 ...awayPlayers.map(p => ({
                     name: p.displayName,
                     shortName: p.displayName,
-                    headshot: p.headshot || `https://a.espncdn.com/combiner/i?img=/i/headshots/${sportKey.toLowerCase().replace('soccer.', '')}/players/full/${p.id}.png&w=96&h=70&cb=1`,
-                    teamId: game.awayTeam.id
+                    headshot: p.headshot || buildESPNHeadshotUrl(p.id, sportKey),
+                    teamId: game.awayTeam.id,
+                    athleteId: p.id,
                 }))
             ];
 
@@ -801,12 +832,17 @@ export const PrecisionHubView: React.FC = () => {
                 const trendVal = topKey && trends[topKey] ? trends[topKey].l5 : 0;
                 const trendingText = trendVal > 0 ? `HOT: ${trendVal} avg / L5` : '';
                 
+                // Best headshot: use what we have, fall back to ESPN CDN using athleteId
+                const bestHeadshot = leader.headshot
+                    || (leader.athleteId ? buildESPNHeadshotUrl(leader.athleteId, sportKey) : '');
+
                 pRows.push({
                     id: dedupKey,
+                    athleteId: leader.athleteId || '',
                     gameId: game.id, sport: game.sport, sportLabel, gameDate,
                     team: t.abbreviation, teamLogo: t.logo,
                     name: leader.name, shortName: leader.shortName || leader.name,
-                    headshot: leader.headshot || '',
+                    headshot: bestHeadshot,
                     stats,
                     lastGame: buildLastGame(rng, gameDate, stats),
                     trends,
@@ -1124,7 +1160,19 @@ export const PrecisionHubView: React.FC = () => {
                                                                                             <div className="flex items-center gap-2">
                                                                                                 <div className="relative shrink-0">
                                                                                                     <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-800">
-                                                                                                        {row.headshot?<img src={row.headshot} alt={row.shortName} className="h-full w-full object-cover" onError={e=>{e.currentTarget.style.display='none'}} />:<span className="material-symbols-outlined text-neutral-600 text-sm flex items-center justify-center h-full w-full">person</span>}
+                                                                                                        {row.headshot || row.athleteId
+                                                                                                            ? <img
+                                                                                                                src={row.headshot || buildESPNHeadshotUrl(row.athleteId, row.sport as SportKey)}
+                                                                                                                alt={row.shortName}
+                                                                                                                className="h-full w-full object-cover"
+                                                                                                                onError={e => {
+                                                                                                                    const img = e.currentTarget;
+                                                                                                                    const alt = row.athleteId ? buildESPNHeadshotUrl(row.athleteId, row.sport as SportKey) : '';
+                                                                                                                    if (alt && img.src !== alt) { img.src = alt; } else { img.style.display = 'none'; }
+                                                                                                                }}
+                                                                                                              />
+                                                                                                            : <span className="material-symbols-outlined text-neutral-600 text-sm flex items-center justify-center h-full w-full">person</span>
+                                                                                                        }
                                                                                                     </div>
                                                                                                     <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-black rounded-full p-[2px] z-10 flex items-center justify-center shadow-sm border border-neutral-800/80">
                                                                                                         <img src={row.teamLogo} alt={row.team} className="w-full h-full object-contain drop-shadow-md" onError={e=>{e.currentTarget.style.opacity='0'}} />

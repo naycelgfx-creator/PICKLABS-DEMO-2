@@ -159,6 +159,35 @@ export interface ESPNGame {
 // Internal raw ESPN API shapes (loose typed for JSON deserialization)
 type RawObj = Record<string, unknown>;
 
+// ── ESPN CDN Headshot URL builder ──────────────────────────────────────────────
+// Maps SportKey → the sport directory used in ESPN's headshot CDN path.
+// e.g. NBA → 'nba', Soccer.EPL → 'soccer', CFB → 'football'
+const SPORT_TO_HEADSHOT_DIR: Partial<Record<SportKey, string>> = {
+    NBA: 'nba',
+    WNBA: 'wnba',
+    NFL: 'nfl',
+    MLB: 'mlb',
+    NHL: 'nhl',
+    CFB: 'college-football',
+    CBB: 'mens-college-basketball',
+    NCAAW: 'womens-college-basketball',
+    NCAAB: 'college-baseball',
+    'Soccer.EPL': 'soccer',
+    'Soccer.MLS': 'soccer',
+    'Soccer.UCL': 'soccer',
+    'Soccer.LALIGA': 'soccer',
+    'Soccer.BUNDESLIGA': 'soccer',
+    'Soccer.SERIEA': 'soccer',
+    'Soccer.LIGUE1': 'soccer',
+    'Soccer.LIGAMX': 'soccer',
+    UFC: 'mma',
+};
+
+export const buildESPNHeadshotUrl = (athleteId: string, sport: SportKey | string): string => {
+    const dir = SPORT_TO_HEADSHOT_DIR[sport as SportKey] ?? sport.toLowerCase().replace('soccer.', 'soccer').split('.')[0];
+    return `https://a.espncdn.com/i/headshots/${dir}/players/full/${athleteId}.png`;
+};
+
 // Parse a raw ESPN competition into our ESPNGame shape
 const parseCompetition = (event: RawObj, sport: SportKey): ESPNGame | null => {
     try {
@@ -220,12 +249,22 @@ const parseCompetition = (event: RawObj, sport: SportKey): ESPNGame | null => {
                         const athlete = pl.athlete as RawObj | undefined;
                         const pos = athlete?.position as RawObj | undefined;
                         const team = pl.team as RawObj | undefined;
+                        // ESPN headshot can be a plain string OR an object {href:string}
+                        const rawHs = athlete?.headshot;
+                        const headshotUrl: string = typeof rawHs === 'string'
+                            ? rawHs
+                            : typeof rawHs === 'object' && rawHs !== null
+                                ? String((rawHs as RawObj).href ?? '')
+                                : '';
+                        // If headshot is missing or blank, build ESPN CDN fallback from athlete id
+                        const athleteId = String(athlete?.id ?? '');
+                        const headshotFinal = headshotUrl || (athleteId ? buildESPNHeadshotUrl(athleteId, sport) : '');
                         return {
                             category: l.displayName as string,
                             name: (athlete?.fullName as string) ?? '',
                             shortName: (athlete?.shortName as string) ?? '',
                             displayValue: (pl.displayValue as string) ?? '',
-                            headshot: (athlete?.headshot as string) ?? '',
+                            headshot: headshotFinal,
                             position: (pos?.abbreviation as string) ?? '',
                             teamId: (team?.id as string) ?? '',
                         };
@@ -416,20 +455,14 @@ export async function fetchESPNRoster(sport: string, teamId: string): Promise<ES
         NFL: 'football/nfl',
         MLB: 'baseball/mlb',
         NHL: 'hockey/nhl',
-        // College Basketball (men)
         CBB: 'basketball/mens-college-basketball',
         NCAAM: 'basketball/mens-college-basketball',
-        // College Basketball (women)
         NCAAW: 'basketball/womens-college-basketball',
         NCAAAW: 'basketball/womens-college-basketball',
-        // College Baseball
         NCAAB: 'baseball/college-baseball',
-        // College Football
         CFB: 'football/college-football',
         NCAAF: 'football/college-football',
-        // WNBA
         WNBA: 'basketball/wnba',
-        // Soccer leagues — keys match SportKey enum
         'Soccer.EPL': 'soccer/eng.1',
         'Soccer.MLS': 'soccer/usa.1',
         'Soccer.LaLiga': 'soccer/esp.1',
@@ -438,14 +471,25 @@ export async function fetchESPNRoster(sport: string, teamId: string): Promise<ES
         'Soccer.Ligue1': 'soccer/fra.1',
         'Soccer.UCL': 'soccer/uefa.champions',
         'Soccer.LIGAMX': 'soccer/mex.1',
-        // WBC
         WBC: 'baseball/wbc',
         'Baseball.WBC': 'baseball/wbc',
-        // Plain fallbacks
         Soccer: 'soccer/eng.1',
     };
     const league = ESPN_LEAGUE[sport];
     if (!league) return [];
+    // The sport directory for ESPN headshot CDN is the top-level sport, not the league slug
+    // e.g.  'basketball/nba' → 'nba'   |  'soccer/eng.1' → 'soccer'
+    const headshotSportDir = (() => {
+        // Special cases where CDN dir differs from URL sport part
+        if (league.startsWith('basketball/')) return league.split('/')[1]; // nba, wnba, mens-college-basketball, etc.
+        if (league.startsWith('football/')) return league.split('/')[1];   // nfl, college-football
+        if (league.startsWith('baseball/')) return league.split('/')[1];   // mlb, college-baseball, wbc
+        if (league.startsWith('hockey/')) return 'nhl';
+        if (league.startsWith('soccer/')) return 'soccer';
+        if (league.startsWith('mma/')) return 'mma';
+        return league.split('/')[0];
+    })();
+
     try {
         const url = `https://site.api.espn.com/apis/site/v2/sports/${league}/teams/${teamId}/roster`;
         const res = await fetch(url);
@@ -454,14 +498,18 @@ export async function fetchESPNRoster(sport: string, teamId: string): Promise<ES
         const athletes: ESPNRosterPlayer[] = [];
         const groups = json.athletes || [];
         for (const group of groups) {
-            // Handle both flat array (NBA) and nested items array (MLB/NFL/NHL)
             const playerList = group.items ? group.items : [group];
             for (const item of playerList) {
                 if (!item.id) continue;
-                // ESPN CDN headshots use sport-level dirs like 'basketball', 'soccer', 'football'
-                // NOT the league sub-path like 'eng.1' or 'nba'
-                const headshotSportDir = league ? league.split('/')[0] : sport.toLowerCase();
-                const photoUrl = item.headshot?.href || `https://a.espncdn.com/i/headshots/${headshotSportDir}/players/full/${item.id}.png`;
+                // Handle headshot being either a plain string, an object {href}, or missing
+                const rawHs = item.headshot;
+                const headshotFromAPI: string = typeof rawHs === 'string'
+                    ? rawHs
+                    : typeof rawHs === 'object' && rawHs !== null
+                        ? String(rawHs.href ?? '')
+                        : '';
+                // Always prefer the real headshot; fall back to ESPN CDN by player ID
+                const photoUrl = headshotFromAPI || `https://a.espncdn.com/i/headshots/${headshotSportDir}/players/full/${item.id}.png`;
 
                 athletes.push({
                     id: item.id,
@@ -473,7 +521,7 @@ export async function fetchESPNRoster(sport: string, teamId: string): Promise<ES
                 });
             }
         }
-        return athletes.slice(0, 20); // top 20 per team
+        return athletes.slice(0, 20);
     } catch {
         return [];
     }
