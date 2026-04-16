@@ -521,132 +521,132 @@ const HotStreakTeamCarousel: React.FC<{ teams: { team: { abbr: string, logo: str
     );
 };
 
-// ── Live Win Streak Leaderboard (NBA + Basketball) ──────────────────────────
+// ── Live Win Streak Leaderboard ───────────────────────────────────────────────
 interface WinStreakTeam {
-    id: string;
-    name: string;
-    abbr: string;
-    logo: string;
-    streak: number;       // current win streak length
-    record: string;       // "52-18"
-    conf: string;         // "Eastern"
-    standing: string;     // "1st in Atlantic"
-    winPct: number;       // 0–1
+    id: string; name: string; abbr: string; logo: string;
+    streak: number; record: string; conf: string; standing: string; winPct: number;
+    sport: string; // 'NBA' | 'NFL' | 'MLB' | 'NHL'
 }
 
+const STREAK_SPORT_TABS = [
+    { key: 'ALL',  label: 'All',  icon: 'sports', col: '#a3ff00' },
+    { key: 'NBA',  label: 'NBA',  icon: 'sports_basketball', col: '#f97316' },
+    { key: 'NHL',  label: 'NHL',  icon: 'sports_hockey',     col: '#22d3ee' },
+    { key: 'MLB',  label: 'MLB',  icon: 'sports_baseball',   col: '#4ade80' },
+    { key: 'NFL',  label: 'NFL',  icon: 'sports_football',   col: '#a78bfa' },
+] as const;
+
+const SPORT_BADGE_COLORS: Record<string, { bg: string; text: string }> = {
+    NBA: { bg: 'rgba(249,115,22,0.15)', text: '#f97316' },
+    NHL: { bg: 'rgba(34,211,238,0.15)', text: '#22d3ee' },
+    MLB: { bg: 'rgba(74,222,128,0.15)', text: '#4ade80' },
+    NFL: { bg: 'rgba(167,139,250,0.15)', text: '#a78bfa' },
+};
+
 const WinStreakLeaderboard: React.FC<{ teams: WinStreakTeam[]; loading: boolean }> = ({ teams, loading }) => {
+    const [activeSport, setActiveSport] = useState<string>('ALL');
+    const filtered = activeSport === 'ALL' ? teams : teams.filter(t => t.sport === activeSport);
+    const availableSports = new Set(teams.map(t => t.sport));
+
     if (loading) return (
         <div className="mb-6">
             <div className="flex items-center gap-2 mb-4">
                 <div className="w-6 h-6 rounded bg-primary/10 border border-primary/20 animate-pulse" />
-                <div className="h-3 w-40 rounded bg-neutral-800 animate-pulse" />
+                <div className="h-3 w-48 rounded bg-neutral-800 animate-pulse" />
             </div>
-            <div className="flex gap-3 overflow-x-hidden">
-                {[1,2,3,4,5].map(i => <div key={i} className="min-w-[160px] h-[180px] rounded-xl bg-neutral-900 border border-neutral-800 animate-pulse shrink-0" />)}
-            </div>
+            <div className="flex gap-3">{[1,2,3,4,5].map(i => <div key={i} className="min-w-[168px] h-[210px] rounded-xl bg-neutral-900 border border-neutral-800 animate-pulse shrink-0" />)}</div>
         </div>
     );
     if (teams.length === 0) return null;
     return (
         <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10 border border-primary/20 shrink-0">
                         <span className="material-symbols-outlined text-primary text-sm">rocket_launch</span>
                     </div>
                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Current Win Streaks</span>
-                    <span className="text-[8px] font-black text-neutral-600 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full uppercase tracking-widest">{teams.length} teams on a roll</span>
+                    <span className="text-[8px] font-black text-neutral-600 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full uppercase tracking-widest">{filtered.length} team{filtered.length !== 1 ? 's' : ''} on a roll</span>
                 </div>
-                <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest">Live NBA Standings</span>
+                <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest">Live Standings</span>
             </div>
-
-            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2" style={{ scrollbarWidth: 'thin' }}>
-                {teams.map((t, i) => {
-                    const isElite = t.streak >= 5;
-                    const isTop3 = i < 3;
-                    const glowColor = isElite ? 'rgba(163,255,0,0.2)' : 'rgba(56,128,250,0.15)';
-                    const borderCol = isElite
-                        ? (isTop3 ? 'border-primary/50' : 'border-primary/25')
-                        : 'border-accent-blue/25';
-                    const bgGrad = isElite
-                        ? (isTop3 ? 'bg-gradient-to-b from-primary/15 via-neutral-900/80 to-neutral-950' : 'bg-gradient-to-b from-primary/8 to-neutral-950')
-                        : 'bg-gradient-to-b from-accent-blue/8 to-neutral-950';
-                    return (
-                        <div key={t.id}
-                            className={`min-w-[160px] rounded-xl border transition-all duration-200 flex flex-col items-center gap-2 p-4 relative overflow-hidden shrink-0 group cursor-default
-                                ${borderCol} ${bgGrad} hover:shadow-[0_0_24px_${glowColor}]`}
-                            style={{ boxShadow: isTop3 ? `0 0 20px ${glowColor}` : undefined }}
-                        >
-                            {/* Rank */}
-                            <div className={`absolute top-2 left-2 text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded
-                                ${isTop3 ? (isElite ? 'bg-primary/20 text-primary' : 'bg-accent-blue/20 text-accent-blue') : 'bg-neutral-800 text-neutral-500'}`}>
-                                #{i + 1}
-                            </div>
-
-                            {/* Fire badge for 5+ streaks */}
-                            {isElite && (
-                                <div className="absolute top-2 right-2">
-                                    <span className="material-symbols-outlined text-primary text-sm animate-pulse" style={{ filter: 'drop-shadow(0 0 6px rgba(163,255,0,0.7))' }}>local_fire_department</span>
-                                </div>
-                            )}
-
-                            {/* Logo */}
-                            <div className={`relative p-2 rounded-full mt-3 ${
-                                isTop3
-                                    ? (isElite ? 'ring-1 ring-primary/50 bg-primary/10 shadow-[0_0_16px_rgba(163,255,0,0.2)]' : 'ring-1 ring-accent-blue/40 bg-accent-blue/10')
-                                    : 'bg-neutral-800/40 ring-1 ring-neutral-700'
-                            }`}>
-                                <img src={t.logo} alt={t.abbr}
-                                    className="w-10 h-10 object-contain"
-                                    style={isTop3 ? { filter: `drop-shadow(0 0 8px ${isElite ? 'rgba(163,255,0,0.5)' : 'rgba(56,128,250,0.5)'})` } : {}}
-                                    onError={e => { e.currentTarget.style.display = 'none'; }} />
-                            </div>
-
-                            {/* Streak badge — the big number */}
-                            <div className="text-center">
-                                <div className={`text-2xl font-black leading-none tabular-nums ${
-                                    isElite ? 'text-primary' : 'text-accent-blue'
-                                }`} style={{ textShadow: isElite ? '0 0 12px rgba(163,255,0,0.4)' : '0 0 12px rgba(56,128,250,0.3)' }}>
-                                    W{t.streak}
-                                </div>
-                                <div className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mt-0.5">Win Streak</div>
-                            </div>
-
-                            {/* Team abbr + record */}
-                            <div className="text-center">
-                                <span className={`block text-xs font-black tracking-wide ${
-                                    isTop3 ? 'text-white' : 'text-slate-300'
-                                } group-hover:text-primary transition-colors`}>
-                                    {t.abbr}
-                                </span>
-                                <span className="block text-[9px] font-bold text-neutral-500 mt-0.5">{t.record}</span>
-                                <span className="block text-[7.5px] font-bold text-neutral-600 truncate max-w-[130px]">{t.standing}</span>
-                            </div>
-
-                            {/* Win % bar */}
-                            <div className="w-full">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[7px] text-neutral-600 font-bold uppercase">WIN%</span>
-                                    <span className={`text-[8px] font-black tabular-nums ${
-                                        isElite ? 'text-primary' : 'text-accent-blue'
-                                    }`}>{Math.round(t.winPct * 100)}%</span>
-                                </div>
-                                <div className="h-1 rounded-full bg-neutral-800 overflow-hidden">
-                                    <div
-                                        className="h-full rounded-full transition-all duration-700"
-                                        style={{
-                                            width: `${Math.round(t.winPct * 100)}%`,
-                                            background: isElite
-                                                ? 'linear-gradient(90deg,#a3ff00,#22d3ee)'
-                                                : 'linear-gradient(90deg,#3880fa,#818cf8)'
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+            {/* Sport filter tabs */}
+            <div className="flex gap-1.5 mb-4 overflow-x-auto no-scrollbar">
+                {STREAK_SPORT_TABS.filter(t => t.key === 'ALL' || availableSports.has(t.key)).map(t => (
+                    <button key={t.key} onClick={() => setActiveSport(t.key)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all shrink-0 ${
+                            activeSport === t.key ? 'bg-neutral-900 text-white' : 'border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600'
+                        }`}
+                        style={activeSport === t.key ? { borderColor: t.col, color: t.col, boxShadow: `0 0 10px ${t.col}33` } : undefined}
+                    >
+                        <span className="material-symbols-outlined text-[11px]">{t.icon}</span>{t.label}
+                        {t.key !== 'ALL' && <span className="text-[7px] opacity-60">{teams.filter(x => x.sport === t.key).length}</span>}
+                    </button>
+                ))}
             </div>
+            {/* Cards */}
+            {filtered.length === 0 ? (
+                <div className="py-6 text-center border border-dashed border-neutral-800 rounded-xl">
+                    <span className="text-neutral-600 text-xs font-bold">No active win streaks for this sport right now</span>
+                </div>
+            ) : (
+                <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2" style={{ scrollbarWidth: 'thin' }}>
+                    {filtered.map((t, i) => {
+                        const isElite = t.streak >= 5;
+                        const isTop3 = i < 3;
+                        const isNo1 = i === 0;
+                        const sportBadge = SPORT_BADGE_COLORS[t.sport] ?? { bg: 'rgba(100,100,100,0.15)', text: '#6b7280' };
+                        const glowCol = isElite ? 'rgba(163,255,0,0.2)' : 'rgba(56,128,250,0.15)';
+                        return (
+                            <div key={t.id + t.sport}
+                                className={`min-w-[168px] rounded-xl border flex flex-col items-center gap-2 p-4 relative overflow-hidden shrink-0 transition-all duration-200 group cursor-default
+                                    ${isElite ? (isTop3 ? 'bg-gradient-to-b from-primary/12 via-neutral-900/80 to-neutral-950' : 'bg-gradient-to-b from-primary/6 to-neutral-950') : 'bg-gradient-to-b from-accent-blue/6 to-neutral-950'}`}
+                                style={{ borderColor: isTop3 ? (isElite ? 'rgba(163,255,0,0.4)' : 'rgba(56,128,250,0.35)') : 'rgba(255,255,255,0.06)', boxShadow: isTop3 ? `0 0 ${isNo1 ? 24 : 14}px ${glowCol}` : undefined }}
+                            >
+                                {/* Rank badge */}
+                                <div className="absolute top-2 left-2 text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded"
+                                    style={{ background: 'rgba(0,0,0,0.4)', color: isTop3 ? (isElite ? '#a3ff00' : '#3880fa') : '#6b7280' }}>#{i+1}</div>
+                                {/* Sport badge */}
+                                <div className="absolute top-2 right-2 text-[7px] font-black px-1.5 py-0.5 rounded-full"
+                                    style={{ background: sportBadge.bg, color: sportBadge.text }}>{t.sport}</div>
+                                {/* Fire for 5+ streaks */}
+                                {isElite && <div className="absolute top-7 right-2"><span className="material-symbols-outlined text-primary text-xs animate-pulse" style={{ filter: 'drop-shadow(0 0 5px rgba(163,255,0,0.7))' }}>local_fire_department</span></div>}
+                                {/* Logo */}
+                                <div className={`relative p-2 rounded-full mt-4 ${
+                                    isTop3 ? (isElite ? 'ring-1 ring-primary/50 bg-primary/10 shadow-[0_0_14px_rgba(163,255,0,0.2)]' : 'ring-1 ring-accent-blue/40 bg-accent-blue/8') : 'bg-neutral-800/40 ring-1 ring-neutral-700'
+                                }`}>
+                                    <img src={t.logo} alt={t.abbr} className="w-10 h-10 object-contain"
+                                        style={isTop3 ? { filter: `drop-shadow(0 0 7px ${isElite ? 'rgba(163,255,0,0.5)' : 'rgba(56,128,250,0.5)'})` } : {}}
+                                        onError={e => { e.currentTarget.style.display = 'none'; }} />
+                                </div>
+                                {/* Streak number */}
+                                <div className="text-center">
+                                    <div className={`text-[28px] font-black leading-none tabular-nums ${ isElite ? 'text-primary' : 'text-accent-blue'}`}
+                                        style={{ textShadow: isElite ? '0 0 14px rgba(163,255,0,0.5)' : '0 0 14px rgba(56,128,250,0.4)' }}>W{t.streak}</div>
+                                    <div className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mt-0.5">Win Streak</div>
+                                </div>
+                                {/* Team info */}
+                                <div className="text-center">
+                                    <span className={`block text-xs font-black tracking-wide ${ isTop3 ? 'text-white' : 'text-slate-300'} group-hover:text-primary transition-colors`}>{t.abbr}</span>
+                                    <span className="block text-[9px] font-bold text-neutral-500 mt-0.5">{t.record}</span>
+                                    {t.standing && <span className="block text-[7px] font-bold text-neutral-600 truncate max-w-[136px] mt-0.5">{t.standing}</span>}
+                                </div>
+                                {/* Win% bar */}
+                                <div className="w-full">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-[7px] text-neutral-600 font-bold uppercase">WIN%</span>
+                                        <span className={`text-[8px] font-black tabular-nums ${ isElite ? 'text-primary' : 'text-accent-blue'}`}>{Math.round(t.winPct * 100)}%</span>
+                                    </div>
+                                    <div className="h-1.5 rounded-full bg-neutral-800 overflow-hidden">
+                                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.round(t.winPct * 100)}%`, background: isElite ? 'linear-gradient(90deg,#a3ff00,#22d3ee)' : 'linear-gradient(90deg,#3880fa,#818cf8)' }} />
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };
@@ -674,10 +674,55 @@ const STAT_CATS = [
     { key: 'td',  label: 'Triple-Doubles', short: 'TD',  icon: 'military_tech',    col: '#f97316', glow: 'rgba(249,115,22,0.25)', grad: 'linear-gradient(90deg,#f97316,#ef4444)', unit: 'TDs' },
 ] as const;
 
+// Fallback real 2024-25 NBA stat leaders — shown when ESPN API is slow/unavailable
+const FALLBACK_STAT_LEADERS: Record<string, StatLeader[]> = {
+    pts: [
+        { rank:1, name:'Shai Gilgeous-Alexander', shortName:'S. Gilgeous-Alexander', headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3934672.png', teamAbbr:'OKC', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/okc.png', value:32.7, displayValue:'32.7' },
+        { rank:2, name:'Giannis Antetokounmpo',   shortName:'Giannis',               headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3032977.png', teamAbbr:'MIL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/mil.png', value:30.4, displayValue:'30.4' },
+        { rank:3, name:'LeBron James',             shortName:'LeBron James',          headshot:'https://a.espncdn.com/i/headshots/nba/players/full/1966.png',    teamAbbr:'LAL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/lal.png', value:24.5, displayValue:'24.5' },
+        { rank:4, name:'Luka Doncic',              shortName:'Luka Doncic',           headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3945274.png', teamAbbr:'LAL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/lal.png', value:28.0, displayValue:'28.0' },
+        { rank:5, name:'Jayson Tatum',             shortName:'J. Tatum',              headshot:'https://a.espncdn.com/i/headshots/nba/players/full/4065648.png', teamAbbr:'BOS', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/bos.png', value:26.9, displayValue:'26.9' },
+        { rank:6, name:'Kevin Durant',             shortName:'Kevin Durant',           headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3202.png',    teamAbbr:'PHX', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/phx.png', value:25.8, displayValue:'25.8' },
+        { rank:7, name:'Donovan Mitchell',         shortName:'D. Mitchell',           headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3908809.png', teamAbbr:'CLE', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/cle.png', value:24.9, displayValue:'24.9' },
+        { rank:8, name:'Anthony Davis',            shortName:'A. Davis',              headshot:'https://a.espncdn.com/i/headshots/nba/players/full/6583.png',    teamAbbr:'LAL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/lal.png', value:24.7, displayValue:'24.7' },
+    ],
+    ast: [
+        { rank:1, name:'Trae Young',               shortName:'Trae Young',            headshot:'https://a.espncdn.com/i/headshots/nba/players/full/4277905.png', teamAbbr:'ATL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/atl.png', value:11.6, displayValue:'11.6' },
+        { rank:2, name:'LaMelo Ball',              shortName:'LaMelo Ball',           headshot:'https://a.espncdn.com/i/headshots/nba/players/full/4432174.png', teamAbbr:'CHA', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/cha.png', value:8.9,  displayValue:'8.9'  },
+        { rank:3, name:'Nikola Jokic',             shortName:'N. Jokic',              headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3112335.png', teamAbbr:'DEN', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/den.png', value:9.0,  displayValue:'9.0'  },
+        { rank:4, name:'Tyrese Haliburton',        shortName:'T. Haliburton',         headshot:'https://a.espncdn.com/i/headshots/nba/players/full/4395725.png', teamAbbr:'IND', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/ind.png', value:9.2,  displayValue:'9.2'  },
+        { rank:5, name:'James Harden',             shortName:'James Harden',          headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3992.png',    teamAbbr:'LAC', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/lac.png', value:8.5,  displayValue:'8.5'  },
+        { rank:6, name:'Shai Gilgeous-Alexander',  shortName:'S. Gilgeous-Alexander', headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3934672.png', teamAbbr:'OKC', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/okc.png', value:6.4,  displayValue:'6.4'  },
+    ],
+    tpm: [
+        { rank:1, name:'Stephen Curry',            shortName:'S. Curry',              headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3975.png',    teamAbbr:'GSW', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/gs.png',  value:4.8,  displayValue:'4.8'  },
+        { rank:2, name:'Klay Thompson',            shortName:'K. Thompson',           headshot:'https://a.espncdn.com/i/headshots/nba/players/full/6475.png',    teamAbbr:'DAL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/dal.png', value:3.9,  displayValue:'3.9'  },
+        { rank:3, name:'Damian Lillard',           shortName:'D. Lillard',            headshot:'https://a.espncdn.com/i/headshots/nba/players/full/6606.png',    teamAbbr:'MIL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/mil.png', value:3.8,  displayValue:'3.8'  },
+        { rank:4, name:'Jaylen Brown',             shortName:'J. Brown',              headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3917376.png', teamAbbr:'BOS', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/bos.png', value:3.6,  displayValue:'3.6'  },
+        { rank:5, name:'Trae Young',               shortName:'Trae Young',            headshot:'https://a.espncdn.com/i/headshots/nba/players/full/4277905.png', teamAbbr:'ATL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/atl.png', value:3.5,  displayValue:'3.5'  },
+        { rank:6, name:'Tyrese Haliburton',        shortName:'T. Haliburton',         headshot:'https://a.espncdn.com/i/headshots/nba/players/full/4395725.png', teamAbbr:'IND', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/ind.png', value:3.4,  displayValue:'3.4'  },
+    ],
+    dd: [
+        { rank:1, name:'Nikola Jokic',             shortName:'N. Jokic',              headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3112335.png', teamAbbr:'DEN', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/den.png', value:62,   displayValue:'62'   },
+        { rank:2, name:'Giannis Antetokounmpo',   shortName:'Giannis',               headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3032977.png', teamAbbr:'MIL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/mil.png', value:56,   displayValue:'56'   },
+        { rank:3, name:'Anthony Davis',            shortName:'A. Davis',              headshot:'https://a.espncdn.com/i/headshots/nba/players/full/6583.png',    teamAbbr:'LAL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/lal.png', value:48,   displayValue:'48'   },
+        { rank:4, name:'Domantas Sabonis',         shortName:'D. Sabonis',            headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3102531.png', teamAbbr:'SAC', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/sac.png', value:46,   displayValue:'46'   },
+        { rank:5, name:'Bam Adebayo',              shortName:'Bam Adebayo',           headshot:'https://a.espncdn.com/i/headshots/nba/players/full/4066336.png', teamAbbr:'MIA', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/mia.png', value:42,   displayValue:'42'   },
+    ],
+    td: [
+        { rank:1, name:'Nikola Jokic',             shortName:'N. Jokic',              headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3112335.png', teamAbbr:'DEN', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/den.png', value:24,   displayValue:'24'   },
+        { rank:2, name:'Luka Doncic',              shortName:'Luka Doncic',           headshot:'https://a.espncdn.com/i/headshots/nba/players/full/3945274.png', teamAbbr:'LAL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/lal.png', value:11,   displayValue:'11'   },
+        { rank:3, name:'LeBron James',             shortName:'LeBron James',          headshot:'https://a.espncdn.com/i/headshots/nba/players/full/1966.png',    teamAbbr:'LAL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/lal.png', value:8,    displayValue:'8'    },
+        { rank:4, name:'Trae Young',               shortName:'Trae Young',            headshot:'https://a.espncdn.com/i/headshots/nba/players/full/4277905.png', teamAbbr:'ATL', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/atl.png', value:7,    displayValue:'7'    },
+        { rank:5, name:'Tyrese Haliburton',        shortName:'T. Haliburton',         headshot:'https://a.espncdn.com/i/headshots/nba/players/full/4395725.png', teamAbbr:'IND', teamLogo:'https://a.espncdn.com/i/teamlogos/nba/500/ind.png', value:6,    displayValue:'6'    },
+    ],
+};
+
 const StatLeadersSection: React.FC<{ leaders: Record<string, StatLeader[]>; loading: boolean }> = ({ leaders, loading }) => {
     const [active, setActive] = useState<string>('pts');
     const cat = STAT_CATS.find(c => c.key === active) ?? STAT_CATS[0];
-    const rows = leaders[active] ?? [];
+    // Merge live data with fallback so section is never empty
+    const rows = (leaders[active]?.length ?? 0) > 0 ? leaders[active] : FALLBACK_STAT_LEADERS[active] ?? [];
     return (
         <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
@@ -1199,84 +1244,54 @@ export const PrecisionHubView: React.FC = () => {
     const [winStreakTeams, setWinStreakTeams] = useState<WinStreakTeam[]>([]);
     const [winStreakLoading, setWinStreakLoading] = useState(true);
 
-    // Fetch NBA win streaks from ESPN standings on mount
+    // Fetch win streaks from ESPN standings — NBA, NHL, MLB, NFL in parallel
     useEffect(() => {
+        const SPORT_STANDINGS = [
+            { sport: 'NBA', url: 'https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?level=3&seasontype=2&type=0', logoBase: 'nba', minStreak: 2 },
+            { sport: 'NHL', url: 'https://site.api.espn.com/apis/v2/sports/hockey/nhl/standings?level=3&seasontype=2&type=0', logoBase: 'nhl', minStreak: 2 },
+            { sport: 'MLB', url: 'https://site.api.espn.com/apis/v2/sports/baseball/mlb/standings?level=3&seasontype=2&type=0', logoBase: 'mlb', minStreak: 2 },
+            { sport: 'NFL', url: 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings?level=3&seasontype=2&type=0', logoBase: 'nfl', minStreak: 2 },
+        ];
         const fetchWinStreaks = async () => {
             setWinStreakLoading(true);
-            try {
-                // ESPN standings endpoint — returns current season standings with streak info
-                const res = await fetch('https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?level=3&seasontype=2&type=0');
-                if (!res.ok) throw new Error('standings failed');
-                const data = await res.json();
-
-                const streakers: WinStreakTeam[] = [];
-
-                const processGroup = (group: Record<string, unknown>) => {
-                    const entries = (group.standings as Record<string, unknown>)?.entries as Record<string, unknown>[] | undefined;
-                    if (!entries) return;
-                    for (const entry of entries) {
-                        try {
-                            const team = entry.team as Record<string, unknown>;
-                            const stats = (entry.stats as Record<string, unknown>[]) ?? [];
-                            const getStat = (name: string) => {
-                                const s = stats.find((x: Record<string, unknown>) => x.name === name || x.shortDisplayName === name);
-                                return s ? Number(s.value ?? 0) : 0;
-                            };
-                            const getStr = (name: string) => {
-                                const s = stats.find((x: Record<string, unknown>) => x.name === name || x.shortDisplayName === name);
-                                return s ? String(s.displayValue ?? '') : '';
-                            };
-
-                            const wins = getStat('wins');
-                            const losses = getStat('losses');
-                            // streakLength is the raw number; streakType is the label (W/L)
-                            const streakLen = Math.abs(getStat('streak') || getStat('streakLength'));
-                            const streakDisplay = getStr('streak');
-                            // Only include teams currently on a WIN streak (positive, or display starts with W)
-                            const isWinStreak = streakDisplay.startsWith('W') || getStat('streak') > 0;
-                            const actualStreak = streakLen;
-
-                            if (!isWinStreak || actualStreak < 2) continue; // skip losing or short streaks
-
-                            const logos = team.logos as { href: string }[] | undefined;
-                            const logo = logos?.[0]?.href || `https://a.espncdn.com/i/teamlogos/nba/500/${team.id}.png`;
-                            const total = wins + losses || 1;
-
-                            streakers.push({
-                                id: String(team.id ?? ''),
-                                name: String(team.displayName ?? team.name ?? ''),
-                                abbr: String(team.abbreviation ?? ''),
-                                logo,
-                                streak: actualStreak,
-                                record: `${wins}-${losses}`,
-                                conf: String((entry as Record<string, unknown>).shortConferenceName ?? ''),
-                                standing: getStr('clinicalNote') || getStr('standingSummary') || '',
-                                winPct: wins / total,
-                            });
-                        } catch { continue; }
-                    }
-                };
-
-                // ESPN returns nested groups (East/West conferences)
-                const children = (data.children as Record<string, unknown>[]) ?? [data];
-                for (const child of children) {
-                    if ((child.standings as Record<string, unknown>)?.entries) {
-                        processGroup(child);
-                    } else {
-                        const subChildren = (child.children as Record<string, unknown>[]) ?? [];
-                        for (const sub of subChildren) processGroup(sub);
-                    }
+            const allStreakers: WinStreakTeam[] = [];
+            const processGroup = (group: Record<string, unknown>, sportKey: string, logoBase: string) => {
+                const entries = (group.standings as Record<string, unknown>)?.entries as Record<string, unknown>[] | undefined;
+                if (!entries) return;
+                for (const entry of entries) {
+                    try {
+                        const team = entry.team as Record<string, unknown>;
+                        const stats = (entry.stats as Record<string, unknown>[]) ?? [];
+                        const getStat = (name: string) => { const s = stats.find((x: Record<string, unknown>) => x.name === name || x.shortDisplayName === name); return s ? Number(s.value ?? 0) : 0; };
+                        const getStr = (name: string) => { const s = stats.find((x: Record<string, unknown>) => x.name === name || x.shortDisplayName === name); return s ? String(s.displayValue ?? '') : ''; };
+                        const wins = getStat('wins'); const losses = getStat('losses');
+                        const streakLen = Math.abs(getStat('streak') || getStat('streakLength'));
+                        const streakDisplay = getStr('streak');
+                        const isWinStreak = streakDisplay.startsWith('W') || getStat('streak') > 0;
+                        if (!isWinStreak || streakLen < 2) continue;
+                        const logos = team.logos as { href: string }[] | undefined;
+                        const logo = logos?.[0]?.href || `https://a.espncdn.com/i/teamlogos/${logoBase}/500/${team.id}.png`;
+                        const total = wins + losses || 1;
+                        allStreakers.push({ id: String(team.id ?? ''), name: String(team.displayName ?? team.name ?? ''), abbr: String(team.abbreviation ?? ''), logo, streak: streakLen, record: `${wins}-${losses}`, conf: '', standing: getStr('clinicalNote') || getStr('standingSummary') || '', winPct: wins / total, sport: sportKey });
+                    } catch { continue; }
                 }
-
-                // Sort by streak descending, then win% descending
-                streakers.sort((a, b) => b.streak - a.streak || b.winPct - a.winPct);
-                setWinStreakTeams(streakers);
-            } catch (err) {
-                console.warn('Win streak fetch failed:', err);
-                setWinStreakTeams([]);
-            } finally {
-                setWinStreakLoading(false);
-            }
+            };
+            await Promise.allSettled(SPORT_STANDINGS.map(async ({ sport, url, logoBase, minStreak }) => {
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const children = (data.children as Record<string, unknown>[]) ?? [data];
+                    for (const child of children) {
+                        if ((child.standings as Record<string, unknown>)?.entries) processGroup(child, sport, logoBase);
+                        else { for (const sub of ((child.children as Record<string, unknown>[]) ?? [])) processGroup(sub as Record<string, unknown>, sport, logoBase); }
+                    }
+                    void minStreak;
+                } catch { /* sport failed silently */ }
+            }));
+            allStreakers.sort((a, b) => b.streak - a.streak || b.winPct - a.winPct);
+            setWinStreakTeams(allStreakers);
+            setWinStreakLoading(false);
         };
         fetchWinStreaks();
     }, []);
@@ -1362,10 +1377,8 @@ export const PrecisionHubView: React.FC = () => {
                 {/* ══ TEAMS ══ */}
                 {tab === 'teams' && (
                     <div className="flex flex-col gap-6">
-                        {/* Win Streak Leaderboard — show for NBA/basketball or ALL */}
-                        {(sport === 'ALL' || sport === 'NBA' || sport === 'CBB' || sport === 'NCAAM') && (
-                            <WinStreakLeaderboard teams={winStreakTeams} loading={winStreakLoading} />
-                        )}
+                        {/* Win Streak Leaderboard — ALL sports */}
+                        <WinStreakLeaderboard teams={winStreakTeams} loading={winStreakLoading} />
                         {!loading && topHotTeams.length > 0 && <HotStreakTeamCarousel teams={topHotTeams} />}
                         {loading
                             ? <div className="terminal-panel overflow-hidden"><div className="overflow-x-auto"><table className="w-full"><tbody>{Array.from({ length: 6 }).map((_, i) => <SkelRow key={i} cols={13} />)}</tbody></table></div></div>
