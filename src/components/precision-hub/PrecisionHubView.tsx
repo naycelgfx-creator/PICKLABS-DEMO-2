@@ -664,6 +664,95 @@ const ACHIEVEMENT_CONFIG: Record<string, { icon: string; color: string; bg: stri
     'Trending Up': { icon: 'trending_up', color: 'text-orange-400', bg: 'from-orange-500/10 to-transparent', border: 'border-orange-500/25', glow: '0_0_10px_rgba(249,115,22,0.1)' },
 };
 
+// ─── NBA Stat Leaders ─────────────────────────────────────────────────────────
+interface StatLeader { rank: number; name: string; shortName: string; headshot: string; teamAbbr: string; teamLogo: string; value: number; displayValue: string; }
+const STAT_CATS = [
+    { key: 'pts', label: 'Points',        short: 'PTS', icon: 'sports_basketball', col: '#a3ff00', glow: 'rgba(163,255,0,0.2)',   grad: 'linear-gradient(90deg,#a3ff00,#22d3ee)', unit: 'PPG' },
+    { key: 'ast', label: 'Assists',        short: 'AST', icon: 'swap_horiz',       col: '#3880fa', glow: 'rgba(56,128,250,0.2)',  grad: 'linear-gradient(90deg,#3880fa,#818cf8)', unit: 'APG' },
+    { key: 'tpm', label: '3-Pointers',     short: '3PT', icon: 'my_location',      col: '#22d3ee', glow: 'rgba(6,182,212,0.22)',  grad: 'linear-gradient(90deg,#22d3ee,#818cf8)', unit: '3PM' },
+    { key: 'dd',  label: 'Double-Doubles', short: 'DD',  icon: 'workspace_premium',col: '#facc15', glow: 'rgba(234,179,8,0.22)', grad: 'linear-gradient(90deg,#facc15,#f97316)', unit: 'DDs' },
+    { key: 'td',  label: 'Triple-Doubles', short: 'TD',  icon: 'military_tech',    col: '#f97316', glow: 'rgba(249,115,22,0.25)', grad: 'linear-gradient(90deg,#f97316,#ef4444)', unit: 'TDs' },
+] as const;
+
+const StatLeadersSection: React.FC<{ leaders: Record<string, StatLeader[]>; loading: boolean }> = ({ leaders, loading }) => {
+    const [active, setActive] = useState<string>('pts');
+    const cat = STAT_CATS.find(c => c.key === active) ?? STAT_CATS[0];
+    const rows = leaders[active] ?? [];
+    return (
+        <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-6 h-6 rounded bg-accent-purple/10 border border-accent-purple/20 shrink-0">
+                        <span className="material-symbols-outlined text-accent-purple text-sm">leaderboard</span>
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-accent-purple">NBA Stat Leaders</span>
+                    <span className="text-[8px] font-black text-neutral-600 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full uppercase tracking-widest">Live ESPN</span>
+                </div>
+                <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest">2024–25 Season</span>
+            </div>
+            {/* Category tabs */}
+            <div className="flex gap-1.5 mb-4 overflow-x-auto no-scrollbar">
+                {STAT_CATS.map(c => (
+                    <button key={c.key} onClick={() => setActive(c.key)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all shrink-0 ${active === c.key ? 'bg-neutral-900 text-white' : 'border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600'}`}
+                        style={active === c.key ? { borderColor: c.glow.replace(',0.2',',.4').replace(',0.22',',.4').replace(',0.25',',.4'), color: c.col, boxShadow: `0 0 12px ${c.glow}` } : undefined}
+                    >
+                        <span className="material-symbols-outlined text-[12px]">{c.icon}</span>{c.short}
+                    </button>
+                ))}
+            </div>
+            {/* Cards */}
+            {loading ? (
+                <div className="flex gap-3">{[1,2,3,4,5].map(i => <div key={i} className="min-w-[148px] h-[200px] rounded-xl bg-neutral-900 border border-neutral-800 animate-pulse shrink-0" />)}</div>
+            ) : rows.length === 0 ? (
+                <div className="py-8 text-center border border-dashed border-neutral-800 rounded-xl"><span className="text-neutral-600 text-xs font-bold">No data available</span></div>
+            ) : (
+                <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2" style={{ scrollbarWidth: 'thin' }}>
+                    {rows.map((p, i) => {
+                        const isTop3 = i < 3;
+                        const isNo1 = i === 0;
+                        return (
+                            <div key={p.name + i}
+                                className={`min-w-[148px] rounded-xl border flex flex-col items-center gap-2.5 p-4 relative overflow-hidden shrink-0 transition-all duration-200 group ${isTop3 ? 'bg-neutral-900/80 hover:bg-neutral-900' : 'bg-neutral-950 hover:bg-neutral-900/60'}`}
+                                style={{ borderColor: isTop3 ? cat.glow.replace(',0.2',',.4').replace(',0.22',',.4').replace(',0.25',',.45') : 'rgba(255,255,255,0.06)', boxShadow: isNo1 ? `0 0 24px ${cat.glow}` : isTop3 ? `0 0 12px ${cat.glow.replace(',0.2',',0.1').replace(',0.22',',0.1').replace(',0.25',',0.12')}` : undefined }}
+                            >
+                                <div className="absolute top-2 left-2 text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded bg-neutral-800"
+                                    style={{ color: isTop3 ? cat.col : '#4b5563' }}>#{p.rank}</div>
+                                {isNo1 && <div className="absolute top-1.5 right-2"><span className="text-yellow-400 text-sm" style={{ filter: 'drop-shadow(0 0 6px rgba(234,179,8,0.8))' }}>👑</span></div>}
+                                {/* Headshot */}
+                                <div className={`relative mt-3 rounded-full overflow-hidden shrink-0 bg-neutral-800 ${isTop3 ? 'ring-2' : 'ring-1 ring-neutral-700'}`}
+                                    style={{ width: isTop3 ? 52 : 44, height: isTop3 ? 52 : 44, ...(isTop3 ? { boxShadow: `0 0 14px ${cat.glow}`, outlineColor: cat.col } : {}) }}>
+                                    {p.headshot
+                                        ? <img src={p.headshot} alt={p.shortName} className="w-full h-full object-cover" style={{ width: isTop3 ? 52 : 44, height: isTop3 ? 52 : 44 }} onError={e => { e.currentTarget.style.display = 'none'; }} />
+                                        : <span className="material-symbols-outlined text-neutral-600 flex items-center justify-center w-full h-full">person</span>
+                                    }
+                                </div>
+                                {/* Stat hero number */}
+                                <div className="text-center">
+                                    <div className="text-2xl font-black leading-none tabular-nums" style={{ color: cat.col, textShadow: `0 0 12px ${cat.glow}` }}>{p.displayValue}</div>
+                                    <div className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mt-0.5">{cat.unit}</div>
+                                </div>
+                                {/* Name + team */}
+                                <div className="text-center">
+                                    <span className="block text-[10px] font-black text-text-main group-hover:text-primary transition-colors leading-tight">{p.shortName}</span>
+                                    <div className="flex items-center justify-center gap-1 mt-1">
+                                        {p.teamLogo && <img src={p.teamLogo} alt={p.teamAbbr} className="w-4 h-4 object-contain" onError={e => { e.currentTarget.style.display = 'none'; }} />}
+                                        <span className="text-[8px] text-neutral-500 font-bold">{p.teamAbbr}</span>
+                                    </div>
+                                </div>
+                                {/* Value bar */}
+                                <div className="w-full"><div className="h-1 rounded-full bg-neutral-800 overflow-hidden">
+                                    <div className="h-full rounded-full transition-all duration-700" style={{ width: rows[0]?.value > 0 ? `${Math.round((p.value / rows[0].value) * 100)}%` : '0%', background: cat.grad }} />
+                                </div></div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const HotStreakPlayerCarousel: React.FC<{ players: PlayerRow[] }> = ({ players }) => {
     if (players.length === 0) return null;
     return (
@@ -1060,6 +1149,53 @@ export const PrecisionHubView: React.FC = () => {
         return filtPlayers.filter(p => p.isTrending).sort((a,b) => b.confidence - a.confidence);
     }, [filtPlayers]);
 
+    const [statLeaders, setStatLeaders] = useState<Record<string, StatLeader[]>>({});
+    const [statLeadersLoading, setStatLeadersLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStatLeaders = async () => {
+            setStatLeadersLoading(true);
+            try {
+                const ENDPOINTS = [
+                    { key: 'pts', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/leaders?stat=avgPoints&limit=10' },
+                    { key: 'ast', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/leaders?stat=avgAssists&limit=10' },
+                    { key: 'tpm', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/leaders?stat=avgThreePointFieldGoalsMade&limit=10' },
+                    { key: 'dd',  url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/leaders?stat=doubleDouble&limit=10' },
+                    { key: 'td',  url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/leaders?stat=tripleDouble&limit=10' },
+                ];
+                const results = await Promise.allSettled(ENDPOINTS.map(async ep => {
+                    const res = await fetch(ep.url);
+                    if (!res.ok) throw new Error(ep.key);
+                    const data = await res.json() as Record<string, unknown>;
+                    const cats = (data.categories as Record<string, unknown>[]) ?? [];
+                    const cat = cats[0] as Record<string, unknown> | undefined;
+                    const entries = (cat?.leaders as Record<string, unknown>[]) ?? [];
+                    const parsed: StatLeader[] = entries.map((entry, idx) => {
+                        const athlete = (entry.athlete as Record<string, unknown>) ?? {};
+                        const team = (entry.team as Record<string, unknown>) ?? {};
+                        const stats = (entry.statistics as Record<string, unknown>[]) ?? [];
+                        const statObj = stats[0] as Record<string, unknown> | undefined;
+                        const rawHs = athlete.headshot;
+                        const hs = typeof rawHs === 'string' ? rawHs : typeof rawHs === 'object' && rawHs !== null ? String((rawHs as Record<string,unknown>).href ?? '') : '';
+                        const athleteId = String(athlete.id ?? '');
+                        const headshot = hs || (athleteId ? `https://a.espncdn.com/i/headshots/nba/players/full/${athleteId}.png` : '');
+                        const logos = (team.logos as { href: string }[]) ?? [];
+                        const teamLogo = logos[0]?.href || `https://a.espncdn.com/i/teamlogos/nba/500/${team.id}.png`;
+                        const dv = String(statObj?.displayValue ?? statObj?.value ?? '0');
+                        const val = parseFloat(dv);
+                        return { rank: idx + 1, name: String(athlete.displayName ?? ''), shortName: String(athlete.shortName ?? athlete.displayName ?? ''), headshot, teamAbbr: String(team.abbreviation ?? ''), teamLogo, value: isNaN(val) ? idx === 0 ? 1 : 0 : val, displayValue: dv };
+                    });
+                    return { key: ep.key, leaders: parsed };
+                }));
+                const out: Record<string, StatLeader[]> = {};
+                results.forEach(r => { if (r.status === 'fulfilled') out[r.value.key] = r.value.leaders; });
+                setStatLeaders(out);
+            } catch (err) { console.warn('Stat leaders fetch failed:', err); }
+            finally { setStatLeadersLoading(false); }
+        };
+        fetchStatLeaders();
+    }, []);
+
     const [winStreakTeams, setWinStreakTeams] = useState<WinStreakTeam[]>([]);
     const [winStreakLoading, setWinStreakLoading] = useState(true);
 
@@ -1322,6 +1458,10 @@ export const PrecisionHubView: React.FC = () => {
                 {/* ══ PLAYERS ══ */}
                 {tab === 'players' && (
                     <div className="flex flex-col gap-6">
+                        {/* NBA Stat Leaders — PTS / AST / 3PT / DD / TD */}
+                        {(sport === 'ALL' || sport === 'NBA' || sport === 'CBB' || sport === 'NCAAM') && (
+                            <StatLeadersSection leaders={statLeaders} loading={statLeadersLoading} />
+                        )}
                         {!loading && topHotPlayers.length > 0 && <HotStreakPlayerCarousel players={topHotPlayers} />}
                         {loading
                             ? <div className="terminal-panel overflow-hidden"><table className="w-full"><tbody>{Array.from({ length: 8 }).map((_, i) => <SkelRow key={i} />)}</tbody></table></div>
