@@ -433,6 +433,75 @@ const LastGamePopup: React.FC<{ player: PlayerRow; anchorRect: DOMRect; onClose:
     );
 };
 
+// ── Hot Streak Carousels ────────────────────────────────────────────────────────
+const HotStreakTeamCarousel: React.FC<{ teams: { team: { abbr: string, logo: string }, prob: number }[] }> = ({ teams }) => {
+    if (teams.length === 0) return null;
+    return (
+        <div className="mb-2">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400 mb-3 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm animate-pulse">local_fire_department</span> Hot Teams of the Week
+            </h3>
+            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-3">
+                {teams.slice(0, 10).map((t, i) => (
+                    <div key={i} className="min-w-[120px] terminal-panel p-3 border-orange-500/30 bg-gradient-to-b from-orange-500/5 to-transparent flex flex-col items-center justify-center gap-2 group hover:border-orange-500/50 transition-colors shrink-0">
+                        <img src={t.team.logo} alt={t.team.abbr} className="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        <div className="text-center">
+                            <span className="block text-xs font-black text-text-main group-hover:text-primary transition-colors">{t.team.abbr}</span>
+                            <span className="block text-[9px] font-bold text-orange-400 mt-0.5">{t.prob}%+ L5 Win Rate</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const HotStreakPlayerCarousel: React.FC<{ players: PlayerRow[] }> = ({ players }) => {
+    if (players.length === 0) return null;
+    return (
+        <div className="mb-2">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400 mb-3 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm animate-pulse">local_fire_department</span> Hot Players of the Week
+            </h3>
+            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-3">
+                {players.slice(0, 12).map((p, i) => {
+                    let achievement = "Trending Up";
+                    if (p.stats.pts >= 10 && p.stats.reb >= 10 && p.stats.ast >= 10) achievement = "Triple-Double Alert";
+                    else if (p.stats.pts >= 10 && (p.stats.reb >= 10 || p.stats.ast >= 10)) achievement = "Double-Double Watch";
+                    else if (p.stats.pts >= 30) achievement = "High Volume Scorer";
+                    else if (p.stats.ast >= 10) achievement = "Elite Playmaker";
+                    else if (p.stats.reb >= 12) achievement = "Glass Cleaner";
+                    else if (p.stats.threePt >= 4) achievement = "3PT Sniper";
+                    else if (p.stats.hr >= 1) achievement = "Home Run Call";
+                    else if (p.stats.yds >= 250 || p.stats.yds >= 80) achievement = "Yardage Monster";
+                    return (
+                        <div key={i} className="min-w-[180px] terminal-panel p-3 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-neutral-900/40 flex flex-col items-start gap-2 group hover:border-orange-500/50 transition-colors relative overflow-hidden shrink-0">
+                            <div className="absolute top-0 right-0 p-1 opacity-20 text-orange-500 pointer-events-none">
+                                <span className="material-symbols-outlined text-5xl -mr-2 -mt-2">local_fire_department</span>
+                            </div>
+                            <div className="relative z-10 flex items-center gap-2">
+                                <div className="w-9 h-9 rounded-full border border-orange-500/50 overflow-hidden bg-neutral-900 shrink-0">
+                                    {p.headshot ? <img src={p.headshot} alt={p.shortName} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="material-symbols-outlined text-neutral-600 w-full h-full flex items-center justify-center text-sm">person</span>}
+                                </div>
+                                <div className="flex flex-col min-w-0 pr-4">
+                                    <span className="text-[11px] font-black text-text-main truncate">{p.shortName}</span>
+                                    <span className="text-[9px] text-text-muted font-bold flex items-center gap-1">
+                                        <img src={p.teamLogo} alt={p.team} className="w-3 h-3 object-contain" onError={(e) => { e.currentTarget.style.opacity = '0'; }} /> {p.team}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="relative z-10 w-full mt-1">
+                                <span className="block text-[8px] font-black uppercase tracking-widest text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded w-fit mb-1 shadow-sm">🔥 {achievement}</span>
+                                {p.trendingText && <span className="block text-[8px] text-text-muted truncate font-medium">{p.trendingText.replace('HOT: ', '')} avg</span>}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 export const PrecisionHubView: React.FC = () => {
     const [tab, setTab] = useState<'teams' | 'players'>('teams');
@@ -665,6 +734,19 @@ export const PrecisionHubView: React.FC = () => {
         setPopup({ player, rect });
     };
 
+    const topHotTeams: { team: { abbr: string, logo: string }, prob: number }[] = [];
+    filtTeams.forEach(t => {
+        if (t.homeTrend.l5W >= 75) topHotTeams.push({ team: { abbr: t.homeTeam.abbr, logo: t.homeTeam.logo }, prob: t.homeTrend.l5W });
+        if (t.awayTrend.l5W >= 75) topHotTeams.push({ team: { abbr: t.awayTeam.abbr, logo: t.awayTeam.logo }, prob: t.awayTrend.l5W });
+    });
+    // Sort highest win prob first
+    topHotTeams.sort((a, b) => b.prob - a.prob);
+
+    const topHotPlayers: PlayerRow[] = useMemo(() => {
+        // filter players who are trending, sort them by confidence and then stat leaders
+        return filtPlayers.filter(p => p.isTrending).sort((a,b) => b.confidence - a.confidence);
+    }, [filtPlayers]);
+
     return (
         <div className="min-h-screen bg-background-dark text-text-main">
 
@@ -746,6 +828,7 @@ export const PrecisionHubView: React.FC = () => {
                 {/* ══ TEAMS ══ */}
                 {tab === 'teams' && (
                     <div className="flex flex-col gap-6">
+                        {!loading && topHotTeams.length > 0 && <HotStreakTeamCarousel teams={topHotTeams} />}
                         {loading
                             ? <div className="terminal-panel overflow-hidden"><div className="overflow-x-auto"><table className="w-full"><tbody>{Array.from({ length: 6 }).map((_, i) => <SkelRow key={i} cols={13} />)}</tbody></table></div></div>
                             : teamDateGroups.length === 0
@@ -837,6 +920,7 @@ export const PrecisionHubView: React.FC = () => {
                 {/* ══ PLAYERS ══ */}
                 {tab === 'players' && (
                     <div className="flex flex-col gap-6">
+                        {!loading && topHotPlayers.length > 0 && <HotStreakPlayerCarousel players={topHotPlayers} />}
                         {loading
                             ? <div className="terminal-panel overflow-hidden"><table className="w-full"><tbody>{Array.from({ length: 8 }).map((_, i) => <SkelRow key={i} />)}</tbody></table></div>
                             : playerDateGroups.length === 0

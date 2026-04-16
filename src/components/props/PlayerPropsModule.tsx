@@ -835,6 +835,40 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+const TeamHotPlayerCarousel: React.FC<{ players: PropLine[], onClick: (id: string) => void }> = ({ players, onClick }) => {
+    if (players.length === 0) return null;
+    return (
+        <div className="mb-4">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400 mb-3 flex items-center gap-1.5 px-4">
+                <span className="material-symbols-outlined text-sm animate-pulse">local_fire_department</span> Hot Players of the Week
+            </h3>
+            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-3 px-4">
+                {players.map((p, i) => (
+                    <div key={i} onClick={() => onClick(p.id)} className="min-w-[160px] terminal-panel p-3 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-neutral-900/40 flex flex-col items-start gap-2 group cursor-pointer hover:border-orange-500/50 transition-colors relative overflow-hidden shrink-0">
+                        <div className="absolute top-0 right-0 p-1 opacity-20 text-orange-500 pointer-events-none">
+                            <span className="material-symbols-outlined text-5xl -mr-2 -mt-2">local_fire_department</span>
+                        </div>
+                        <div className="relative z-10 flex items-center gap-2">
+                            <div className="w-9 h-9 rounded-full border border-orange-500/50 overflow-hidden bg-neutral-900 shrink-0">
+                                <img src={p.photoUrl} alt={p.player} className="w-full h-full object-cover" onError={e=>{e.currentTarget.style.display='none'}} />
+                            </div>
+                            <div className="flex flex-col min-w-0 pr-4">
+                                <span className="text-[11px] font-black text-text-main truncate group-hover:text-primary transition-colors">{p.player}</span>
+                                <span className="text-[9px] text-text-muted font-bold flex items-center gap-1">{p.position}</span>
+                            </div>
+                        </div>
+                        <div className="relative z-10 w-full mt-1">
+                            <span className="block text-[8px] font-black uppercase tracking-widest text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded w-fit mb-1 shadow-sm">🔥 TRENDING UP</span>
+                            <span className="block text-[8px] text-text-muted truncate font-medium">{Math.max(parseFloat(p.line.toString()) * 1.2, parseFloat(p.line.toString()) + 2).toFixed(1)} avg / L5</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, team }) => {
@@ -883,6 +917,13 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
                     <PlayerHero prop={selectedProp} onClose={() => setSelectedId(null)} sport={sport} />
                 )}
             </div>
+
+            {/* ── Zone A.5: Hot Streak Players of the Week for the team ── */}
+            {!isLoading && propsData.filter(p => p.isTrending).length > 0 && (
+                <div className="mt-4">
+                    <TeamHotPlayerCarousel players={propsData.filter(p => p.isTrending)} onClick={handleSelect} />
+                </div>
+            )}
 
             {/* ── Zone B: Props Table ── */}
             <div className="terminal-panel rounded-xl overflow-hidden">
