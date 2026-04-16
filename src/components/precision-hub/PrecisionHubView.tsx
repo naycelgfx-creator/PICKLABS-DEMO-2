@@ -433,67 +433,199 @@ const LastGamePopup: React.FC<{ player: PlayerRow; anchorRect: DOMRect; onClose:
     );
 };
 
-// ── Hot Streak Carousels ────────────────────────────────────────────────────────
+// ── Hot Streak Carousels (Premium Design) ────────────────────────────────────────
+const MEDAL_COLORS = ['text-yellow-400 drop-shadow-[0_0_6px_rgba(234,179,8,0.6)]','text-slate-300 drop-shadow-[0_0_6px_rgba(203,213,225,0.5)]','text-amber-600 drop-shadow-[0_0_4px_rgba(217,119,6,0.5)]'];
+const RANK_LABELS = ['1ST','2ND','3RD'];
+
 const HotStreakTeamCarousel: React.FC<{ teams: { team: { abbr: string, logo: string }, prob: number }[] }> = ({ teams }) => {
     if (teams.length === 0) return null;
+    const topTeams = teams.slice(0, 10);
     return (
-        <div className="mb-2">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400 mb-3 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm animate-pulse">local_fire_department</span> Hot Teams of the Week
-            </h3>
-            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-3">
-                {teams.slice(0, 10).map((t, i) => (
-                    <div key={i} className="min-w-[120px] terminal-panel p-3 border-orange-500/30 bg-gradient-to-b from-orange-500/5 to-transparent flex flex-col items-center justify-center gap-2 group hover:border-orange-500/50 transition-colors shrink-0">
-                        <img src={t.team.logo} alt={t.team.abbr} className="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                        <div className="text-center">
-                            <span className="block text-xs font-black text-text-main group-hover:text-primary transition-colors">{t.team.abbr}</span>
-                            <span className="block text-[9px] font-bold text-orange-400 mt-0.5">{t.prob}%+ L5 Win Rate</span>
-                        </div>
+        <div className="mb-6">
+            {/* Section header */}
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-6 h-6 rounded bg-orange-500/10 border border-orange-500/30 shrink-0">
+                        <span className="material-symbols-outlined text-orange-400 text-sm animate-pulse">local_fire_department</span>
                     </div>
-                ))}
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-400">Teams of the Week</span>
+                    <span className="text-[8px] font-black text-neutral-600 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full uppercase tracking-widest">{topTeams.length} hot teams</span>
+                </div>
+                <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest">L5 AI Win Streak</span>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2" style={{ scrollbarWidth: 'thin' }}>
+                {topTeams.map((t, i) => {
+                    const isTop3 = i < 3;
+                    return (
+                        <div key={i}
+                            className={`min-w-[140px] rounded-xl border transition-all duration-200 cursor-pointer flex flex-col items-center gap-3 p-4 relative overflow-hidden shrink-0 group
+                            ${isTop3
+                                ? 'border-orange-500/40 bg-gradient-to-b from-orange-500/15 via-neutral-900/80 to-neutral-950 hover:border-orange-400/60 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)]'
+                                : 'border-neutral-800 bg-neutral-900/60 hover:border-orange-500/30 hover:bg-orange-500/5'
+                            }`}>
+
+                            {/* Rank badge */}
+                            <div className={`absolute top-2 left-2 text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${isTop3 ? 'bg-orange-500/20 text-orange-400' : 'bg-neutral-800 text-neutral-500'}`}>
+                                #{i + 1}
+                            </div>
+
+                            {/* Glow ring around logo */}
+                            <div className={`relative p-2 rounded-full mt-2 ${isTop3 ? 'bg-gradient-to-br from-orange-500/20 to-transparent ring-1 ring-orange-500/40 shadow-[0_0_16px_rgba(249,115,22,0.2)]' : 'bg-neutral-800/40 ring-1 ring-neutral-700'}`}>
+                                <img src={t.team.logo} alt={t.team.abbr}
+                                    className="w-10 h-10 object-contain"
+                                    style={isTop3 ? { filter: 'drop-shadow(0 0 8px rgba(249,115,22,0.5))' } : {}}
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                {isTop3 && (
+                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-black text-[10px]">local_fire_department</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Team name */}
+                            <div className="text-center">
+                                <span className={`block text-sm font-black tracking-wide transition-colors ${isTop3 ? 'text-white group-hover:text-orange-300' : 'text-slate-300 group-hover:text-orange-400'}`}>
+                                    {t.team.abbr}
+                                </span>
+                                <span className={`block text-[9px] font-bold mt-0.5 ${isTop3 ? 'text-orange-400' : 'text-slate-600'}`}>
+                                    {t.prob}% L5 W-Rate
+                                </span>
+                            </div>
+
+                            {/* Win-rate bar */}
+                            <div className="w-full">
+                                <div className="h-1 rounded-full bg-neutral-800 overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-700 ${isTop3 ? 'bg-gradient-to-r from-orange-500 to-yellow-400' : 'bg-neutral-600'}`}
+                                        style={{ width: `${Math.min(t.prob, 100)}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
 };
 
+// achievement config with material icons + color schemes
+const ACHIEVEMENT_CONFIG: Record<string, { icon: string; color: string; bg: string; border: string; glow: string }> = {
+    'Triple-Double Alert': { icon: 'workspace_premium', color: 'text-yellow-300', bg: 'from-yellow-500/20 via-orange-500/10 to-transparent', border: 'border-yellow-500/50', glow: '0_0_20px_rgba(234,179,8,0.25)' },
+    'Double-Double Watch': { icon: 'stars', color: 'text-orange-300', bg: 'from-orange-500/20 via-red-500/5 to-transparent', border: 'border-orange-500/40', glow: '0_0_16px_rgba(249,115,22,0.2)' },
+    'High Volume Scorer': { icon: 'whatshot', color: 'text-red-400', bg: 'from-red-500/15 via-orange-500/5 to-transparent', border: 'border-red-500/40', glow: '0_0_14px_rgba(239,68,68,0.2)' },
+    'Elite Playmaker': { icon: 'gesture', color: 'text-blue-400', bg: 'from-blue-500/15 via-cyan-500/5 to-transparent', border: 'border-blue-500/35', glow: '0_0_14px_rgba(59,130,246,0.15)' },
+    'Glass Cleaner': { icon: 'fitness_center', color: 'text-purple-400', bg: 'from-purple-500/15 via-violet-500/5 to-transparent', border: 'border-purple-500/35', glow: '0_0_14px_rgba(168,85,247,0.15)' },
+    '3PT Sniper': { icon: 'my_location', color: 'text-cyan-400', bg: 'from-cyan-500/15 via-blue-500/5 to-transparent', border: 'border-cyan-500/35', glow: '0_0_14px_rgba(6,182,212,0.15)' },
+    'Home Run Call': { icon: 'sports_baseball', color: 'text-green-400', bg: 'from-green-500/15 via-emerald-500/5 to-transparent', border: 'border-green-500/35', glow: '0_0_14px_rgba(34,197,94,0.15)' },
+    'Yardage Monster': { icon: 'sports_football', color: 'text-amber-400', bg: 'from-amber-500/15 via-yellow-500/5 to-transparent', border: 'border-amber-500/35', glow: '0_0_14px_rgba(245,158,11,0.15)' },
+    'Trending Up': { icon: 'trending_up', color: 'text-orange-400', bg: 'from-orange-500/10 to-transparent', border: 'border-orange-500/25', glow: '0_0_10px_rgba(249,115,22,0.1)' },
+};
+
 const HotStreakPlayerCarousel: React.FC<{ players: PlayerRow[] }> = ({ players }) => {
     if (players.length === 0) return null;
     return (
-        <div className="mb-2">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400 mb-3 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm animate-pulse">local_fire_department</span> Hot Players of the Week
-            </h3>
-            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-3">
+        <div className="mb-6">
+            {/* Section header */}
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-6 h-6 rounded bg-orange-500/10 border border-orange-500/30 shrink-0">
+                        <span className="material-symbols-outlined text-orange-400 text-sm animate-pulse">local_fire_department</span>
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-400">Players of the Week</span>
+                    <span className="text-[8px] font-black text-neutral-600 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full uppercase tracking-widest">{players.length} trending</span>
+                </div>
+                <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest">AI-Detected Streaks</span>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2">
                 {players.slice(0, 12).map((p, i) => {
-                    let achievement = "Trending Up";
-                    if (p.stats.pts >= 10 && p.stats.reb >= 10 && p.stats.ast >= 10) achievement = "Triple-Double Alert";
-                    else if (p.stats.pts >= 10 && (p.stats.reb >= 10 || p.stats.ast >= 10)) achievement = "Double-Double Watch";
-                    else if (p.stats.pts >= 30) achievement = "High Volume Scorer";
-                    else if (p.stats.ast >= 10) achievement = "Elite Playmaker";
-                    else if (p.stats.reb >= 12) achievement = "Glass Cleaner";
-                    else if (p.stats.threePt >= 4) achievement = "3PT Sniper";
-                    else if (p.stats.hr >= 1) achievement = "Home Run Call";
-                    else if (p.stats.yds >= 250 || p.stats.yds >= 80) achievement = "Yardage Monster";
+                    let achievementKey = 'Trending Up';
+                    if (p.stats.pts >= 10 && p.stats.reb >= 10 && p.stats.ast >= 10) achievementKey = 'Triple-Double Alert';
+                    else if (p.stats.pts >= 10 && (p.stats.reb >= 10 || p.stats.ast >= 10)) achievementKey = 'Double-Double Watch';
+                    else if (p.stats.pts >= 30) achievementKey = 'High Volume Scorer';
+                    else if (p.stats.ast >= 10) achievementKey = 'Elite Playmaker';
+                    else if (p.stats.reb >= 12) achievementKey = 'Glass Cleaner';
+                    else if (p.stats.threePt >= 4) achievementKey = '3PT Sniper';
+                    else if (p.stats.hr >= 1) achievementKey = 'Home Run Call';
+                    else if (p.stats.yds >= 80) achievementKey = 'Yardage Monster';
+
+                    const cfg = ACHIEVEMENT_CONFIG[achievementKey] ?? ACHIEVEMENT_CONFIG['Trending Up'];
+                    const isRank1 = i === 0;
+
+                    // Build key stats to show
+                    const keyStats: { label: string; val: string }[] = [];
+                    if (p.stats.pts > 0)   keyStats.push({ label: 'PTS', val: p.stats.pts.toFixed(1) });
+                    if (p.stats.reb > 0)   keyStats.push({ label: 'REB', val: p.stats.reb.toFixed(1) });
+                    if (p.stats.ast > 0)   keyStats.push({ label: 'AST', val: p.stats.ast.toFixed(1) });
+                    if (p.stats.threePt > 0) keyStats.push({ label: '3PT', val: p.stats.threePt.toFixed(1) });
+                    if (p.stats.yds > 0)   keyStats.push({ label: 'YDS', val: p.stats.yds.toFixed(0) });
+                    if (p.stats.hr > 0)    keyStats.push({ label: 'HR', val: p.stats.hr.toFixed(0) });
+
                     return (
-                        <div key={i} className="min-w-[180px] terminal-panel p-3 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-neutral-900/40 flex flex-col items-start gap-2 group hover:border-orange-500/50 transition-colors relative overflow-hidden shrink-0">
-                            <div className="absolute top-0 right-0 p-1 opacity-20 text-orange-500 pointer-events-none">
-                                <span className="material-symbols-outlined text-5xl -mr-2 -mt-2">local_fire_department</span>
-                            </div>
-                            <div className="relative z-10 flex items-center gap-2">
-                                <div className="w-9 h-9 rounded-full border border-orange-500/50 overflow-hidden bg-neutral-900 shrink-0">
-                                    {p.headshot ? <img src={p.headshot} alt={p.shortName} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="material-symbols-outlined text-neutral-600 w-full h-full flex items-center justify-center text-sm">person</span>}
+                        <div key={i}
+                            className={`min-w-[200px] rounded-xl border bg-gradient-to-br ${cfg.bg} transition-all duration-200 cursor-pointer flex flex-col gap-0 relative overflow-hidden shrink-0 group ${cfg.border}`}
+                            style={{ boxShadow: isRank1 ? `inset 0 0 0 1px rgba(234,179,8,0.15), ${cfg.glow}` : `${cfg.glow}` }}
+                        >
+                            {/* Top rank strip */}
+                            <div className={`flex items-center justify-between px-3 py-2 border-b ${cfg.border} bg-black/20`}>
+                                <div className="flex items-center gap-1.5">
+                                    <span className={`material-symbols-outlined text-[14px] ${cfg.color}`}>{cfg.icon}</span>
+                                    <span className={`text-[8px] font-black uppercase tracking-widest ${cfg.color}`}>{achievementKey}</span>
                                 </div>
-                                <div className="flex flex-col min-w-0 pr-4">
-                                    <span className="text-[11px] font-black text-text-main truncate">{p.shortName}</span>
-                                    <span className="text-[9px] text-text-muted font-bold flex items-center gap-1">
-                                        <img src={p.teamLogo} alt={p.team} className="w-3 h-3 object-contain" onError={(e) => { e.currentTarget.style.opacity = '0'; }} /> {p.team}
-                                    </span>
+                                <span className={`text-[8px] font-black ${i < 3 ? MEDAL_COLORS[i] : 'text-neutral-600'}`}>#{i + 1}</span>
+                            </div>
+
+                            {/* Player identity */}
+                            <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
+                                <div className={`relative shrink-0`}>
+                                    <div className={`w-11 h-11 rounded-full overflow-hidden ring-2 ${isRank1 ? 'ring-yellow-400/50 shadow-[0_0_12px_rgba(234,179,8,0.3)]' : `ring-[var(--ring-col,rgba(249,115,22,0.3))]`}`}>
+                                        {p.headshot
+                                            ? <img src={p.headshot} alt={p.shortName} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                            : <div className="w-full h-full bg-neutral-800 flex items-center justify-center"><span className="material-symbols-outlined text-neutral-500 text-lg">person</span></div>
+                                        }
+                                    </div>
+                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-neutral-950 border border-neutral-800 flex items-center justify-center p-[2px]">
+                                        <img src={p.teamLogo} alt={p.team} className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.opacity = '0'; }} />
+                                    </div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <span className={`block text-[12px] font-black leading-tight truncate transition-colors ${cfg.color} group-hover:brightness-125`}>{p.shortName}</span>
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                        <span className="text-[9px] font-bold text-neutral-500">{p.team}</span>
+                                        <span className="text-[8px] text-neutral-700">·</span>
+                                        <span className="text-[9px] font-bold text-neutral-500">{p.sportLabel}</span>
+                                    </div>
+                                    {/* Confidence bar */}
+                                    <div className="mt-1.5 flex items-center gap-1.5">
+                                        <div className="flex-1 h-1 rounded-full bg-neutral-800 overflow-hidden">
+                                            <div className={`h-full rounded-full transition-all`}
+                                                style={{ width: `${p.confidence}%`, background: p.confidence >= 80 ? 'linear-gradient(90deg,#a3ff00,#22d3ee)' : p.confidence >= 65 ? 'linear-gradient(90deg,#3880fa,#818cf8)' : '#525252' }} />
+                                        </div>
+                                        <span className={`text-[8px] font-black ${p.confidence >= 80 ? 'text-primary' : p.confidence >= 65 ? 'text-accent-blue' : 'text-neutral-500'}`}>{p.confidence}%</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="relative z-10 w-full mt-1">
-                                <span className="block text-[8px] font-black uppercase tracking-widest text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded w-fit mb-1 shadow-sm">🔥 {achievement}</span>
-                                {p.trendingText && <span className="block text-[8px] text-text-muted truncate font-medium">{p.trendingText.replace('HOT: ', '')} avg</span>}
-                            </div>
+
+                            {/* Key stats row */}
+                            {keyStats.length > 0 && (
+                                <div className="flex border-t border-neutral-800/60 divide-x divide-neutral-800/60">
+                                    {keyStats.slice(0, 3).map(s => (
+                                        <div key={s.label} className="flex-1 flex flex-col items-center py-2">
+                                            <span className={`text-[11px] font-black tabular-nums ${cfg.color}`}>{s.val}</span>
+                                            <span className="text-[7px] font-black text-neutral-600 uppercase tracking-widest">{s.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* L5 hot text */}
+                            {p.trendingText && (
+                                <div className="px-3 py-1.5 bg-black/20 border-t border-neutral-800/50">
+                                    <span className="text-[8px] text-neutral-400 font-medium">{p.trendingText}</span>
+                                </div>
+                            )}
                         </div>
                     );
                 })}

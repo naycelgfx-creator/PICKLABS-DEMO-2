@@ -571,9 +571,10 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
                         )}
                     </div>
                     {isTrending && propLines[0] && (
-                        <div className="flex items-center gap-1 mt-1 font-black text-[9px] text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded w-fit">
-                            <span className="material-symbols-outlined text-[10px] animate-pulse">local_fire_department</span>
-                            HOT: {Math.max(parseFloat(propLines[0].line) * 1.2, parseFloat(propLines[0].line) + 2).toFixed(1)} {propLines[0].label.replace('Points', 'PTS').replace('Rebounds', 'REB').replace('Assists', 'AST')} avg / L5
+                        <div className="flex items-center gap-1 mt-1 px-2 py-1 rounded-lg border border-orange-500/30 bg-gradient-to-r from-orange-500/15 to-transparent w-fit shadow-[0_0_8px_rgba(249,115,22,0.1)]">
+                            <span className="material-symbols-outlined text-orange-400 text-[11px] animate-pulse">local_fire_department</span>
+                            <span className="text-[8px] font-black text-orange-400 uppercase tracking-wider">HOT</span>
+                            <span className="text-[8px] text-neutral-400 font-bold">{Math.max(parseFloat(propLines[0].line) * 1.2, parseFloat(propLines[0].line) + 2).toFixed(1)} {propLines[0].label.replace('Points','PTS').replace('Rebounds','REB').replace('Assists','AST')} avg L5</span>
                         </div>
                     )}
                     <div className="flex items-center gap-1.5 mt-1">

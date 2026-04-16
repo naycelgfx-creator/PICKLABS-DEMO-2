@@ -835,34 +835,122 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+const PROP_ACHIEVEMENT_CONFIG: Record<string, { icon: string; color: string; bgFrom: string; border: string }> = {
+    'HIGH_SCORER': { icon: 'whatshot', color: 'text-red-400', bgFrom: 'from-red-500/15', border: 'border-red-500/35' },
+    'PLAYMAKER':   { icon: 'gesture', color: 'text-blue-400', bgFrom: 'from-blue-500/15', border: 'border-blue-500/35' },
+    'REBOUNDER':   { icon: 'fitness_center', color: 'text-purple-400', bgFrom: 'from-purple-500/15', border: 'border-purple-500/35' },
+    'SNIPER':      { icon: 'my_location', color: 'text-cyan-400', bgFrom: 'from-cyan-500/15', border: 'border-cyan-500/35' },
+    'STREAKING':   { icon: 'local_fire_department', color: 'text-orange-400', bgFrom: 'from-orange-500/15', border: 'border-orange-500/35' },
+};
+
+const MEDAL_GLOW = [
+    'ring-yellow-400/50 shadow-[0_0_14px_rgba(234,179,8,0.3)]',
+    'ring-slate-300/40 shadow-[0_0_10px_rgba(203,213,225,0.2)]',
+    'ring-amber-600/40 shadow-[0_0_10px_rgba(217,119,6,0.2)]',
+];
+
 const TeamHotPlayerCarousel: React.FC<{ players: PropLine[], onClick: (id: string) => void }> = ({ players, onClick }) => {
     if (players.length === 0) return null;
     return (
-        <div className="mb-4">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400 mb-3 flex items-center gap-1.5 px-4">
-                <span className="material-symbols-outlined text-sm animate-pulse">local_fire_department</span> Hot Players of the Week
-            </h3>
-            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-3 px-4">
-                {players.map((p, i) => (
-                    <div key={i} onClick={() => onClick(p.id)} className="min-w-[160px] terminal-panel p-3 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-neutral-900/40 flex flex-col items-start gap-2 group cursor-pointer hover:border-orange-500/50 transition-colors relative overflow-hidden shrink-0">
-                        <div className="absolute top-0 right-0 p-1 opacity-20 text-orange-500 pointer-events-none">
-                            <span className="material-symbols-outlined text-5xl -mr-2 -mt-2">local_fire_department</span>
-                        </div>
-                        <div className="relative z-10 flex items-center gap-2">
-                            <div className="w-9 h-9 rounded-full border border-orange-500/50 overflow-hidden bg-neutral-900 shrink-0">
-                                <img src={p.photoUrl} alt={p.player} className="w-full h-full object-cover" onError={e=>{e.currentTarget.style.display='none'}} />
-                            </div>
-                            <div className="flex flex-col min-w-0 pr-4">
-                                <span className="text-[11px] font-black text-text-main truncate group-hover:text-primary transition-colors">{p.player}</span>
-                                <span className="text-[9px] text-text-muted font-bold flex items-center gap-1">{p.position}</span>
-                            </div>
-                        </div>
-                        <div className="relative z-10 w-full mt-1">
-                            <span className="block text-[8px] font-black uppercase tracking-widest text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded w-fit mb-1 shadow-sm">🔥 TRENDING UP</span>
-                            <span className="block text-[8px] text-text-muted truncate font-medium">{Math.max(parseFloat(p.line.toString()) * 1.2, parseFloat(p.line.toString()) + 2).toFixed(1)} avg / L5</span>
-                        </div>
+        <div className="mb-5">
+            <div className="flex items-center justify-between mb-4 px-4">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-6 h-6 rounded bg-orange-500/10 border border-orange-500/30 shrink-0">
+                        <span className="material-symbols-outlined text-orange-400 text-sm animate-pulse">local_fire_department</span>
                     </div>
-                ))}
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-400">Hot Players This Week</span>
+                    <span className="text-[8px] font-black text-neutral-600 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full uppercase tracking-widest">{players.length} on fire</span>
+                </div>
+                <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">Click to Analyze</span>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 px-4">
+                {players.map((p, i) => {
+                    const hotLine = Math.max(parseFloat(p.line.toString()) * 1.2, parseFloat(p.line.toString()) + 2);
+                    // Simple achievement based on propType
+                    let achKey = 'STREAKING';
+                    if (['Points','PTS','Goals'].some(k => p.propType.includes(k))) achKey = 'HIGH_SCORER';
+                    else if (['Assists','AST'].some(k => p.propType.includes(k))) achKey = 'PLAYMAKER';
+                    else if (['Rebounds','REB'].some(k => p.propType.includes(k))) achKey = 'REBOUNDER';
+                    else if (['3PT','Three'].some(k => p.propType.includes(k))) achKey = 'SNIPER';
+                    const cfg = PROP_ACHIEVEMENT_CONFIG[achKey];
+                    const isTop = i < 3;
+
+                    return (
+                        <div
+                            key={i}
+                            onClick={() => onClick(p.id)}
+                            className={`min-w-[190px] rounded-xl border ${cfg.border} bg-gradient-to-br ${cfg.bgFrom} via-neutral-900/80 to-neutral-950
+                                cursor-pointer flex flex-col overflow-hidden shrink-0 group
+                                transition-all duration-200 hover:scale-[1.01] hover:brightness-110`}
+                            style={{ boxShadow: isTop ? '0 0 18px rgba(249,115,22,0.12)' : '0 0 8px rgba(0,0,0,0.4)' }}
+                        >
+                            {/* Header strip */}
+                            <div className={`flex items-center justify-between px-3 py-2 border-b ${cfg.border} bg-black/20`}>
+                                <div className="flex items-center gap-1.5">
+                                    <span className={`material-symbols-outlined text-[13px] ${cfg.color}`}>{cfg.icon}</span>
+                                    <span className={`text-[8px] font-black uppercase tracking-widest ${cfg.color}`}>{p.propType}</span>
+                                </div>
+                                <span className={`text-[8px] font-black ${i < 3 ? (i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : 'text-amber-600') : 'text-neutral-600'}`}>
+                                    #{i + 1}
+                                </span>
+                            </div>
+
+                            {/* Player info */}
+                            <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
+                                <div className="relative shrink-0">
+                                    <div className={`w-11 h-11 rounded-full overflow-hidden ring-2 ${isTop ? MEDAL_GLOW[Math.min(i, 2)] : 'ring-neutral-700/50'}`}>
+                                        <img src={p.photoUrl} alt={p.player} className="w-full h-full object-cover"
+                                            onError={e => { e.currentTarget.style.display = 'none'; }} />
+                                    </div>
+                                    {isTop && (
+                                        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center border-2 border-neutral-950">
+                                            <span className="material-symbols-outlined text-black text-[9px]">local_fire_department</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <span className={`block text-[12px] font-black leading-tight truncate ${cfg.color} group-hover:brightness-125 transition-all`}>{p.player}</span>
+                                    <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider block mt-0.5">{p.position}</span>
+                                    {/* Implied probability bar */}
+                                    <div className="flex items-center gap-1.5 mt-1.5">
+                                        <div className="flex-1 h-1 rounded-full bg-neutral-800 overflow-hidden">
+                                            <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-yellow-400 transition-all"
+                                                style={{ width: `${p.impliedProb}%` }} />
+                                        </div>
+                                        <span className="text-[8px] font-black text-orange-400">{p.impliedProb}%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Stats row */}
+                            <div className="flex border-t border-neutral-800/60 divide-x divide-neutral-800/60">
+                                <div className="flex-1 flex flex-col items-center py-2">
+                                    <span className={`text-[12px] font-black tabular-nums ${cfg.color}`}>{p.line}</span>
+                                    <span className="text-[7px] font-black text-neutral-600 uppercase tracking-widest">Line</span>
+                                </div>
+                                <div className="flex-1 flex flex-col items-center py-2">
+                                    <span className={`text-[12px] font-black tabular-nums ${cfg.color}`}>{hotLine.toFixed(1)}</span>
+                                    <span className="text-[7px] font-black text-neutral-600 uppercase tracking-widest">L5 Avg</span>
+                                </div>
+                                <div className="flex-1 flex flex-col items-center py-2">
+                                    <span className={`text-[12px] font-black tabular-nums ${p.l5Pct >= 70 ? 'text-primary' : p.l5Pct >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>{p.l5Pct}%</span>
+                                    <span className="text-[7px] font-black text-neutral-600 uppercase tracking-widest">Hit%</span>
+                                </div>
+                            </div>
+
+                            {/* Odds footer */}
+                            <div className="px-3 py-1.5 flex items-center justify-between bg-black/20 border-t border-neutral-800/50">
+                                <span className="text-[8px] text-neutral-500 font-bold">DK: <span className="text-white">{p.dkOdds}</span></span>
+                                <span className="text-[8px] text-neutral-500 font-bold">FD: <span className="text-white">{p.fdOdds}</span></span>
+                                <div className="flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-primary text-[10px]">smart_toy</span>
+                                    <span className="text-[8px] font-black text-primary">AI Pick</span>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
