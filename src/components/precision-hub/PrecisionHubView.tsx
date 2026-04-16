@@ -521,6 +521,136 @@ const HotStreakTeamCarousel: React.FC<{ teams: { team: { abbr: string, logo: str
     );
 };
 
+// ── Live Win Streak Leaderboard (NBA + Basketball) ──────────────────────────
+interface WinStreakTeam {
+    id: string;
+    name: string;
+    abbr: string;
+    logo: string;
+    streak: number;       // current win streak length
+    record: string;       // "52-18"
+    conf: string;         // "Eastern"
+    standing: string;     // "1st in Atlantic"
+    winPct: number;       // 0–1
+}
+
+const WinStreakLeaderboard: React.FC<{ teams: WinStreakTeam[]; loading: boolean }> = ({ teams, loading }) => {
+    if (loading) return (
+        <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 rounded bg-primary/10 border border-primary/20 animate-pulse" />
+                <div className="h-3 w-40 rounded bg-neutral-800 animate-pulse" />
+            </div>
+            <div className="flex gap-3 overflow-x-hidden">
+                {[1,2,3,4,5].map(i => <div key={i} className="min-w-[160px] h-[180px] rounded-xl bg-neutral-900 border border-neutral-800 animate-pulse shrink-0" />)}
+            </div>
+        </div>
+    );
+    if (teams.length === 0) return null;
+    return (
+        <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10 border border-primary/20 shrink-0">
+                        <span className="material-symbols-outlined text-primary text-sm">rocket_launch</span>
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Current Win Streaks</span>
+                    <span className="text-[8px] font-black text-neutral-600 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full uppercase tracking-widest">{teams.length} teams on a roll</span>
+                </div>
+                <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest">Live NBA Standings</span>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2" style={{ scrollbarWidth: 'thin' }}>
+                {teams.map((t, i) => {
+                    const isElite = t.streak >= 5;
+                    const isTop3 = i < 3;
+                    const glowColor = isElite ? 'rgba(163,255,0,0.2)' : 'rgba(56,128,250,0.15)';
+                    const borderCol = isElite
+                        ? (isTop3 ? 'border-primary/50' : 'border-primary/25')
+                        : 'border-accent-blue/25';
+                    const bgGrad = isElite
+                        ? (isTop3 ? 'bg-gradient-to-b from-primary/15 via-neutral-900/80 to-neutral-950' : 'bg-gradient-to-b from-primary/8 to-neutral-950')
+                        : 'bg-gradient-to-b from-accent-blue/8 to-neutral-950';
+                    return (
+                        <div key={t.id}
+                            className={`min-w-[160px] rounded-xl border transition-all duration-200 flex flex-col items-center gap-2 p-4 relative overflow-hidden shrink-0 group cursor-default
+                                ${borderCol} ${bgGrad} hover:shadow-[0_0_24px_${glowColor}]`}
+                            style={{ boxShadow: isTop3 ? `0 0 20px ${glowColor}` : undefined }}
+                        >
+                            {/* Rank */}
+                            <div className={`absolute top-2 left-2 text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded
+                                ${isTop3 ? (isElite ? 'bg-primary/20 text-primary' : 'bg-accent-blue/20 text-accent-blue') : 'bg-neutral-800 text-neutral-500'}`}>
+                                #{i + 1}
+                            </div>
+
+                            {/* Fire badge for 5+ streaks */}
+                            {isElite && (
+                                <div className="absolute top-2 right-2">
+                                    <span className="material-symbols-outlined text-primary text-sm animate-pulse" style={{ filter: 'drop-shadow(0 0 6px rgba(163,255,0,0.7))' }}>local_fire_department</span>
+                                </div>
+                            )}
+
+                            {/* Logo */}
+                            <div className={`relative p-2 rounded-full mt-3 ${
+                                isTop3
+                                    ? (isElite ? 'ring-1 ring-primary/50 bg-primary/10 shadow-[0_0_16px_rgba(163,255,0,0.2)]' : 'ring-1 ring-accent-blue/40 bg-accent-blue/10')
+                                    : 'bg-neutral-800/40 ring-1 ring-neutral-700'
+                            }`}>
+                                <img src={t.logo} alt={t.abbr}
+                                    className="w-10 h-10 object-contain"
+                                    style={isTop3 ? { filter: `drop-shadow(0 0 8px ${isElite ? 'rgba(163,255,0,0.5)' : 'rgba(56,128,250,0.5)'})` } : {}}
+                                    onError={e => { e.currentTarget.style.display = 'none'; }} />
+                            </div>
+
+                            {/* Streak badge — the big number */}
+                            <div className="text-center">
+                                <div className={`text-2xl font-black leading-none tabular-nums ${
+                                    isElite ? 'text-primary' : 'text-accent-blue'
+                                }`} style={{ textShadow: isElite ? '0 0 12px rgba(163,255,0,0.4)' : '0 0 12px rgba(56,128,250,0.3)' }}>
+                                    W{t.streak}
+                                </div>
+                                <div className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mt-0.5">Win Streak</div>
+                            </div>
+
+                            {/* Team abbr + record */}
+                            <div className="text-center">
+                                <span className={`block text-xs font-black tracking-wide ${
+                                    isTop3 ? 'text-white' : 'text-slate-300'
+                                } group-hover:text-primary transition-colors`}>
+                                    {t.abbr}
+                                </span>
+                                <span className="block text-[9px] font-bold text-neutral-500 mt-0.5">{t.record}</span>
+                                <span className="block text-[7.5px] font-bold text-neutral-600 truncate max-w-[130px]">{t.standing}</span>
+                            </div>
+
+                            {/* Win % bar */}
+                            <div className="w-full">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[7px] text-neutral-600 font-bold uppercase">WIN%</span>
+                                    <span className={`text-[8px] font-black tabular-nums ${
+                                        isElite ? 'text-primary' : 'text-accent-blue'
+                                    }`}>{Math.round(t.winPct * 100)}%</span>
+                                </div>
+                                <div className="h-1 rounded-full bg-neutral-800 overflow-hidden">
+                                    <div
+                                        className="h-full rounded-full transition-all duration-700"
+                                        style={{
+                                            width: `${Math.round(t.winPct * 100)}%`,
+                                            background: isElite
+                                                ? 'linear-gradient(90deg,#a3ff00,#22d3ee)'
+                                                : 'linear-gradient(90deg,#3880fa,#818cf8)'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 // achievement config with material icons + color schemes
 const ACHIEVEMENT_CONFIG: Record<string, { icon: string; color: string; bg: string; border: string; glow: string }> = {
     'Triple-Double Alert': { icon: 'workspace_premium', color: 'text-yellow-300', bg: 'from-yellow-500/20 via-orange-500/10 to-transparent', border: 'border-yellow-500/50', glow: '0_0_20px_rgba(234,179,8,0.25)' },
@@ -930,6 +1060,91 @@ export const PrecisionHubView: React.FC = () => {
         return filtPlayers.filter(p => p.isTrending).sort((a,b) => b.confidence - a.confidence);
     }, [filtPlayers]);
 
+    const [winStreakTeams, setWinStreakTeams] = useState<WinStreakTeam[]>([]);
+    const [winStreakLoading, setWinStreakLoading] = useState(true);
+
+    // Fetch NBA win streaks from ESPN standings on mount
+    useEffect(() => {
+        const fetchWinStreaks = async () => {
+            setWinStreakLoading(true);
+            try {
+                // ESPN standings endpoint — returns current season standings with streak info
+                const res = await fetch('https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?level=3&seasontype=2&type=0');
+                if (!res.ok) throw new Error('standings failed');
+                const data = await res.json();
+
+                const streakers: WinStreakTeam[] = [];
+
+                const processGroup = (group: Record<string, unknown>) => {
+                    const entries = (group.standings as Record<string, unknown>)?.entries as Record<string, unknown>[] | undefined;
+                    if (!entries) return;
+                    for (const entry of entries) {
+                        try {
+                            const team = entry.team as Record<string, unknown>;
+                            const stats = (entry.stats as Record<string, unknown>[]) ?? [];
+                            const getStat = (name: string) => {
+                                const s = stats.find((x: Record<string, unknown>) => x.name === name || x.shortDisplayName === name);
+                                return s ? Number(s.value ?? 0) : 0;
+                            };
+                            const getStr = (name: string) => {
+                                const s = stats.find((x: Record<string, unknown>) => x.name === name || x.shortDisplayName === name);
+                                return s ? String(s.displayValue ?? '') : '';
+                            };
+
+                            const wins = getStat('wins');
+                            const losses = getStat('losses');
+                            // streakLength is the raw number; streakType is the label (W/L)
+                            const streakLen = Math.abs(getStat('streak') || getStat('streakLength'));
+                            const streakDisplay = getStr('streak');
+                            // Only include teams currently on a WIN streak (positive, or display starts with W)
+                            const isWinStreak = streakDisplay.startsWith('W') || getStat('streak') > 0;
+                            const actualStreak = streakLen;
+
+                            if (!isWinStreak || actualStreak < 2) continue; // skip losing or short streaks
+
+                            const logos = team.logos as { href: string }[] | undefined;
+                            const logo = logos?.[0]?.href || `https://a.espncdn.com/i/teamlogos/nba/500/${team.id}.png`;
+                            const total = wins + losses || 1;
+
+                            streakers.push({
+                                id: String(team.id ?? ''),
+                                name: String(team.displayName ?? team.name ?? ''),
+                                abbr: String(team.abbreviation ?? ''),
+                                logo,
+                                streak: actualStreak,
+                                record: `${wins}-${losses}`,
+                                conf: String((entry as Record<string, unknown>).shortConferenceName ?? ''),
+                                standing: getStr('clinicalNote') || getStr('standingSummary') || '',
+                                winPct: wins / total,
+                            });
+                        } catch { continue; }
+                    }
+                };
+
+                // ESPN returns nested groups (East/West conferences)
+                const children = (data.children as Record<string, unknown>[]) ?? [data];
+                for (const child of children) {
+                    if ((child.standings as Record<string, unknown>)?.entries) {
+                        processGroup(child);
+                    } else {
+                        const subChildren = (child.children as Record<string, unknown>[]) ?? [];
+                        for (const sub of subChildren) processGroup(sub);
+                    }
+                }
+
+                // Sort by streak descending, then win% descending
+                streakers.sort((a, b) => b.streak - a.streak || b.winPct - a.winPct);
+                setWinStreakTeams(streakers);
+            } catch (err) {
+                console.warn('Win streak fetch failed:', err);
+                setWinStreakTeams([]);
+            } finally {
+                setWinStreakLoading(false);
+            }
+        };
+        fetchWinStreaks();
+    }, []);
+
     return (
         <div className="min-h-screen bg-background-dark text-text-main">
 
@@ -1011,6 +1226,10 @@ export const PrecisionHubView: React.FC = () => {
                 {/* ══ TEAMS ══ */}
                 {tab === 'teams' && (
                     <div className="flex flex-col gap-6">
+                        {/* Win Streak Leaderboard — show for NBA/basketball or ALL */}
+                        {(sport === 'ALL' || sport === 'NBA' || sport === 'CBB' || sport === 'NCAAM') && (
+                            <WinStreakLeaderboard teams={winStreakTeams} loading={winStreakLoading} />
+                        )}
                         {!loading && topHotTeams.length > 0 && <HotStreakTeamCarousel teams={topHotTeams} />}
                         {loading
                             ? <div className="terminal-panel overflow-hidden"><div className="overflow-x-auto"><table className="w-full"><tbody>{Array.from({ length: 6 }).map((_, i) => <SkelRow key={i} cols={13} />)}</tbody></table></div></div>
