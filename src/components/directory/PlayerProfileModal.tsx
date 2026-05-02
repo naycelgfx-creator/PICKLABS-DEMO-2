@@ -204,8 +204,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
     const [loading, setLoading] = useState(true);
 
     // Analytics tab state
-    const PROP_OPTIONS = ['pts', 'reb', 'ast', 'pra'] as const;
-    type PropKey = typeof PROP_OPTIONS[number];
+    type PropKey = 'pts' | 'reb' | 'ast' | 'pra';
     const PROP_LINES: Record<PropKey, number> = { pts: 22.5, reb: 6.5, ast: 4.5, pra: 32.5 };
     const [activeProp, setActiveProp] = useState<PropKey>('pts');
 
@@ -218,7 +217,8 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
 
     const analytics = useMemo(() => getPlayerAnalysis(
         mockGameLog, athlete.id, activeProp, PROP_LINES[activeProp]
-    ), [mockGameLog, athlete.id, activeProp]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ), [mockGameLog, athlete.id, activeProp, PROP_LINES[activeProp]]);
 
     const matchupGrade = useMemo(() => generateMatchupGrade(
         mockGameLog, athlete.position?.abbreviation ?? 'PG', 'OPP', activeProp
@@ -278,7 +278,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({ athlete,
     const locationSplits = splits.find(s => s.name === 'byLocation')?.splits || [];
 
     // Map stats indices based on sport
-    const getSplitStatVal = (sport: string, statIdx: number, item: any) => {
+    const getSplitStatVal = (sport: string, statIdx: number, item: { stats?: string[] }) => {
         if (!item.stats) return '—';
         if (sport === 'basketball') {
             // In splits: points is 16, reb is 10, ast is 11 for NBA

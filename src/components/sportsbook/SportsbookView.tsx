@@ -129,7 +129,7 @@ const Tip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, chil
         >
             {children}
             {show && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-yellow-400 text-black text-[10px] font-bold rounded-lg px-2.5 py-2 shadow-xl z-50 pointer-events-none leading-tight text-center">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-yellow-400 text-black text-[10px] font-bold rounded-full px-2.5 py-2 shadow-xl z-50 pointer-events-none leading-tight text-center">
                     <span className="material-symbols-outlined text-[11px] mr-0.5 align-middle">school</span>
                     {text}
                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-yellow-400" />
@@ -154,7 +154,7 @@ const OddsBtn: React.FC<{
         <button
             onClick={onClick}
             disabled={disabled}
-            className="flex flex-col items-center px-3 py-2 rounded-lg border transition-all text-center relative min-w-[56px] font-mono"
+            className="flex flex-col items-center px-3 py-2 rounded-full border transition-all text-center relative min-w-[56px] font-mono"
             style={{
                 background: isSelected
                     ? 'rgba(34,197,94,0.18)'
@@ -216,6 +216,12 @@ interface TeamOddsCardProps {
 
 const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, betSlip, onAddBet, sport, weatherAI, aiML, aiSpread, aiOU, isSelectedForAI, onToggleAI }) => {
     const [showPrediction, setShowPrediction] = useState(false);
+
+    // Auto-expand AI prediction when AI mode is activated
+    useEffect(() => {
+        if (aiMode || isSelectedForAI) setShowPrediction(true);
+    }, [aiMode, isSelectedForAI]);
+
     // Generate fallback prediction for standard odds formatting, but use AI prediction if available
     const pred = useMemo(() => generateAIPrediction(
         game.homeTeam.record, game.awayTeam.record, sport, [], []
@@ -285,7 +291,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
         const isFavoredContext = isHome ? winPct > 50 : winPct > 50;
 
         return (
-            <div className={`flex items-center gap-3 py-3 px-4 border-b border-border-muted/50 last:border-0 transition-all ${aiHighlight && isFavoredContext ? 'bg-green-500/5' : ''}`}>
+            <div className={`flex items-center gap-3 py-5 px-10 border-b border-border-muted/50 last:border-0 transition-all ${aiHighlight && isFavoredContext ? 'bg-green-500/5' : ''}`}>
                 {/* Logo */}
                 <div className="w-10 h-10 rounded-full bg-neutral-800 border border-border-muted overflow-hidden flex-shrink-0">
                     <img
@@ -353,7 +359,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
 
             {/* Weather Alert (Visible if Weather AI toggled and conditions are bad) */}
             {weatherAI && weatherAlert && (
-                <div className={`px-4 py-2 flex items-center gap-2 ${weatherAlert.color} border-b`}>
+                <div className={`px-10 py-3 flex items-center gap-2 ${weatherAlert.color} border-b rounded-full`}>
                     <span className="material-symbols-outlined text-[13px]">{weatherAlert.icon}</span>
                     <span className="text-[9px] font-black uppercase tracking-widest leading-none mt-0.5">
                         Weather Alert: {weatherAlert.cond}
@@ -363,7 +369,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
             )}
 
             {/* Card header */}
-            <div className="flex items-center justify-between px-4 py-2 bg-black/20 border-b border-[#1c2037]">
+            <div className="flex items-center justify-between px-10 py-4 bg-black/20 border-b border-[#1c2037] rounded-t-[3.5rem]">
                 <div className="flex items-center gap-2">
                     {onToggleAI && (
                         <button 
@@ -419,7 +425,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
             <TeamRow team={game.homeTeam} isHome={true} />
 
             {/* O/U row */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-black/10 border-t border-[#1c2037]">
+            <div className="flex items-center justify-between px-10 py-3 bg-black/10 border-t border-[#1c2037]">
                 <div className="flex flex-col">
                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total · {applyOddsShift(pred.total, shifts.totalShift)}</span>
                     {rookieMode && <span className="text-[9px] text-yellow-400/80">Combined score O/U</span>}
@@ -448,7 +454,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
 
             {/* AI Best Pick Row — clickable to expand full breakdown */}
             <button
-                className="w-full flex items-center justify-between px-4 py-2.5 border-t border-[#1c2037] bg-green-500/5 hover:bg-green-500/10 transition-colors group"
+                className="w-full flex items-center justify-between px-10 py-3.5 border-t border-[#1c2037] bg-green-500/5 hover:bg-green-500/10 transition-colors group"
                 onClick={() => setShowPrediction(p => !p)}
             >
                 <div className="flex items-center gap-2 text-[10px] font-black tracking-wider uppercase">
@@ -466,7 +472,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
 
             {/* Expanded AI Prediction Panel */}
             {showPrediction && (
-                <div className="border-t border-[#1c2037] bg-neutral-950/80 px-4 py-4 space-y-4">
+                <div className="border-t border-[#1c2037] bg-neutral-950/80 px-10 py-6 space-y-4 rounded-b-[3.5rem]">
                     {/* Header */}
                     <div className="flex items-center gap-2 mb-1">
                         <span className="material-symbols-outlined text-primary text-sm">smart_toy</span>
@@ -480,7 +486,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                           { team: game.homeTeam, prob: pred.homeWinProb, ml: pred.moneylineHome }].map(({ team, prob, ml }) => {
                             const isFav = prob > 50;
                             return (
-                                <div key={team.id} className={`rounded-xl p-3 border flex flex-col gap-1.5 ${isFav ? 'bg-primary/8 border-primary/25' : 'bg-neutral-900 border-neutral-800'}`}>
+                                <div key={team.id} className={`rounded-[3.5rem] p-3 border flex flex-col gap-1.5 ${isFav ? 'bg-primary/8 border-primary/25' : 'bg-neutral-900 border-neutral-800'}`}>
                                     <div className="flex items-center gap-2">
                                         <img src={team.logo} alt={team.abbreviation} className="w-6 h-6 object-contain" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                                         <span className="text-[10px] font-black text-text-main truncate">{team.abbreviation}</span>
@@ -504,15 +510,15 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
 
                     {/* Spread + O/U + Kelly */}
                     <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 flex flex-col items-center gap-1">
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-full p-2.5 flex flex-col items-center gap-1">
                             <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">AI Spread</span>
                             <span className="text-sm font-black text-accent-blue tabular-nums">{pred.spread}</span>
                         </div>
-                        <div className={`border rounded-lg p-2.5 flex flex-col items-center gap-1 ${pred.overUnderPick === 'Over' ? 'bg-orange-500/10 border-orange-500/25' : 'bg-cyan-500/10 border-cyan-500/25'}`}>
+                        <div className={`border rounded-full p-2.5 flex flex-col items-center gap-1 ${pred.overUnderPick === 'Over' ? 'bg-orange-500/10 border-orange-500/25' : 'bg-cyan-500/10 border-cyan-500/25'}`}>
                             <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">O/U {pred.total}</span>
                             <span className={`text-sm font-black tabular-nums ${pred.overUnderPick === 'Over' ? 'text-orange-400' : 'text-cyan-400'}`}>{pred.overUnderPick}</span>
                         </div>
-                        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 flex flex-col items-center gap-1">
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-full p-2.5 flex flex-col items-center gap-1">
                             <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">Kelly %</span>
                             <span className="text-sm font-black text-accent-purple tabular-nums">
                                 {Math.max(0, parseFloat(((pred.homeWinProb - 52.4) * 0.5).toFixed(1)))}%
@@ -534,7 +540,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                     </div>
 
                     {/* AI Insight Text */}
-                    <div className="bg-neutral-900/60 border border-border-muted rounded-lg px-3 py-2.5 flex items-start gap-2">
+                    <div className="bg-neutral-900/60 border border-border-muted rounded-full px-3 py-2.5 flex items-start gap-2">
                         <span className="material-symbols-outlined text-accent-purple text-[14px] mt-0.5 shrink-0">tips_and_updates</span>
                         <p className="text-[10px] text-slate-300 font-medium leading-relaxed">{pred.insight}</p>
                     </div>
@@ -546,7 +552,7 @@ const TeamOddsCard: React.FC<TeamOddsCardProps> = ({ game, aiMode, rookieMode, b
                             const favML = pred.homeWinProb > pred.awayWinProb ? pred.moneylineHome : pred.moneylineAway;
                             onAddBet({ gameId: `espn-${game.id}`, type: 'ML', team: `${favTeam.displayName} ML`, odds: favML, matchupStr: `${game.awayTeam.displayName} vs ${game.homeTeam.displayName}`, stake: 50, gameStatus: game.status, gameStatusName: game.statusName, gameDate: game.date });
                         }}
-                        className="w-full py-2.5 rounded-lg bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-[0_0_14px_rgba(163,255,0,0.25)] flex items-center justify-center gap-2"
+                        className="w-full py-2.5 rounded-full bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-[0_0_14px_rgba(163,255,0,0.25)] flex items-center justify-center gap-2"
                     >
                         <span className="material-symbols-outlined text-[14px]">add_shopping_cart</span>
                         Add AI Pick to Bet Slip
@@ -619,7 +625,7 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
     return (
         <div className={`terminal-panel transition-all ${aiMode && propLines[0]?.aiPick ? '!border-green-500/35 shadow-[0_0_16px_rgba(34,197,94,0.08)]' : ''}`}>
             {/* Player header */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1c2037] bg-black/20">
+            <div className="flex items-center gap-3 px-10 py-5 border-b border-[#1c2037] bg-black/20 rounded-t-[3.5rem]">
                 <div className="relative flex-shrink-0">
                     <div className="w-11 h-11 rounded-full bg-neutral-800 overflow-hidden shrink-0 relative group">
                         {onToggleAI && (
@@ -666,7 +672,7 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
                         )}
                     </div>
                     {isTrending && propLines[0] && (
-                        <div className="flex items-center gap-1 mt-1 px-2 py-1 rounded-lg border border-orange-500/30 bg-gradient-to-r from-orange-500/15 to-transparent w-fit shadow-[0_0_8px_rgba(249,115,22,0.1)]">
+                        <div className="flex items-center gap-1 mt-1 px-2 py-1 rounded-full border border-orange-500/30 bg-gradient-to-r from-orange-500/15 to-transparent w-fit shadow-[0_0_8px_rgba(249,115,22,0.1)]">
                             <span className="material-symbols-outlined text-orange-400 text-[11px] animate-pulse">local_fire_department</span>
                             <span className="text-[8px] font-black text-orange-400 uppercase tracking-wider">HOT</span>
                             <span className="text-[8px] text-neutral-400 font-bold">{Math.max(parseFloat(propLines[0].line) * 1.2, parseFloat(propLines[0].line) + 2).toFixed(1)} {propLines[0].label.replace('Points','PTS').replace('Rebounds','REB').replace('Assists','AST')} avg L5</span>
@@ -683,7 +689,7 @@ const PlayerPropCard: React.FC<PlayerPropCardProps> = ({
             </div>
 
             {/* Props */}
-            <div className="p-3 space-y-2">
+            <div className="p-4 space-y-2 bg-neutral-900/40 rounded-b-[3.5rem]">
                 {propLines.map(({ label, line, odds, aiPick }) => {
                     const overKey = `${player.displayName} Over ${line} ${label}`;
                     const underKey = `${player.displayName} Under ${line} ${label}`;
@@ -776,9 +782,9 @@ const RosterPanel: React.FC<RosterPanelProps> = ({ game, sport, betSlip, onAddBe
     }, [players, searchQuery]);
 
     return (
-        <div className="terminal-panel mb-4 overflow-visible">
+        <div className="terminal-panel mb-4 overflow-visible rounded-[3.5rem]">
             {/* Game matchup header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#1c2037] bg-black/20 rounded-t-xl">
+            <div className="flex items-center justify-between px-10 py-4 border-b border-[#1c2037] bg-black/20 rounded-t-[3.5rem]">
                 <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
                         <img src={game.awayTeam.logo} alt={game.awayTeam.abbreviation} className="w-6 h-6 object-contain"
@@ -796,17 +802,17 @@ const RosterPanel: React.FC<RosterPanelProps> = ({ game, sport, betSlip, onAddBe
                     )}
                 </div>
                 {/* Team switcher */}
-                <div className="flex gap-1 bg-background-dark border border-border-muted rounded-lg p-0.5">
+                <div className="flex gap-1 bg-background-dark border border-border-muted rounded-full p-0.5">
                     <button
                         onClick={() => setActiveTeam('away')}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${activeTeam === 'away' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider transition-all ${activeTeam === 'away' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
                     >
                         <img src={game.awayTeam.logo} alt="" className="w-4 h-4 object-contain" />
                         {game.awayTeam.abbreviation}
                     </button>
                     <button
                         onClick={() => setActiveTeam('home')}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${activeTeam === 'home' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider transition-all ${activeTeam === 'home' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
                     >
                         <img src={game.homeTeam.logo} alt="" className="w-4 h-4 object-contain" />
                         {game.homeTeam.abbreviation}
@@ -815,13 +821,13 @@ const RosterPanel: React.FC<RosterPanelProps> = ({ game, sport, betSlip, onAddBe
             </div>
 
             {rosterLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 p-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 p-10 bg-neutral-900/40 rounded-b-[3.5rem]">
                     {[1, 2, 3, 4, 5, 6].map(i => (
                         <div key={i} className="h-32 terminal-panel bg-black/10 animate-pulse" />
                     ))}
                 </div>
             ) : filteredPlayers.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 p-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 p-10 bg-neutral-900/40 rounded-b-[3.5rem]">
                     {filteredPlayers.map(player => (
                         <PlayerPropCard
                             key={player.id}
@@ -1045,7 +1051,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
             .map(([dateKey, games]) => ({ dateKey, games }));
     }, [sortedGames]);
     return (
-        <div className="flex flex-col min-h-screen bg-background-dark">
+        <div className="flex flex-col min-h-screen bg-transparent">
             {/* ── Sticky Header ───────────────────────────────────── */}
             <div className="border-b border-border-muted bg-neutral-900/70 sticky top-[64px] z-30 backdrop-blur-md">
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
@@ -1068,7 +1074,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                                 <button
                                     onClick={() => setAllGamesAI(!allGamesAI)}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${allGamesAI ? 'bg-primary/20 border-primary/50 text-primary' : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${allGamesAI ? 'bg-primary/20 border-primary/50 text-primary' : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
                                         }`}
                                 >
                                     <span className="material-symbols-outlined text-[13px]">psychology</span>
@@ -1076,7 +1082,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                 </button>
                                 <button
                                     onClick={() => setAllPlayersAI(!allPlayersAI)}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${allPlayersAI ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${allPlayersAI ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
                                         }`}
                                 >
                                     <span className="material-symbols-outlined text-[13px]">person_search</span>
@@ -1084,7 +1090,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                 </button>
                                 <button
                                     onClick={() => setWeatherAI(!weatherAI)}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${weatherAI ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${weatherAI ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'border-neutral-700 text-slate-500 hover:text-white hover:border-neutral-600'
                                         }`}
                                 >
                                     <span className="material-symbols-outlined text-[13px]">thunderstorm</span>
@@ -1140,7 +1146,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                     }
                                     toggleRookieMode();
                                 }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all ${shakeRookieModeBtn
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider transition-all ${shakeRookieModeBtn
                                     ? 'animate-shake border-red-500 text-red-500 bg-red-500/10'
                                     : isRookieModeActive
                                         ? 'bg-yellow-400/15 border-yellow-400/40 text-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.2)]'
@@ -1155,7 +1161,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                             <button
                                 onClick={() => setShowLiveTickets(p => !p)}
                                 title={showLiveTickets ? 'Hide Tickets' : 'Show Tickets'}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all ${showLiveTickets
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider transition-all ${showLiveTickets
                                     ? 'bg-[#A3FF00]/15 border-[#A3FF00]/40 text-[#A3FF00] shadow-[0_0_12px_rgba(163,255,0,0.2)]'
                                     : 'border-neutral-700 text-slate-400 hover:border-[#A3FF00]/30 hover:text-[#A3FF00]'
                                     }`}
@@ -1167,7 +1173,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                             {/* Bet Slip */}
                             <button
                                 onClick={() => setShowBetSlip(p => !p)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all ${showBetSlip
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider transition-all ${showBetSlip
                                     ? 'bg-purple-500/15 border-purple-500/40 text-purple-400'
                                     : 'border-neutral-700 text-slate-400 hover:border-neutral-600 hover:text-white'
                                     }`}
@@ -1189,7 +1195,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                             <button
                                 key={sport.key}
                                 onClick={() => { setActiveSport(sport.key); setGames([]); setSearchQuery(''); }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${activeSport === sport.key
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${activeSport === sport.key
                                     ? 'bg-primary text-black'
                                     : 'text-slate-400 hover:text-white hover:bg-neutral-800'
                                     }`}
@@ -1215,34 +1221,34 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
 
                         {/* ── Analysis Panel (Removed) ── */}
 
-                        {/* Search + Panel tabs */}
-                        <div className="flex items-center gap-3">
+                        {/* Search + Panel tabs (Bento Layout) */}
+                        <div className="bento-card flex flex-col sm:flex-row sm:items-center gap-4 p-10">
                             <div className="relative flex-1">
-                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[16px]">search</span>
+                                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-[18px]">search</span>
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                     placeholder="Search teams or players..."
-                                    className="w-full bg-neutral-900 border border-border-muted rounded-lg pl-9 pr-4 py-2.5 text-sm text-text-main placeholder-text-muted/40 focus:outline-none focus:border-primary/50 transition-all"
+                                    className="w-full bg-white/5 border border-white/10 rounded-[3.5rem] pl-11 pr-4 py-3 text-sm text-text-main placeholder-text-muted/40 focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium"
                                 />
                                 {searchQuery && (
-                                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
-                                        <span className="material-symbols-outlined text-[14px]">close</span>
+                                    <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
+                                        <span className="material-symbols-outlined text-[16px]">close</span>
                                     </button>
                                 )}
                             </div>
-                            <div className="flex gap-1 bg-background-dark border border-border-muted rounded-lg p-1 flex-shrink-0">
+                            <div className="flex gap-2 bg-black/40 border border-white/5 rounded-[3.5rem] p-1.5 flex-shrink-0">
                                 <button
                                     onClick={() => setActivePanel('teams')}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${activePanel === 'teams' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${activePanel === 'teams' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
                                 >
                                     <span className="material-symbols-outlined text-[13px]">groups</span>
                                     Teams
                                 </button>
                                 <button
                                     onClick={() => setActivePanel('players')}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${activePanel === 'players' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${activePanel === 'players' ? 'bg-primary text-black' : 'text-text-muted hover:text-text-main'}`}
                                 >
                                     <span className="material-symbols-outlined text-[13px]">person</span>
                                     Players
@@ -1252,7 +1258,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
 
                         {/* Status banners */}
                         {(allGamesAI || selectedAIGames.size > 0 || allPlayersAI || selectedAIPlayers.size > 0) && (
-                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-green-500/25 bg-green-500/5 mb-4">
+                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-[3.5rem] border border-green-500/25 bg-green-500/5 mb-4">
                                 <span className="relative flex h-2 w-2 flex-shrink-0">
                                     <span className="animate-ping absolute inset-0 rounded-full bg-green-400 opacity-75" />
                                     <span className="relative rounded-full h-2 w-2 bg-green-500 inline-flex" />
@@ -1263,7 +1269,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                             </div>
                         )}
                         {isRookieModeActive && (
-                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-yellow-400/25 bg-yellow-400/5">
+                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-[3.5rem] border border-yellow-400/25 bg-yellow-400/5">
                                 <span className="material-symbols-outlined text-yellow-400 text-sm">school</span>
                                 <p className="text-[11px] text-yellow-300 font-bold">
                                     Rookie Mode — hover any bet button for an explanation of what it means.
@@ -1291,29 +1297,30 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                                 return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
                                             })();
                                             return (
-                                                <div key={dateKey}>
+                                                <div key={dateKey} className="bento-card p-10">
                                                     {/* Date header with collapse toggle */}
                                                     <button
                                                         onClick={() => toggleDateCollapse(dateKey)}
-                                                        className="w-full flex items-center gap-3 mb-3 group"
+                                                        className="w-full flex items-center justify-between mb-4 group"
                                                     >
-                                                        <div className="flex items-center gap-2.5 flex-1">
+                                                        <div className="flex items-center gap-3">
                                                             {liveInDate > 0 && (
-                                                                <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                                                                <span className="relative flex h-3 w-3 flex-shrink-0">
                                                                     <span className="animate-ping absolute inset-0 rounded-full bg-red-400 opacity-75" />
-                                                                    <span className="relative rounded-full h-2.5 w-2.5 bg-red-500 inline-flex" />
+                                                                    <span className="relative rounded-full h-3 w-3 bg-red-500 inline-flex" />
                                                                 </span>
                                                             )}
-                                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">{label}</span>
-                                                            <span className="text-[10px] text-neutral-600 font-medium">{fullDate}</span>
-                                                            <span className="text-[9px] font-black text-neutral-500 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded-full">{dGames.length} games</span>
+                                                            <span className="text-[14px] font-black uppercase tracking-[0.2em] text-cyan-400">{label}</span>
+                                                            <span className="text-[12px] text-neutral-400 font-medium">{fullDate}</span>
+                                                            <span className="text-[10px] font-black text-neutral-400 bg-black/40 border border-white/10 px-2 py-0.5 rounded-full">{dGames.length} games</span>
                                                             {liveInDate > 0 && (
-                                                                <span className="text-[9px] font-black text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">{liveInDate} LIVE</span>
+                                                                <span className="text-[10px] font-black text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">{liveInDate} LIVE</span>
                                                             )}
                                                         </div>
-                                                        <span className={`material-symbols-outlined text-neutral-500 group-hover:text-primary transition-all text-[18px] ${isCollapsed ? 'rotate-180' : ''}`}>expand_less</span>
+                                                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 group-hover:bg-cyan-500/20 group-hover:border-cyan-500/50 transition-colors">
+                                                            <span className={`material-symbols-outlined text-neutral-400 group-hover:text-cyan-400 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}>expand_less</span>
+                                                        </div>
                                                     </button>
-                                                    <div className="h-px bg-neutral-800 mb-3" />
 
                                                     {!isCollapsed && (
                                                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -1341,7 +1348,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="py-20 flex flex-col items-center text-center border border-dashed border-border-muted rounded-xl">
+                                    <div className="py-20 flex flex-col items-center text-center border border-dashed border-border-muted rounded-[3.5rem]">
                                         <span className="material-symbols-outlined text-4xl text-text-muted/30 mb-3">event_busy</span>
                                         <h3 className="text-text-main font-black uppercase tracking-widest text-sm mb-1">No Games Today</h3>
                                         <p className="text-text-muted text-xs">No {activeSport} games scheduled for today.</p>
@@ -1356,7 +1363,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                 {loading && games.length === 0 ? (
                                     <div className="space-y-4">
                                         {[1, 2].map(i => (
-                                            <div key={i} className="h-64 rounded-xl bg-neutral-900 border border-neutral-800 animate-pulse" />
+                                            <div key={i} className="h-64 rounded-[3.5rem] bg-neutral-900 border border-neutral-800 animate-pulse" />
                                         ))}
                                     </div>
                                 ) : dateGroups.length > 0 ? (
@@ -1410,7 +1417,7 @@ export const SportsbookView: React.FC<SportsbookViewProps> = ({ betSlip, setBetS
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="py-20 flex flex-col items-center text-center border border-dashed border-border-muted rounded-xl">
+                                    <div className="py-24 px-10 flex flex-col items-center text-center border border-dashed border-border-muted rounded-[3.5rem]">
                                         <span className="material-symbols-outlined text-4xl text-text-muted/30 mb-3">person_off</span>
                                         <h3 className="text-text-main font-black uppercase tracking-widest text-sm mb-1">No Games Today</h3>
                                         <p className="text-text-muted text-xs">Switch to the Teams tab or select a different sport.</p>

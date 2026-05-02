@@ -169,7 +169,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <div className="terminal-panel p-8 group border-primary/10 relative">
                         <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} variant="green" />
-                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-black transition-all">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-black transition-all">
                             <span className="material-symbols-outlined">hub</span>
                         </div>
                         <h4 className="text-lg font-black italic uppercase text-text-main mb-3 leading-tight">Neural Network Simulations</h4>
@@ -186,7 +186,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
 
                     <div className="terminal-panel p-8 group border-accent-purple/10 relative">
                         <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} variant="green" />
-                        <div className="w-12 h-12 rounded-lg bg-accent-purple/10 flex items-center justify-center text-accent-purple mb-6 group-hover:bg-accent-purple group-hover:text-white transition-all">
+                        <div className="w-12 h-12 rounded-full bg-accent-purple/10 flex items-center justify-center text-accent-purple mb-6 group-hover:bg-accent-purple group-hover:text-white transition-all">
                             <span className="material-symbols-outlined">visibility</span>
                         </div>
                         <h4 className="text-lg font-black italic uppercase text-white mb-3 leading-tight">Sharp & Whale Intelligence</h4>
@@ -202,7 +202,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                     </div>
                     <div className="terminal-panel p-8 group border-accent-blue/10 relative">
                         <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} variant="green" />
-                        <div className="w-12 h-12 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue mb-6 group-hover:bg-accent-blue group-hover:text-white transition-all">
+                        <div className="w-12 h-12 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue mb-6 group-hover:bg-accent-blue group-hover:text-white transition-all">
                             <span className="material-symbols-outlined">analytics</span>
                         </div>
                         <h4 className="text-lg font-black italic uppercase text-text-main mb-3 leading-tight">Stat-Prop Engine</h4>
@@ -218,7 +218,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                     </div>
                     <div className="terminal-panel p-8 group border-primary/10 relative">
                         <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} variant="green" />
-                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-black transition-all">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-black transition-all">
                             <span className="material-symbols-outlined">balance</span>
                         </div>
                         <h4 className="text-lg font-black italic uppercase text-white mb-3 leading-tight">Arbitrage & EV+ Tools</h4>
@@ -276,7 +276,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
                     {/* Left — simulated API terminal */}
-                    <div className="relative rounded-2xl overflow-hidden border border-neutral-800 bg-[#0d0d0d] shadow-2xl">
+                    <div className="relative rounded-[3.5rem] overflow-hidden border border-neutral-800 bg-[#0d0d0d] shadow-2xl">
                         {/* Window chrome */}
                         <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-800 bg-neutral-900/80">
                             <span className="w-3 h-3 rounded-full bg-red-500/80"></span>
@@ -339,7 +339,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                             ))}
                         </ul>
 
-                        <button className="mt-4 self-start px-10 py-4 border-2 border-border-muted bg-neutral-900 text-text-main rounded-xl text-xs font-black uppercase tracking-[0.2em] italic hover:border-primary/60 hover:text-primary transition-all">
+                        <button className="mt-4 self-start px-10 py-4 border-2 border-border-muted bg-neutral-900 text-text-main rounded-[3.5rem] text-xs font-black uppercase tracking-[0.2em] italic hover:border-primary/60 hover:text-primary transition-all">
                             View Documentation
                         </button>
                     </div>
@@ -373,7 +373,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                                 { icon: 'newspaper', title: 'Breaking News Filters', desc: 'Curated sharp news directly affecting lines.' },
                             ].map((feat, i) => (
                                 <div key={i} className="flex items-start gap-3">
-                                    <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
                                         <span className="material-symbols-outlined text-primary text-base">{feat.icon}</span>
                                     </div>
                                     <div>
@@ -386,7 +386,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                     </div>
 
                     {/* Right — live play-by-play terminal */}
-                    <div className="relative rounded-2xl overflow-hidden border border-neutral-800 bg-[#0d0d0d] shadow-2xl">
+                    <div className="relative rounded-[3.5rem] overflow-hidden border border-neutral-800 bg-[#0d0d0d] shadow-2xl">
                         {/* Window chrome */}
                         <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-800 bg-neutral-900/80">
                             <span className="w-3 h-3 rounded-full bg-red-500/80"></span>
@@ -437,7 +437,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onNavigate }) 
                         <img
                             src="/Screenshot 2026-02-28 at 6.02.26 AM.png"
                             alt="PickLabs Dashboard"
-                            className="mx-auto rounded-2xl object-cover h-full object-left-top"
+                            className="mx-auto rounded-[3.5rem] object-cover h-full object-left-top"
                             draggable={false}
                         />
                     </ContainerScroll>

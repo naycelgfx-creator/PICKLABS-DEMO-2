@@ -465,7 +465,7 @@ export function recordUserSessionLogout(userId: string) {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function verifyOTP(..._args: any[]): boolean {
     // Legacy Password Reset Placeholder
     return false;

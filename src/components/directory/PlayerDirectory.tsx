@@ -59,7 +59,7 @@ export const PlayerDirectory: React.FC = () => {
     const paginatedAthletes = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
     return (
-        <div className="w-full flex justify-center py-6 sm:py-8 px-4 bg-background-dark min-h-screen">
+        <div className="w-full flex justify-center py-6 sm:py-8 px-4 bg-transparent min-h-screen pb-12">
             <div className="w-full max-w-[1536px] flex flex-col gap-6">
 
                 {/* ── Header & Search ── */}

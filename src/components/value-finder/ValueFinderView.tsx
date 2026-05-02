@@ -108,7 +108,7 @@ export const ValueFinderView: React.FC<ValueFinderViewProps> = ({ betSlip, onAdd
     }, []);
 
     return (
-        <div className="w-full flex justify-center bg-background-dark py-8 px-6 min-h-[calc(100vh-200px)]">
+        <div className="w-full flex justify-center bg-transparent py-8 px-6 min-h-[calc(100vh-200px)] pb-12">
             <div className="max-w-[1536px] w-full flex flex-col gap-6 animate-fade-in">
 
                 {/* Header Section */}

@@ -93,7 +93,7 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({ onLogo
     );
 
     return (
-        <div className="flex-1 w-full bg-background-dark min-h-screen text-slate-100 overflow-y-auto font-display">
+        <div className="flex-1 w-full bg-transparent min-h-screen text-slate-100 overflow-y-auto font-display pb-12">
             <div className="p-6 md:p-8 space-y-8 max-w-4xl mx-auto">
                 {/* Page Header */}
                 <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">

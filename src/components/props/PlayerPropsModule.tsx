@@ -253,7 +253,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] 
         const log = payload[0].payload.log || payload[0].payload;
         if (!log || !log.date) return null;
         return (
-            <div className="bg-[#0f172a] border border-[#1e3a5f] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] overflow-hidden min-w-[180px] animate-in zoom-in-95 duration-100">
+            <div className="bg-[#0f172a] border border-[#1e3a5f] rounded-[3.5rem] shadow-[0_8px_32px_rgba(0,0,0,0.8)] overflow-hidden min-w-[180px] animate-in zoom-in-95 duration-100">
                 <div className="px-3 py-2 border-b border-[#1e3a5f] bg-[#111827]">
                     <div className="flex items-center justify-between gap-4">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -565,7 +565,7 @@ const AltLinesPanel: React.FC<{
                         return (
                             <button key={i} onClick={() => { if (offer) { setPendingLine(entry.line); setPendingDir(dir); } }}
                                 disabled={!offer}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left cursor-pointer
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[3.5rem] border transition-all text-left cursor-pointer
                                 ${isSelected ? 'bg-emerald-900/40 border-emerald-500/60' : offer ? 'bg-[#111827] border-[#1e293b] hover:border-[#2d3f5a]' : 'bg-[#0a0f1a] border-[#111827] opacity-40 cursor-not-allowed'}`}>
                                 <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${isSelected ? 'border-emerald-400 bg-emerald-400' : 'border-slate-600'}`}>
                                     {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
@@ -584,7 +584,7 @@ const AltLinesPanel: React.FC<{
                 {/* Done */}
                 <div className="p-4 border-t border-[#1e293b]">
                     <button onClick={() => { onSelect(pendingLine, pendingDir); onClose(); }}
-                        className="w-full py-3.5 rounded-xl bg-primary text-black text-sm font-black uppercase tracking-widest cursor-pointer hover:opacity-90 transition-opacity">
+                        className="w-full py-3.5 rounded-[3.5rem] bg-primary text-black text-sm font-black uppercase tracking-widest cursor-pointer hover:opacity-90 transition-opacity">
                         Done
                     </button>
                 </div>
@@ -604,14 +604,14 @@ const InsightsPanel: React.FC<{
         window.addEventListener('mousedown', h); return () => window.removeEventListener('mousedown', h);
     }, [onClose]);
     return (
-        <div className="insights-panel absolute top-full left-0 z-40 mt-1 w-80 bg-[#0d1117] border border-[#1e3a5f] rounded-xl shadow-2xl overflow-hidden animate-fade-in">
+        <div className="insights-panel absolute top-full left-0 z-40 mt-1 w-80 bg-[#0d1117] border border-[#1e3a5f] rounded-[3.5rem] shadow-2xl overflow-hidden animate-fade-in">
             <div className="px-4 py-3 border-b border-[#1e293b]">
                 <span className="text-sm font-black text-white">Choose insight</span>
             </div>
             <div className="p-3 space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
                 {insights.map((insight, i) => (
                     <button key={i} onClick={() => setSelected(i)}
-                        className={`w-full text-left p-3 rounded-lg border transition-all cursor-pointer ${selected === i ? 'bg-[#111827] border-[#1e3a5f]' : 'bg-transparent border-transparent hover:bg-white/5'}`}>
+                        className={`w-full text-left p-3 rounded-full border transition-all cursor-pointer ${selected === i ? 'bg-[#111827] border-[#1e3a5f]' : 'bg-transparent border-transparent hover:bg-white/5'}`}>
                         <div className="flex items-start gap-2">
                             <div className="flex-1">
                                 <p className="text-[13px] font-bold text-white leading-relaxed">{insight}</p>
@@ -676,13 +676,13 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
     const activeBook = activeAlt ? (selectedAltLine?.dir === 'over' ? activeAlt.overBook : activeAlt.underBook) : null;
 
     return (
-        <div className="terminal-panel border border-border-muted rounded-2xl overflow-hidden animate-fade-in bg-[#0a0a0f]">
+        <div className="terminal-panel border border-border-muted rounded-[3.5rem] overflow-hidden animate-fade-in bg-[#0a0a0f]">
 
             {/* ── Row 1: Identity + Odds ── */}
-            <div className="flex items-center gap-4 px-5 pt-5 pb-3 border-b border-border-muted">
+            <div className="flex items-center gap-4 px-10 pt-10 pb-4 border-b border-border-muted">
                 {/* Photo + bigger team logo badge */}
                 <div className="relative shrink-0">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-border-muted shadow-lg">
+                    <div className="w-16 h-16 rounded-[3.5rem] overflow-hidden border-2 border-border-muted shadow-lg">
                         <img src={prop.photoUrl} alt={prop.player}
                             className="w-full h-full object-cover"
                             onError={e => { (e.target as HTMLImageElement).src = AVATAR(prop.player); }} />
@@ -712,14 +712,6 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
                                     {pt}
                                 </button>
                             ))}
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-[10px] font-black text-slate-400">Over <span className="text-white">{effectiveLine}</span> {activePropType}</span>
-                        <span className="text-[9px] text-slate-600">·</span>
-                        <span className="text-[10px] font-black text-slate-400">DK: <span className="text-white">{prop.dkOdds}</span></span>
-                        <span className="text-[10px] font-black text-slate-400">FD: <span className="text-white">{prop.fdOdds}</span></span>
-                        <span className="text-[10px] font-black text-slate-400">IP: <span className="text-primary">{prop.impliedProb}%</span></span>
                     </div>
                 </div>
 
@@ -730,7 +722,7 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
             </div>
 
             {/* ── Row 2: Window tabs + lightbulb + % summary ── */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border-muted">
+            <div className="flex items-center justify-between px-10 py-5 border-b border-border-muted">
                 <div className="flex items-center gap-1">
                     {/* 💡 Insights button */}
                     <div className="relative mr-1">
@@ -767,14 +759,14 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
             </div>
 
             {/* ── Row 3: Chart Header + ALT LINES pill ── */}
-            <div className="flex items-center justify-between px-5 pt-3 pb-1">
+            <div className="flex items-center justify-between px-10 pt-6 pb-2">
                 <div className="flex items-center gap-3">
                     <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">% {prop.player} · {activePropType}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     {/* Alt Lines bookie button — like image 5 */}
                     <button onClick={() => setAltLinesOpen(true)}
-                        className="flex items-center gap-1.5 bg-[#111827] border border-dashed border-[#2d3f5a] rounded-lg px-2.5 py-1.5 hover:border-primary/40 hover:bg-white/5 transition-all cursor-pointer group">
+                        className="flex items-center gap-1.5 bg-[#111827] border border-dashed border-[#2d3f5a] rounded-full px-2.5 py-1.5 hover:border-primary/40 hover:bg-white/5 transition-all cursor-pointer group">
                         {activeBook
                             ? <BookBadge book={activeBook} size="sm" />
                             : <>
@@ -793,7 +785,7 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
             </div>
 
             {/* ── Opp Rank pill ── */}
-            <div className="flex items-center gap-2 px-5 pb-1">
+            <div className="flex items-center gap-2 px-10 pb-4">
                 <span className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">Opp Rank vs {activePropType}:</span>
                 <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${prop.oppRank.color === 'green' ? 'text-[#a3ff00] border-[#a3ff00]/30 bg-[#a3ff00]/10' : prop.oppRank.color === 'red' ? 'text-orange-500 border-orange-500/30 bg-orange-500/10' : 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10'}`}>
                     {prop.oppRank.rank}{OrdinalSuffix(prop.oppRank.rank)} in league
@@ -815,7 +807,7 @@ const PlayerHero: React.FC<PlayerHeroProps> = ({ prop, onClose, sport }) => {
             </div>
 
             {/* ── Chart Rendering ── */}
-            <div className="px-4 pb-4">
+            <div className="px-10 pb-10">
                 <UniversalPropChart logs={logs} line={effectiveLine} propType={activePropType} playerName={prop.player} chartType={chartType} />
             </div>
 
@@ -853,7 +845,7 @@ const TeamHotPlayerCarousel: React.FC<{ players: PropLine[], onClick: (id: strin
     if (players.length === 0) return null;
     return (
         <div className="mb-5">
-            <div className="flex items-center justify-between mb-4 px-4">
+            <div className="flex items-center justify-between mb-4 px-10">
                 <div className="flex items-center gap-2">
                     <div className="flex items-center justify-center w-6 h-6 rounded bg-orange-500/10 border border-orange-500/30 shrink-0">
                         <span className="material-symbols-outlined text-orange-400 text-sm animate-pulse">local_fire_department</span>
@@ -864,7 +856,7 @@ const TeamHotPlayerCarousel: React.FC<{ players: PropLine[], onClick: (id: strin
                 <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">Click to Analyze</span>
             </div>
 
-            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 px-4">
+            <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 px-10">
                 {players.map((p, i) => {
                     const hotLine = Math.max(parseFloat(p.line.toString()) * 1.2, parseFloat(p.line.toString()) + 2);
                     // Simple achievement based on propType
@@ -880,7 +872,7 @@ const TeamHotPlayerCarousel: React.FC<{ players: PropLine[], onClick: (id: strin
                         <div
                             key={i}
                             onClick={() => onClick(p.id)}
-                            className={`min-w-[190px] rounded-xl border ${cfg.border} bg-gradient-to-br ${cfg.bgFrom} via-neutral-900/80 to-neutral-950
+                            className={`min-w-[190px] rounded-[3.5rem] border ${cfg.border} bg-gradient-to-br ${cfg.bgFrom} via-neutral-900/80 to-neutral-950
                                 cursor-pointer flex flex-col overflow-hidden shrink-0 group
                                 transition-all duration-200 hover:scale-[1.01] hover:brightness-110`}
                             style={{ boxShadow: isTop ? '0 0 18px rgba(249,115,22,0.12)' : '0 0 8px rgba(0,0,0,0.4)' }}
@@ -1014,7 +1006,7 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
             )}
 
             {/* ── Zone B: Props Table ── */}
-            <div className="terminal-panel rounded-xl overflow-hidden">
+            <div className="terminal-panel rounded-[3.5rem] overflow-hidden">
 
                 {/* Toolbar */}
                 <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border-muted bg-neutral-900/40 flex-wrap">
@@ -1043,7 +1035,7 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
                         <button 
                             onClick={handleRefreshProps}
                             disabled={refreshing || isLoading}
-                            className={`flex items-center justify-center p-1 rounded-md transition-colors ${refreshing ? 'text-primary' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}
+                            className={`flex items-center justify-center p-1 rounded-full transition-colors ${refreshing ? 'text-primary' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}
                             title="Refresh Stats Manually"
                         >
                             <span className={`material-symbols-outlined text-sm ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
@@ -1052,7 +1044,7 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
                 </div>
 
                 {/* Table Header */}
-                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-2 px-4 py-2.5 border-b border-border-muted bg-neutral-900/60 sticky top-0 z-10 min-w-[800px]">
+                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-2 px-10 py-4 border-b border-border-muted bg-neutral-900/60 sticky top-0 z-10 min-w-[800px]">
                     {[
                         'Player', 'Line',
                         'DK / FD Odds', 'IP', 'Opp Rank',
@@ -1068,7 +1060,7 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
                 {isLoading && (
                     <div className="flex flex-col min-w-[800px]">
                         {Array.from({ length: 10 }).map((_, i) => (
-                            <div key={i} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-2 px-4 py-3 border-b border-border-muted/30 items-center animate-pulse">
+                            <div key={i} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-2 px-10 py-4 border-b border-border-muted/30 items-center animate-pulse">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-neutral-800 shrink-0" />
                                     <div className="w-28 h-3 bg-neutral-800 rounded" />
@@ -1131,11 +1123,11 @@ export const PlayerPropsModule: React.FC<PlayerPropsModuleProps> = ({ sport, tea
                                     {/* Odds */}
                                     <div className="flex flex-col items-center gap-0.5">
                                         <div className="flex items-center gap-1">
-                                            <img src="https://sportsbook.draftkings.com/favicon.ico" alt="DK" className="w-2.5 h-2.5 rounded-sm opacity-60" />
+                                            <img src="https://sportsbook.draftkings.com/favicon.ico" alt="DK" className="w-2.5 h-2.5 rounded-full opacity-60" />
                                             <span className="text-[10px] font-bold text-text-muted">{prop.dkOdds}</span>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <img src="https://cdn.wagerwire.com/sportsbooks/fanduel.png" alt="FD" className="w-2.5 h-2.5 rounded-sm opacity-60" />
+                                            <img src="https://cdn.wagerwire.com/sportsbooks/fanduel.png" alt="FD" className="w-2.5 h-2.5 rounded-full opacity-60" />
                                             <span className="text-[10px] font-bold text-text-muted">{prop.fdOdds}</span>
                                         </div>
                                     </div>

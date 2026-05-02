@@ -659,7 +659,7 @@ function App() {
           )}
 
           {currentView === 'precision-hub' && (
-            <PrecisionHubView />
+            <PrecisionHubView onAddBet={handeAddBet} onSelectGame={(g) => { setSelectedGame(g); setCurrentView('matchup-terminal'); }} />
           )}
 
           {currentView === 'sportsbook' && (

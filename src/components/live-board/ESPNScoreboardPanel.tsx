@@ -38,12 +38,12 @@ const ESPNGameCard: React.FC<{ game: ESPNGame; onSelectGame?: (game: ESPNGame) =
 
     return (
         <div
-            className={`bg-neutral-900 border rounded-xl overflow-hidden shadow-lg transition-all duration-200 ${isLive ? 'border-red-500/30 hover:border-red-500/60' : 'border-neutral-800 hover:border-primary/40'
+            className={`bg-neutral-900 border rounded-3xl overflow-hidden shadow-lg transition-all duration-200 ${isLive ? 'border-red-500/30 hover:border-red-500/60' : 'border-neutral-800 hover:border-primary/40'
                 } ${onSelectGame ? 'cursor-pointer' : ''}`}
             onClick={() => onSelectGame?.(game)}
         >
             {/* Card Top: Venue + Broadcast */}
-            <div className="bg-neutral-800/60 px-4 py-2 flex items-center justify-between border-b border-neutral-700/50">
+            <div className="bg-neutral-800/60 px-6 py-4 flex items-center justify-between border-b border-neutral-700/50">
                 <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium truncate">
                     <span className="material-symbols-outlined text-[12px]">location_on</span>
                     <span className="truncate">{game.venue}{game.city ? ` · ${game.city}` : ''}</span>
@@ -60,7 +60,7 @@ const ESPNGameCard: React.FC<{ game: ESPNGame; onSelectGame?: (game: ESPNGame) =
             </div>
 
             {/* Scoreboard */}
-            <div className="px-4 py-4">
+            <div className="px-8 py-8">
                 {/* Away Team */}
                 <div className={`flex items-center gap-3 mb-3 ${!isFinal ? '' : game.awayTeam.winner ? '' : 'opacity-60'}`}>
                     <div className="w-9 h-9 rounded-full bg-neutral-800 overflow-hidden shrink-0">
@@ -172,7 +172,7 @@ const ESPNGameRow: React.FC<{ game: ESPNGame; onSelectGame?: (g: ESPNGame) => vo
     return (
         <div
             onClick={() => onSelectGame?.(game)}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all ${isLive ? 'border-red-500/20 bg-red-500/5 hover:border-red-500/40' : 'border-neutral-800 bg-neutral-900 hover:border-primary/20'
+            className={`flex items-center gap-3 px-8 py-6 rounded-3xl border transition-all ${isLive ? 'border-red-500/20 bg-red-500/5 hover:border-red-500/40' : 'border-neutral-800 bg-neutral-900 hover:border-primary/20'
                 } ${onSelectGame ? 'cursor-pointer' : ''}`}
         >
             {/* Status */}
@@ -295,7 +295,7 @@ export const ESPNScoreboardPanel: React.FC<ESPNScoreboardPanelProps> = ({ sport,
 
             {/* Error */}
             {error && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 mb-4 flex items-center gap-2">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-[2rem] px-8 py-4 mb-4 flex items-center gap-2">
                     <span className="material-symbols-outlined text-red-400 text-[16px]">error</span>
                     <span className="text-red-400 text-xs">{error}</span>
                 </div>
@@ -384,7 +384,7 @@ export const ESPNScoreboardPanel: React.FC<ESPNScoreboardPanelProps> = ({ sport,
                     })}
                 </div>
             ) : !error ? (
-                <div className="py-12 flex flex-col items-center text-center border border-dashed border-neutral-800 rounded-xl">
+                <div className="py-24 flex flex-col items-center text-center border border-dashed border-neutral-800 rounded-[3.5rem] px-10">
                     <span className="material-symbols-outlined text-3xl text-slate-600 mb-2">event_busy</span>
                     <p className="text-slate-500 text-sm font-medium">No {sport} games today. Check back later.</p>
                 </div>

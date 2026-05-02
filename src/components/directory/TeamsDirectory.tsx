@@ -512,7 +512,7 @@ export const TeamsDirectory: React.FC = () => {
     }
 
     return (
-        <div className="w-full flex flex-col items-center bg-background-dark py-4 sm:py-8 px-3 sm:px-6 min-h-screen">
+        <div className="w-full flex flex-col items-center bg-transparent py-4 sm:py-8 px-3 sm:px-6 min-h-screen pb-12">
             <div className="max-w-[1536px] w-full flex flex-col gap-4 sm:gap-8">
 
                 {/* ── Header ── */}

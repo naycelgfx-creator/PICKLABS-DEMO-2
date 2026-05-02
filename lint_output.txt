@@ -1,0 +1,44 @@
+
+> hidden-aurora@0.0.0 lint
+> eslint .
+
+
+/Users/naycelgfx/Desktop/untitled folder/picklab app - 03 -08-2026/PICKLABS-DEMO-2-main 2/src/components/dashboard/HomeDashboardView.tsx
+    5:39  error  'getSportStatLabels' is defined but never used          @typescript-eslint/no-unused-vars
+    9:10  error  'TrendingUp' is defined but never used                  @typescript-eslint/no-unused-vars
+    9:22  error  'User' is defined but never used                        @typescript-eslint/no-unused-vars
+    9:28  error  'Activity' is defined but never used                    @typescript-eslint/no-unused-vars
+    9:38  error  'BarChart2' is defined but never used                   @typescript-eslint/no-unused-vars
+   10:10  error  'XAxis' is defined but never used                       @typescript-eslint/no-unused-vars
+   10:17  error  'YAxis' is defined but never used                       @typescript-eslint/no-unused-vars
+   10:24  error  'CartesianGrid' is defined but never used               @typescript-eslint/no-unused-vars
+   10:39  error  'Tooltip' is defined but never used                     @typescript-eslint/no-unused-vars
+   10:48  error  'ResponsiveContainer' is defined but never used         @typescript-eslint/no-unused-vars
+   43:7   error  'TEAM_TREND_DATA' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   69:7   error  'TEAM_RADAR_DATA' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   84:12  error  'statsCollapsed' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   84:28  error  'setStatsCollapsed' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   85:12  error  'trendRange' is assigned a value but never used         @typescript-eslint/no-unused-vars
+   85:24  error  'setTrendRange' is assigned a value but never used      @typescript-eslint/no-unused-vars
+   87:11  error  'getLastGameStats' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  129:12  error  'topPlayers' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  130:12  error  'aiPicks' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  131:12  error  'addedBets' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  131:23  error  'setAddedBets' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  212:11  error  'uniqueGames' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  217:22  error  'chartPrimary' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  217:47  error  'chartSecondary' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/Users/naycelgfx/Desktop/untitled folder/picklab app - 03 -08-2026/PICKLABS-DEMO-2-main 2/src/components/directory/PlayerProfileModal.tsx
+  207:11  error    'PROP_OPTIONS' is assigned a value but only used as a type                                                   @typescript-eslint/no-unused-vars
+  221:8   warning  React Hook useMemo has a missing dependency: 'PROP_LINES'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  281:68  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+
+/Users/naycelgfx/Desktop/untitled folder/picklab app - 03 -08-2026/PICKLABS-DEMO-2-main 2/src/components/precision-hub/PrecisionHubView.tsx
+  102:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  922:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  923:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 31 problems (30 errors, 1 warning)
+

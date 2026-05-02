@@ -99,10 +99,11 @@ const kellyStake = (prob: number, ml: string): number => {
 };
 
 // ── Build stats for a player ──────────────────────────────────────────────────
-const buildStats = (sport: string, rng: () => number, leaders?: any[]): Record<StatKey, number> => {
+interface StatLeaderEntry { category: string; displayValue: string; }
+const buildStats = (sport: string, rng: () => number, leaders?: StatLeaderEntry[]): Record<StatKey, number> => {
     const r = (lo: number, hi: number, dp = 1) => parseFloat((lo + rng() * (hi - lo)).toFixed(dp));
     const z = 0;
-    const real: any = {};
+    const real: Partial<Record<StatKey, number>> = {};
     if (leaders) {
         leaders.forEach(l => {
             const v = parseFloat(l.displayValue);
@@ -238,41 +239,9 @@ const KellyBadge: React.FC<{ pct: number }> = ({ pct }) => {
     return <span className={`text-[10px] font-black ${c}`}>{pct.toFixed(1)}%</span>;
 };
 
-const OddsCompare: React.FC<{ ai: string; vegas: string }> = ({ ai, vegas }) => (
-    <div className="flex flex-col items-center gap-0.5">
-        <span className="text-[10px] font-black text-primary">{ai}</span>
-        <span className="text-[9px] text-text-muted">{vegas}</span>
-    </div>
-);
 
-const RecBadge: React.FC<{ rec: string; conf: number }> = ({ rec, conf }) => {
-    const c = rec === 'HOME' ? 'bg-primary/10 text-primary border-primary/30' : rec === 'AWAY' ? 'bg-accent-purple/10 text-accent-purple border-accent-purple/30' : 'bg-neutral-800 text-text-muted border-border-muted';
-    return (
-        <div className="flex flex-col items-center gap-1">
-            <span className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest ${c}`}>{rec}</span>
-            <span className="text-[8px] text-text-muted">{conf}% conf</span>
-        </div>
-    );
-};
 
-// +/- stat cell: green if above baseline, red if below
-const SC: React.FC<{ v: number; baseline: number; hi?: boolean; fmt?: string; inverted?: boolean }> = ({ v, baseline, hi, fmt, inverted }) => {
-    const zero = v === 0;
-    const over = inverted ? v < baseline : v > baseline; // ERA: lower is better
-    const sign = zero ? '' : over ? '+' : '';
-    const display = fmt === 'avg' || fmt === 'svpct'
-        ? v > 0 ? v.toFixed(3) : '—'
-        : v > 0 ? `${sign}${v}` : '—';
-    return (
-        <td className={`px-1.5 py-3 text-center text-xs font-bold tabular-nums transition-colors ${zero ? 'text-neutral-700'
-            : hi ? 'text-primary'
-                : over ? 'text-emerald-400'
-                    : 'text-red-400'
-            }`}>
-            {display}
-        </td>
-    );
-};
+
 
 const SkelRow: React.FC<{ cols?: number }> = ({ cols = 8 }) => (
     <tr className="border-b border-border-muted animate-pulse">
@@ -323,7 +292,7 @@ const LastGamePopup: React.FC<{ player: PlayerRow; anchorRect: DOMRect; onClose:
     return (
         <div
             ref={ref}
-            className="fixed z-[9999] w-[400px] bg-neutral-950 border border-border-muted rounded-xl shadow-[0_24px_80px_rgba(0,0,0,0.8)] overflow-hidden"
+            className="fixed z-[9999] w-[400px] bg-neutral-950 border border-border-muted rounded-[3.5rem] shadow-[0_24px_80px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col p-2"
             style={{ top, left }}
         >
             {/* Header */}
@@ -446,7 +415,6 @@ const LastGamePopup: React.FC<{ player: PlayerRow; anchorRect: DOMRect; onClose:
 
 // ── Hot Streak Carousels (Premium Design) ────────────────────────────────────────
 const MEDAL_COLORS = ['text-yellow-400 drop-shadow-[0_0_6px_rgba(234,179,8,0.6)]','text-slate-300 drop-shadow-[0_0_6px_rgba(203,213,225,0.5)]','text-amber-600 drop-shadow-[0_0_4px_rgba(217,119,6,0.5)]'];
-const RANK_LABELS = ['1ST','2ND','3RD'];
 
 const HotStreakTeamCarousel: React.FC<{ teams: { team: { abbr: string, logo: string }, prob: number }[] }> = ({ teams }) => {
     if (teams.length === 0) return null;
@@ -470,7 +438,7 @@ const HotStreakTeamCarousel: React.FC<{ teams: { team: { abbr: string, logo: str
                     const isTop3 = i < 3;
                     return (
                         <div key={i}
-                            className={`min-w-[140px] rounded-xl border transition-all duration-200 cursor-pointer flex flex-col items-center gap-3 p-4 relative overflow-hidden shrink-0 group
+                            className={`min-w-[140px] rounded-[3.5rem] border transition-all duration-200 cursor-pointer flex flex-col items-center gap-3 p-10 relative overflow-hidden shrink-0 group
                             ${isTop3
                                 ? 'border-orange-500/40 bg-gradient-to-b from-orange-500/15 via-neutral-900/80 to-neutral-950 hover:border-orange-400/60 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)]'
                                 : 'border-neutral-800 bg-neutral-900/60 hover:border-orange-500/30 hover:bg-orange-500/5'
@@ -554,7 +522,7 @@ const WinStreakLeaderboard: React.FC<{ teams: WinStreakTeam[]; loading: boolean 
                 <div className="w-6 h-6 rounded bg-primary/10 border border-primary/20 animate-pulse" />
                 <div className="h-3 w-48 rounded bg-neutral-800 animate-pulse" />
             </div>
-            <div className="flex gap-3">{[1,2,3,4,5].map(i => <div key={i} className="min-w-[168px] h-[210px] rounded-xl bg-neutral-900 border border-neutral-800 animate-pulse shrink-0" />)}</div>
+            <div className="flex gap-3">{[1,2,3,4,5].map(i => <div key={i} className="min-w-[168px] h-[210px] rounded-[3.5rem] bg-neutral-900 border border-neutral-800 animate-pulse shrink-0" />)}</div>
         </div>
     );
     if (teams.length === 0) return null;
@@ -575,7 +543,7 @@ const WinStreakLeaderboard: React.FC<{ teams: WinStreakTeam[]; loading: boolean 
             <div className="flex gap-1.5 mb-4 overflow-x-auto no-scrollbar">
                 {STREAK_SPORT_TABS.filter(t => t.key === 'ALL' || availableSports.has(t.key)).map(t => (
                     <button key={t.key} onClick={() => setActiveSport(t.key)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all shrink-0 ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-wider transition-all shrink-0 ${
                             activeSport === t.key ? 'bg-neutral-900 text-white' : 'border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600'
                         }`}
                         style={activeSport === t.key ? { borderColor: t.col, color: t.col, boxShadow: `0 0 10px ${t.col}33` } : undefined}
@@ -587,7 +555,7 @@ const WinStreakLeaderboard: React.FC<{ teams: WinStreakTeam[]; loading: boolean 
             </div>
             {/* Cards */}
             {filtered.length === 0 ? (
-                <div className="py-6 text-center border border-dashed border-neutral-800 rounded-xl">
+                <div className="py-6 text-center border border-dashed border-neutral-800 rounded-[3.5rem]">
                     <span className="text-neutral-600 text-xs font-bold">No active win streaks for this sport right now</span>
                 </div>
             ) : (
@@ -600,7 +568,7 @@ const WinStreakLeaderboard: React.FC<{ teams: WinStreakTeam[]; loading: boolean 
                         const glowCol = isElite ? 'rgba(163,255,0,0.2)' : 'rgba(56,128,250,0.15)';
                         return (
                             <div key={t.id + t.sport}
-                                className={`min-w-[168px] rounded-xl border flex flex-col items-center gap-2 p-4 relative overflow-hidden shrink-0 transition-all duration-200 group cursor-default
+                                className={`min-w-[168px] rounded-[3.5rem] border flex flex-col items-center gap-2 p-10 relative overflow-hidden shrink-0 transition-all duration-200 group cursor-default
                                     ${isElite ? (isTop3 ? 'bg-gradient-to-b from-primary/12 via-neutral-900/80 to-neutral-950' : 'bg-gradient-to-b from-primary/6 to-neutral-950') : 'bg-gradient-to-b from-accent-blue/6 to-neutral-950'}`}
                                 style={{ borderColor: isTop3 ? (isElite ? 'rgba(163,255,0,0.4)' : 'rgba(56,128,250,0.35)') : 'rgba(255,255,255,0.06)', boxShadow: isTop3 ? `0 0 ${isNo1 ? 24 : 14}px ${glowCol}` : undefined }}
                             >
@@ -739,7 +707,7 @@ const StatLeadersSection: React.FC<{ leaders: Record<string, StatLeader[]>; load
             <div className="flex gap-1.5 mb-4 overflow-x-auto no-scrollbar">
                 {STAT_CATS.map(c => (
                     <button key={c.key} onClick={() => setActive(c.key)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all shrink-0 ${active === c.key ? 'bg-neutral-900 text-white' : 'border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600'}`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-wider transition-all shrink-0 ${active === c.key ? 'bg-neutral-900 text-white' : 'border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600'}`}
                         style={active === c.key ? { borderColor: c.glow.replace(',0.2',',.4').replace(',0.22',',.4').replace(',0.25',',.4'), color: c.col, boxShadow: `0 0 12px ${c.glow}` } : undefined}
                     >
                         <span className="material-symbols-outlined text-[12px]">{c.icon}</span>{c.short}
@@ -748,9 +716,9 @@ const StatLeadersSection: React.FC<{ leaders: Record<string, StatLeader[]>; load
             </div>
             {/* Cards */}
             {loading ? (
-                <div className="flex gap-3">{[1,2,3,4,5].map(i => <div key={i} className="min-w-[148px] h-[200px] rounded-xl bg-neutral-900 border border-neutral-800 animate-pulse shrink-0" />)}</div>
+                <div className="flex gap-3">{[1,2,3,4,5].map(i => <div key={i} className="min-w-[148px] h-[200px] rounded-[3.5rem] bg-neutral-900 border border-neutral-800 animate-pulse shrink-0" />)}</div>
             ) : rows.length === 0 ? (
-                <div className="py-8 text-center border border-dashed border-neutral-800 rounded-xl"><span className="text-neutral-600 text-xs font-bold">No data available</span></div>
+                <div className="py-8 text-center border border-dashed border-neutral-800 rounded-[3.5rem]"><span className="text-neutral-600 text-xs font-bold">No data available</span></div>
             ) : (
                 <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2" style={{ scrollbarWidth: 'thin' }}>
                     {rows.map((p, i) => {
@@ -758,7 +726,7 @@ const StatLeadersSection: React.FC<{ leaders: Record<string, StatLeader[]>; load
                         const isNo1 = i === 0;
                         return (
                             <div key={p.name + i}
-                                className={`min-w-[148px] rounded-xl border flex flex-col items-center gap-2.5 p-4 relative overflow-hidden shrink-0 transition-all duration-200 group ${isTop3 ? 'bg-neutral-900/80 hover:bg-neutral-900' : 'bg-neutral-950 hover:bg-neutral-900/60'}`}
+                                className={`min-w-[148px] rounded-[3.5rem] border flex flex-col items-center gap-2.5 p-10 relative overflow-hidden shrink-0 transition-all duration-200 group ${isTop3 ? 'bg-neutral-900/80 hover:bg-neutral-900' : 'bg-neutral-950 hover:bg-neutral-900/60'}`}
                                 style={{ borderColor: isTop3 ? cat.glow.replace(',0.2',',.4').replace(',0.22',',.4').replace(',0.25',',.45') : 'rgba(255,255,255,0.06)', boxShadow: isNo1 ? `0 0 24px ${cat.glow}` : isTop3 ? `0 0 12px ${cat.glow.replace(',0.2',',0.1').replace(',0.22',',0.1').replace(',0.25',',0.12')}` : undefined }}
                             >
                                 <div className="absolute top-2 left-2 text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded bg-neutral-800"
@@ -840,7 +808,7 @@ const HotStreakPlayerCarousel: React.FC<{ players: PlayerRow[] }> = ({ players }
 
                     return (
                         <div key={i}
-                            className={`min-w-[200px] rounded-xl border bg-gradient-to-br ${cfg.bg} transition-all duration-200 cursor-pointer flex flex-col gap-0 relative overflow-hidden shrink-0 group ${cfg.border}`}
+                            className={`min-w-[200px] rounded-[3.5rem] border bg-gradient-to-br ${cfg.bg} transition-all duration-200 cursor-pointer flex flex-col gap-0 relative overflow-hidden shrink-0 group ${cfg.border}`}
                             style={{ boxShadow: isRank1 ? `inset 0 0 0 1px rgba(234,179,8,0.15), ${cfg.glow}` : `${cfg.glow}` }}
                         >
                             {/* Top rank strip */}
@@ -918,8 +886,198 @@ const HotStreakPlayerCarousel: React.FC<{ players: PlayerRow[] }> = ({ players }
     );
 };
 
+// ── Game Card (oval, beginner-friendly) ──────────────────────────────────────
+const GameCard: React.FC<{ row: TeamRow; idx: number; onPredict: (row: TeamRow) => void }> = ({ row, idx, onPredict }) => {
+    const favHome = row.homeEdge >= row.awayEdge;
+    const pickColor = row.rec === 'HOME' ? 'text-primary border-primary/30 bg-primary/10' : row.rec === 'AWAY' ? 'text-accent-purple border-accent-purple/30 bg-accent-purple/10' : 'text-neutral-400 border-neutral-700 bg-neutral-800/60';
+    const edgeHome = row.homeEdge > 0;
+    const edgeAway = row.awayEdge > 0;
+    return (
+        <div className="rounded-[2.5rem] border border-border-muted bg-gradient-to-br from-neutral-900/80 to-neutral-950 overflow-hidden transition-all duration-200 hover:border-white/10 hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+            {/* Sport + index badge strip */}
+            <div className="flex items-center justify-between px-5 py-2.5 border-b border-border-muted/50 bg-neutral-900/60">
+                <div className="flex items-center gap-2">
+                    <span className="text-[8px] font-black text-neutral-600 tabular-nums">#{idx + 1}</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">{row.sportLabel}</span>
+                    <span className="text-[8px] text-neutral-600 font-bold">{row.status}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-black text-neutral-500 uppercase">O/U</span>
+                    <span className="text-[12px] font-black text-text-main tabular-nums">{row.total}</span>
+                </div>
+            </div>
+
+            <div className="flex items-stretch gap-0 divide-x divide-border-muted/40">
+                {/* ── Teams column ── */}
+                <div className="flex-1 p-4 flex flex-col gap-3 min-w-0">
+                    {/* Away team */}
+                    <div className="flex items-center gap-3">
+                        <img src={row.awayTeam.logo} alt={row.awayTeam.abbr} className="w-9 h-9 object-contain shrink-0" onError={e => { e.currentTarget.style.opacity = '0'; }} />
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-black text-text-main">{row.awayTeam.abbr}</span>
+                                <span className="text-[8px] text-neutral-600 font-bold">AWAY</span>
+                                {row.awayTeam.record && <span className="text-[8px] text-neutral-600">{row.awayTeam.record}</span>}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1">
+                                <span className="text-[10px] font-black text-text-muted tabular-nums">Proj: <span className="text-text-main">{row.awayPoints}</span></span>
+                                <span className="text-[10px] font-bold text-neutral-600">{row.awaySpread}</span>
+                                <EdgePill v={row.awayEdge} />
+                            </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                            <div className="text-[9px] font-black text-cyan-400">{row.aiMLAway}</div>
+                            <div className="text-[8px] text-neutral-600">{row.vegasMLAway}</div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pl-1">
+                        <div className="h-px flex-1 bg-border-muted/40" />
+                        <span className="text-[9px] font-black text-neutral-700">@</span>
+                        <div className="h-px flex-1 bg-border-muted/40" />
+                    </div>
+
+                    {/* Home team */}
+                    <div className="flex items-center gap-3">
+                        <img src={row.homeTeam.logo} alt={row.homeTeam.abbr} className="w-9 h-9 object-contain shrink-0" onError={e => { e.currentTarget.style.opacity = '0'; }} />
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-black text-text-main">{row.homeTeam.abbr}</span>
+                                <span className="text-[8px] text-primary/60 font-black">HOME</span>
+                                {row.homeTeam.record && <span className="text-[8px] text-neutral-600">{row.homeTeam.record}</span>}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1">
+                                <span className="text-[10px] font-black text-text-muted tabular-nums">Proj: <span className="text-text-main">{row.homePoints}</span></span>
+                                <span className="text-[10px] font-bold text-neutral-600">{row.homeSpread}</span>
+                                <EdgePill v={row.homeEdge} />
+                            </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                            <div className="text-[9px] font-black text-cyan-400">{row.aiMLHome}</div>
+                            <div className="text-[8px] text-neutral-600">{row.vegasMLHome}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Stats column ── */}
+                <div className="flex flex-col items-center justify-center gap-3 px-4 py-4 shrink-0 bg-neutral-900/30">
+                    <WinGauge prob={row.homeWinProb >= row.awayWinProb ? row.homeWinProb : row.awayWinProb} abbr={row.homeWinProb >= row.awayWinProb ? row.homeTeam.abbr : row.awayTeam.abbr} />
+                    <div className="flex gap-3">
+                        <WinPctBadge label="L5" pct={favHome ? row.homeTrend.l5W : row.awayTrend.l5W} />
+                        <WinPctBadge label="L10" pct={favHome ? row.homeTrend.l10W : row.awayTrend.l10W} />
+                        <WinPctBadge label="L20" pct={favHome ? row.homeTrend.l20W : row.awayTrend.l20W} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[8px] text-accent-purple font-bold uppercase">Kelly</span>
+                        <KellyBadge pct={favHome ? row.kellyHome : row.kellyAway} />
+                    </div>
+                    <div className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${edgeHome || edgeAway ? 'text-primary border-primary/30 bg-primary/8' : 'text-neutral-500 border-neutral-700'}`}>
+                        {edgeHome ? `+${row.homeEdge.toFixed(1)}% edge` : edgeAway ? `+${row.awayEdge.toFixed(1)}% edge` : 'No edge'}
+                    </div>
+                </div>
+
+                {/* ── AI Pick + CTA column ── */}
+                <div className="flex flex-col items-center justify-center gap-3 px-4 py-4 shrink-0 bg-neutral-900/20 min-w-[110px]">
+                    <div className="text-center">
+                        <div className="text-[8px] font-black text-neutral-600 uppercase tracking-widest mb-1">AI Pick</div>
+                        <span className={`text-[11px] font-black px-3 py-1 rounded-full border ${pickColor}`}>{row.rec}</span>
+                        <div className="text-[8px] text-neutral-600 mt-1">{row.conf}% conf</div>
+                    </div>
+                    <button
+                        onClick={() => onPredict(row)}
+                        className="flex flex-col items-center gap-1 px-4 py-2.5 rounded-full bg-primary/10 border border-primary/30 hover:bg-primary hover:border-primary transition-all group/btn"
+                    >
+                        <span className="material-symbols-outlined text-primary group-hover/btn:text-black text-base transition-colors">smart_toy</span>
+                        <span className="text-[8px] font-black text-primary group-hover/btn:text-black uppercase tracking-widest transition-colors">Add to Slip</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ── Player Card ──────────────────────────────────────────────────────────────────
+const PlayerCard: React.FC<{ row: PlayerRow; gCols: ReturnType<typeof getColsForSport>; onPredict: (row: PlayerRow) => void; onOpenPopup: (row: PlayerRow, e: React.MouseEvent) => void }> = ({ row, gCols, onPredict, onOpenPopup }) => {
+    return (
+        <div className="terminal-panel flex flex-col justify-between h-full bg-neutral-900/60 hover:bg-neutral-900/80 transition-all border border-neutral-800 rounded-[2.5rem] overflow-hidden group">
+            {/* Header: Name and Team */}
+            <div className="flex items-center gap-3 px-6 py-4 bg-black/20 border-b border-border-muted/50 cursor-pointer" onClick={(e) => onOpenPopup(row, e)}>
+                <div className="relative shrink-0">
+                    <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-800">
+                        {row.headshot || row.athleteId
+                            ? <img
+                                src={row.headshot || buildESPNHeadshotUrl(row.athleteId, row.sport as SportKey)}
+                                alt={row.shortName}
+                                className="h-full w-full object-cover"
+                                onError={e => {
+                                    const img = e.currentTarget;
+                                    const alt = row.athleteId ? buildESPNHeadshotUrl(row.athleteId, row.sport as SportKey) : '';
+                                    if (alt && img.src !== alt) { img.src = alt; } else { img.style.display = 'none'; }
+                                }}
+                              />
+                            : <span className="material-symbols-outlined text-neutral-600 text-lg flex items-center justify-center h-full w-full">person</span>
+                        }
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-black rounded-full p-[2px] z-10 flex items-center justify-center shadow-sm border border-neutral-800/80">
+                        <img src={row.teamLogo} alt={row.team} className="w-full h-full object-contain drop-shadow-md" onError={e=>{e.currentTarget.style.opacity='0'}} />
+                    </div>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-black text-text-main group-hover:text-primary transition-colors leading-none">{row.shortName}</span>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-black text-text-muted">{row.team}</span>
+                        {row.isTrending && row.trendingText && (
+                            <span className="text-[8px] font-black text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 w-fit">
+                                <span className="material-symbols-outlined text-[10px] animate-pulse">local_fire_department</span>
+                                {row.trendingText}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            </div>
+            
+            {/* Stats Grid */}
+            <div className="px-6 py-4 grid grid-cols-4 gap-2">
+                {gCols.slice(0, 4).map(c => {
+                    const v = row.stats[c.key] ?? 0;
+                    const zero = v === 0;
+                    const over = c.key === 'era' ? v < c.baseline : v > c.baseline;
+                    const display = c.key === 'avg' || c.key === 'svpct' ? (v > 0 ? v.toFixed(3) : '—') : (v > 0 ? v : '—');
+                    return (
+                        <div key={c.key} className="flex flex-col items-center bg-black/20 rounded-[1.5rem] p-2 border border-white/5">
+                            <span className="text-[8px] font-black uppercase text-text-muted tracking-widest">{c.label}</span>
+                            <span className={`text-sm font-black mt-0.5 ${zero ? 'text-neutral-700' : over ? 'text-emerald-400' : 'text-text-main'}`}>
+                                {display}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+            
+            {/* Action Row */}
+            <div className="px-6 py-4 border-t border-border-muted/50 bg-black/10 flex items-center justify-between">
+                <div className="flex flex-col">
+                    <span className="text-[8px] text-text-muted font-bold uppercase tracking-widest">AI Confidence</span>
+                    <span className={`text-sm font-black ${row.confidence>=80?'text-primary':row.confidence>=65?'text-accent-blue':'text-text-muted'}`}>
+                        {row.confidence}%
+                    </span>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); onPredict(row); }} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-black transition-all group/pbtn">
+                    <span className="material-symbols-outlined text-[14px]">smart_toy</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Predict</span>
+                </button>
+            </div>
+        </div>
+    );
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
-export const PrecisionHubView: React.FC = () => {
+interface PrecisionHubProps {
+    onAddBet?: (bet: Record<string, unknown>) => void;
+    onSelectGame?: (game: Record<string, unknown>) => void;
+}
+
+export const PrecisionHubView: React.FC<PrecisionHubProps> = ({ onAddBet }) => {
     const [tab, setTab] = useState<'teams' | 'players'>('teams');
     const [sport, setSport] = useState('ALL');
     const [sortBy, setSortBy] = useState<'points' | 'team'>('points');
@@ -931,6 +1089,24 @@ export const PrecisionHubView: React.FC = () => {
     const [popup, setPopup] = useState<{ player: PlayerRow; rect: DOMRect } | null>(null);
     const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
 
+    const handleTeamPredict = (row: TeamRow) => {
+        if (!onAddBet) return;
+        const isHomeBetter = row.homeEdge > row.awayEdge;
+        const team = isHomeBetter ? row.homeTeam : row.awayTeam;
+        const ml = isHomeBetter ? row.vegasMLHome : row.vegasMLAway;
+        
+        onAddBet({
+            gameId: row.gameId,
+            type: 'ML',
+            team: `${team.abbr} ML`,
+            odds: ml,
+            matchupStr: `${row.awayTeam.abbr} @ ${row.homeTeam.abbr}`,
+            stake: Math.max(10, row.rec === (isHomeBetter ? 'HOME' : 'AWAY') ? row.conf : 10),
+            gameStatus: row.status,
+            gameDate: row.gameDate
+        });
+    };
+
     const getDateISO = (offset: number) => {
         const d = new Date();
         if (d.getHours() < 6) d.setDate(d.getDate() - 1);
@@ -938,7 +1114,6 @@ export const PrecisionHubView: React.FC = () => {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
 
-    const todayISO = getDateISO(0);
     const todayDisplay = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
     const toggleDateCollapse = (dateKey: string) => {
@@ -1123,7 +1298,7 @@ export const PrecisionHubView: React.FC = () => {
         setPlayerRows(pRows);
         setUpdatedAt(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
         setLoading(false);
-    }, [todayISO]);
+    }, []);
 
     useEffect(() => { load(); }, [load]);
 
@@ -1143,13 +1318,6 @@ export const PrecisionHubView: React.FC = () => {
         };
         return getStat(b) - getStat(a);
     });
-
-    // Group sorted players by sport
-    const groupedPlayers = sport === 'ALL'
-        ? PRECISION_SPORTS
-            .map(s => ({ label: s.label, icon: s.icon, rows: sortedPlayers.filter(p => p.sportLabel === s.label) }))
-            .filter(g => g.rows.length > 0)
-        : [{ label: sport, icon: PRECISION_SPORTS.find(s => s.label === sport)?.icon ?? 'sports', rows: sortedPlayers }];
 
     // Group team rows by date
     const teamDateGroups: { dateKey: string; rows: TeamRow[] }[] = useMemo(() => {
@@ -1295,84 +1463,100 @@ export const PrecisionHubView: React.FC = () => {
         };
         fetchWinStreaks();
     }, []);
-
     return (
-        <div className="min-h-screen bg-background-dark text-text-main">
+        <div className="min-h-screen bg-transparent text-text-main pb-12 w-full max-w-[1536px] mx-auto px-4 sm:px-6 pt-6">
 
-            {/* ── Header ── */}
-            <div className="border-b border-border-muted bg-neutral-900/40 backdrop-blur-sm">
-                <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-5">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div>
-                            <div className="flex items-center gap-2.5 mb-1">
-                                <div className="flex items-center justify-center w-7 h-7 rounded bg-primary/10 border border-primary/20">
-                                    <span className="material-symbols-outlined text-primary text-sm">bolt</span>
-                                </div>
-                                <h1 className="text-lg font-black uppercase tracking-[0.15em] text-text-main">Precision Hub</h1>
-                                <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-accent-purple/10 text-accent-purple border border-accent-purple/20 rounded">AI Predictions</span>
+            {/* ── Header (Bento) ── */}
+            <div className="bento-card p-6 mb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-2.5 mb-1.5">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                                <span className="material-symbols-outlined text-cyan-400 text-sm">bolt</span>
                             </div>
-                            <p className="text-[11px] text-text-muted font-medium">{todayDisplay}</p>
-                            <div className="flex items-center gap-3 mt-0.5">
-                                <span className="flex items-center gap-1.5 text-[10px] text-text-muted">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" style={{ boxShadow: '0 0 6px rgba(163,255,0,0.7)' }} />
-                                    {filtTeams.length} matchups · {filtPlayers.length} players
-                                </span>
-                                {updatedAt && <span className="text-[10px] text-neutral-700">Updated {updatedAt}</span>}
-                            </div>
+                            <h1 className="text-xl font-black uppercase tracking-[0.15em] text-text-main">Precision Hub</h1>
+                            <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-accent-purple/10 text-accent-purple border border-accent-purple/20 rounded-full">AI Predictions</span>
                         </div>
-                        <button onClick={load} className="flex items-center gap-2 px-4 py-2 border border-border-muted bg-neutral-900 hover:border-primary/40 hover:text-primary text-text-muted rounded text-[10px] font-black uppercase tracking-widest transition-all">
-                            <span className={`material-symbols-outlined text-sm ${loading ? 'animate-spin' : ''}`}>refresh</span>
-                            Refresh
-                        </button>
+                        <p className="text-xs text-text-muted font-medium">{todayDisplay}</p>
+                        <div className="flex items-center gap-3 mt-1.5">
+                            <span className="flex items-center gap-1.5 text-[10px] text-text-muted">
+                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block" style={{ boxShadow: '0 0 6px rgba(34,211,238,0.7)' }} />
+                                <span className="font-bold">{filtTeams.length} matchups</span> <span className="opacity-50">·</span> <span className="font-bold">{filtPlayers.length} players</span>
+                            </span>
+                            {updatedAt && <span className="text-[10px] text-neutral-600 font-medium bg-black/40 px-2 py-0.5 rounded-full border border-white/5">Updated {updatedAt}</span>}
+                        </div>
                     </div>
+                    <button onClick={load} className="flex items-center gap-2 px-4 py-2 border border-white/10 bg-white/5 hover:bg-cyan-500/10 hover:border-cyan-500/40 hover:text-cyan-400 text-text-muted rounded-full text-[10px] font-black uppercase tracking-widest transition-all">
+                        <span className={`material-symbols-outlined text-sm ${loading ? 'animate-spin' : ''}`}>refresh</span>
+                        Refresh
+                    </button>
                 </div>
             </div>
 
-            <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-5">
+            {/* ── Rookie How-To Banner ── */}
+            <div className="mb-4 rounded-[2rem] border border-cyan-500/20 bg-gradient-to-r from-cyan-500/8 via-accent-purple/5 to-transparent p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-cyan-500/15 border border-cyan-500/30 shrink-0">
+                    <span className="material-symbols-outlined text-cyan-400">school</span>
+                </div>
+                <div className="flex-1">
+                    <p className="text-[11px] font-black text-cyan-300 uppercase tracking-widest mb-1">How to use Precision Hub</p>
+                    <div className="flex flex-wrap gap-x-5 gap-y-1">
+                        <span className="text-[10px] text-text-muted"><span className="text-white font-bold">1.</span> Pick a sport (or keep “All”)</span>
+                        <span className="text-[10px] text-text-muted"><span className="text-white font-bold">2.</span> Switch between Teams or Players tab</span>
+                        <span className="text-[10px] text-text-muted"><span className="text-white font-bold">3.</span> Find a game → check the “AI Pick” column → hit “Predict” to add to your bet slip</span>
+                        <span className="text-[10px] text-text-muted"><span className="text-white font-bold">4.</span> Green numbers = strong value. Higher confidence = safer bet</span>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-1 shrink-0 text-[9px] font-bold uppercase tracking-widest">
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-primary inline-block"></span><span className="text-primary">Green = strong edge</span></span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 inline-block"></span><span className="text-red-400">Red = weak / avoid</span></span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-accent-blue inline-block"></span><span className="text-accent-blue">Blue = fair value</span></span>
+                </div>
+            </div>
 
-                {/* ── Tabs ── */}
-                <div className="flex items-center gap-0 mb-5 border-b border-border-muted">
-                    {(['teams', 'players'] as const).map(t => (
-                        <button key={t} onClick={() => setTab(t)}
-                            className={`flex items-center gap-2 px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 -mb-px ${tab === t ? 'text-primary border-primary' : 'text-text-muted border-transparent hover:text-text-main'}`}
-                        >
-                            <span className="material-symbols-outlined text-sm">{t === 'teams' ? 'emoji_events' : 'person'}</span>
-                            {t === 'teams' ? 'Teams' : 'Players'}
+            <div className="bento-card p-6 mb-6">
+                <div className="flex flex-col xl:flex-row xl:items-center gap-6">
+                    {/* ── Tabs ── */}
+                    <div className="flex items-center gap-2 pb-2 xl:pb-0 border-b xl:border-b-0 xl:border-r border-white/10 xl:pr-6 overflow-x-auto">
+                        {(['teams', 'players'] as const).map(t => (
+                            <button key={t} onClick={() => setTab(t)}
+                                className={`flex items-center gap-2 px-4 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-[3.5rem] transition-all ${tab === t ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/40' : 'text-text-muted border border-transparent hover:text-white hover:bg-white/5'}`}
+                            >
+                                <span className="material-symbols-outlined text-[14px]">{t === 'teams' ? 'emoji_events' : 'person'}</span>
+                                {t === 'teams' ? 'Teams' : 'Players'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* ── Sport Filter Chips ── */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 flex-1 w-full scrollbar-hide">
+                        <button onClick={() => setSport('ALL')} className={`flex items-center justify-center min-w-[60px] px-3 py-2 rounded-[3.5rem] text-[10px] font-black uppercase tracking-wider transition-all border ${sport === 'ALL' ? 'bg-white/10 border-white/20 text-white shadow-[0_0_12px_rgba(255,255,255,0.1)]' : 'border-white/5 bg-black/40 text-neutral-500 hover:text-neutral-300 hover:bg-white/5'}`}>
+                            All
                         </button>
-                    ))}
+                        {available.map(s => (
+                            <button key={s.key} onClick={() => setSport(s.key)} className={`flex items-center justify-center gap-1.5 min-w-[80px] px-3 py-2 rounded-[3.5rem] text-[10px] font-black uppercase tracking-wider transition-all border ${sport === s.key ? 'bg-white/10 border-white/20 text-white shadow-[0_0_12px_rgba(255,255,255,0.1)]' : 'border-white/5 bg-black/40 text-neutral-500 hover:text-neutral-300 hover:bg-white/5'}`}>
+                                <span className="material-symbols-outlined text-[14px]">{s.icon}</span>
+                                <span>{s.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Sort Options */}
                     {tab === 'players' && (
-                        <div className="ml-auto flex items-center gap-2 pb-2">
-                            <span className="text-[8px] text-text-muted font-bold uppercase tracking-widest">Sort:</span>
-                            <button onClick={() => setSortBy('points')} className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded border transition-all ${sortBy === 'points' ? 'bg-primary/10 text-primary border-primary/40' : 'border-border-muted text-text-muted hover:text-text-main'}`}>
-                                <span className="material-symbols-outlined text-[11px] mr-1">arrow_downward</span>
+                        <div className="flex items-center gap-2 mt-4 xl:mt-0 xl:pl-6 xl:border-l border-white/10 shrink-0">
+                            <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest hidden sm:inline-block">Sort:</span>
+                            <button onClick={() => setSortBy('points')} className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-[3.5rem] border transition-all ${sortBy === 'points' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/40' : 'border-white/10 text-neutral-400 bg-black/40 hover:text-white hover:bg-white/5'}`}>
+                                <span className="material-symbols-outlined text-[11px] mr-1 hidden sm:inline-block border-white/10">arrow_downward</span>
                                 Points
                             </button>
-                            <button onClick={() => setSortBy('team')} className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded border transition-all ${sortBy === 'team' ? 'bg-primary/10 text-primary border-primary/40' : 'border-border-muted text-text-muted hover:text-text-main'}`}>
-                                <span className="material-symbols-outlined text-[11px] mr-1">group</span>
+                            <button onClick={() => setSortBy('team')} className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-[3.5rem] border transition-all ${sortBy === 'team' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/40' : 'border-white/10 text-neutral-400 bg-black/40 hover:text-white hover:bg-white/5'}`}>
+                                <span className="material-symbols-outlined text-[11px] mr-1 hidden sm:inline-block border-white/10">group</span>
                                 Team
                             </button>
                         </div>
                     )}
-                    {tab === 'teams' && (
-                        <div className="ml-auto flex items-center gap-3 pb-2 text-[9px] text-text-muted font-bold uppercase tracking-widest">
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" />AI ML</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-neutral-600" />Vegas</span>
-                            <span className="text-accent-purple">Kelly%</span>
-                        </div>
-                    )}
                 </div>
-
-                {/* ── Sport Filter Chips ── */}
-                {/* Mobile: 5-per-row equal grid — Desktop: flex-wrap */}
-                <div className="grid grid-cols-5 gap-1.5 sm:flex sm:flex-wrap sm:gap-2 mb-5">
-                    <button onClick={() => setSport('ALL')} className={`sport-chip justify-center text-center !text-[9px] sm:!text-[10px] ${sport === 'ALL' ? 'active' : ''}`}>All</button>
-                    {available.map(s => (
-                        <button key={s.key} onClick={() => setSport(s.key)} className={`sport-chip flex items-center justify-center gap-1 !text-[9px] sm:!text-[10px] ${sport === s.key ? 'active' : ''}`}>
-                            <span className="material-symbols-outlined text-[10px] sm:text-[12px]">{s.icon}</span>
-                            <span className="truncate">{s.label}</span>
-                        </button>
-                    ))}
-                </div>
+            </div>
 
                 {/* ══ TEAMS ══ */}
                 {tab === 'teams' && (
@@ -1381,9 +1565,34 @@ export const PrecisionHubView: React.FC = () => {
                         <WinStreakLeaderboard teams={winStreakTeams} loading={winStreakLoading} />
                         {!loading && topHotTeams.length > 0 && <HotStreakTeamCarousel teams={topHotTeams} />}
                         {loading
-                            ? <div className="terminal-panel overflow-hidden"><div className="overflow-x-auto"><table className="w-full"><tbody>{Array.from({ length: 6 }).map((_, i) => <SkelRow key={i} cols={13} />)}</tbody></table></div></div>
+                            ? (
+                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                    {Array.from({ length: 6 }).map((_, i) => (
+                                        <div key={i} className="rounded-[2.5rem] border border-border-muted bg-neutral-900/60 animate-pulse overflow-hidden">
+                                            <div className="h-10 bg-neutral-800/60 border-b border-border-muted" />
+                                            <div className="p-4 flex gap-4">
+                                                <div className="flex-1 space-y-3">
+                                                    <div className="h-3 bg-neutral-800 rounded-full w-3/4" />
+                                                    <div className="h-2 bg-neutral-800 rounded-full w-1/2" />
+                                                    <div className="h-px bg-neutral-800" />
+                                                    <div className="h-3 bg-neutral-800 rounded-full w-3/4" />
+                                                    <div className="h-2 bg-neutral-800 rounded-full w-1/2" />
+                                                </div>
+                                                <div className="w-24 space-y-2 flex flex-col items-center pt-2">
+                                                    <div className="w-12 h-12 rounded-full bg-neutral-800" />
+                                                    <div className="h-2 bg-neutral-800 rounded-full w-full" />
+                                                </div>
+                                                <div className="w-24 space-y-3 flex flex-col items-center pt-4">
+                                                    <div className="h-4 bg-neutral-800 rounded-full w-16" />
+                                                    <div className="h-8 bg-neutral-800 rounded-full w-20" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )
                             : teamDateGroups.length === 0
-                                ? <div className="terminal-panel py-20 text-center"><span className="material-symbols-outlined text-4xl text-neutral-700 block mb-3">sports_score</span><p className="text-text-muted text-sm font-bold">No games found.</p></div>
+                                ? <div className="rounded-[2.5rem] border border-dashed border-border-muted py-20 text-center"><span className="material-symbols-outlined text-4xl text-neutral-700 block mb-3">sports_score</span><p className="text-text-muted text-sm font-bold">No games found for the selected sport.</p></div>
                                 : teamDateGroups.map(({ dateKey, rows: dateRows }) => {
                                     const isCollapsed = collapsedDates.has(dateKey);
                                     const label = formatDateLabel(dateKey);
@@ -1398,67 +1607,12 @@ export const PrecisionHubView: React.FC = () => {
                                                 </div>
                                                 <span className={`material-symbols-outlined text-neutral-500 group-hover:text-primary transition-all text-[18px] ${isCollapsed ? 'rotate-180' : ''}`}>expand_less</span>
                                             </button>
-                                            <div className="h-px bg-neutral-800 mb-3" />
+                                            <div className="h-px bg-neutral-800 mb-4" />
                                             {!isCollapsed && (
-                                                <div className="terminal-panel overflow-hidden">
-                                                    <div className="overflow-x-auto custom-scrollbar">
-                                                        <table className="w-full min-w-[900px]">
-                                                            <thead>
-                                                                <tr className="border-b border-border-muted bg-neutral-900/80">
-                                                                    {['#','Teams','Proj Pts','Spread','Edge','Total','AI ML / Vegas','Kelly%','Win Prob','L5','L10','L20','Pick'].map((h,i) => (
-                                                                        <th key={i} className={`px-3 py-3 text-[8px] font-black uppercase tracking-widest text-text-muted ${i===0?'w-12 text-center':i>=6&&i<=8?'text-center':i===1?'text-left':'text-center'}`}>{h}</th>
-                                                                    ))}
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {dateRows.map((row, idx) => (
-                                                                    <React.Fragment key={row.gameId}>
-                                                                        <tr className="stat-grid-row border-b border-border-muted/50">
-                                                                            <td className="px-3 py-3 text-center" rowSpan={2}><div className="flex flex-col items-center gap-0.5"><span className="text-[10px] font-black text-text-muted">{idx+1}</span><span className="text-[7px] text-neutral-700 font-bold uppercase">{row.sportLabel}</span></div></td>
-                                                                            <td className="px-3 py-3"><div className="flex items-center gap-2"><img src={row.awayTeam.logo} alt={row.awayTeam.abbr} className="h-6 w-6 object-contain rounded" onError={e=>{e.currentTarget.style.opacity='0'}} /><div><p className="text-xs font-black text-text-main">{row.awayTeam.abbr}</p>{row.awayTeam.record&&<p className="text-[8px] text-text-muted">{row.awayTeam.record}</p>}</div><span className="text-[8px] text-text-muted opacity-50">@</span></div></td>
-                                                                            <td className="px-3 py-3 text-center text-xs font-black text-text-main tabular-nums">{row.awayPoints}</td>
-                                                                            <td className="px-3 py-3 text-center text-xs font-bold text-text-muted tabular-nums">{row.awaySpread}</td>
-                                                                            <td className="px-3 py-3 text-center"><EdgePill v={row.awayEdge} /></td>
-                                                                            <td className="px-3 py-3 text-center" rowSpan={2}><div className="flex flex-col items-center"><span className="text-sm font-black text-text-main tabular-nums">{row.total}</span><span className="text-[7px] text-text-muted font-bold uppercase">O/U</span></div></td>
-                                                                            <td className="px-3 py-3 text-center"><OddsCompare ai={row.aiMLAway} vegas={row.vegasMLAway} /></td>
-                                                                            <td className="px-3 py-3 text-center"><KellyBadge pct={row.kellyAway} /></td>
-                                                                            <td className="px-3 py-3 text-center" rowSpan={2}><WinGauge prob={row.homeWinProb>=row.awayWinProb?row.homeWinProb:row.awayWinProb} abbr={row.homeWinProb>=row.awayWinProb?row.homeTeam.abbr:row.awayTeam.abbr} /></td>
-                                                                            <td className="px-3 py-3 text-center" rowSpan={2}>
-                                                                                <div className="flex flex-col items-center gap-1">
-                                                                                    <WinPctBadge label="L5" pct={row.homeTrend.l5W} />
-                                                                                    <span className="text-[7px] text-neutral-700">HM</span>
-                                                                                </div>
-                                                                            </td>
-                                                                            <td className="px-3 py-3 text-center" rowSpan={2}>
-                                                                                <div className="flex flex-col items-center gap-1">
-                                                                                    <WinPctBadge label="L10" pct={row.homeTrend.l10W} />
-                                                                                </div>
-                                                                            </td>
-                                                                            <td className="px-3 py-3 text-center" rowSpan={2}>
-                                                                                <div className="flex flex-col items-center gap-1">
-                                                                                    <WinPctBadge label="L20" pct={row.homeTrend.l20W} />
-                                                                                </div>
-                                                                            </td>
-                                                                            <td className="px-3 py-3 text-center" rowSpan={2}><RecBadge rec={row.rec} conf={row.conf} /></td>
-                                                                        </tr>
-                                                                        <tr className="border-b border-border-muted">
-                                                                            <td className="px-3 py-3"><div className="flex items-center gap-2"><img src={row.homeTeam.logo} alt={row.homeTeam.abbr} className="h-6 w-6 object-contain rounded" onError={e=>{e.currentTarget.style.opacity='0'}} /><div><p className="text-xs font-black text-text-muted">{row.homeTeam.abbr}</p>{row.homeTeam.record&&<p className="text-[8px] text-text-muted">{row.homeTeam.record}</p>}</div><span className="text-[7px] text-primary/30 font-bold uppercase">HM</span></div></td>
-                                                                            <td className="px-3 py-3 text-center text-xs font-black text-text-muted tabular-nums">{row.homePoints}</td>
-                                                                            <td className="px-3 py-3 text-center text-xs font-bold text-text-muted tabular-nums">{row.homeSpread}</td>
-                                                                            <td className="px-3 py-3 text-center"><EdgePill v={row.homeEdge} /></td>
-                                                                            <td className="px-3 py-3 text-center"><OddsCompare ai={row.aiMLHome} vegas={row.vegasMLHome} /></td>
-                                                                            <td className="px-3 py-3 text-center"><KellyBadge pct={row.kellyHome} /></td>
-                                                                        </tr>
-                                                                    </React.Fragment>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                    <div className="px-4 py-2.5 border-t border-border-muted flex flex-wrap items-center gap-4 text-[8px] text-text-muted font-bold uppercase tracking-widest">
-                                                        <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-xs text-primary">smart_toy</span>AI ML = PickLabs no-vig line</span>
-                                                        <span className="text-neutral-700">·</span><span>Vegas = FanDuel/DraftKings est. (4.5% vig)</span>
-                                                        <span className="text-neutral-700">·</span><span className="text-accent-purple">Kelly% = recommended stake per unit</span>
-                                                    </div>
+                                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
+                                                    {dateRows.map((row, idx) => (
+                                                        <GameCard key={row.gameId} row={row} idx={idx} onPredict={handleTeamPredict} />
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>
@@ -1511,58 +1665,18 @@ export const PrecisionHubView: React.FC = () => {
                                                                         <span className="text-red-400">▼ = under baseline</span>
                                                                     </div>
                                                                 </div>
-                                                                <div className="overflow-x-auto custom-scrollbar">
-                                                                    <table className="w-full min-w-[600px]">
-                                                                        <thead>
-                                                                            <tr className="border-b border-border-muted bg-neutral-900/40">
-                                                                                <th className="px-4 py-2.5 text-left text-[8px] font-black uppercase tracking-widest text-text-muted">Team</th>
-                                                                                <th className="px-4 py-2.5 text-left text-[8px] font-black uppercase tracking-widest text-text-muted">Player</th>
-                                                                                {gCols.map(c => (<th key={c.key} className="px-2 py-2.5 text-center text-[8px] font-black uppercase tracking-widest text-text-muted">{c.label}</th>))}
-                                                                                <th className="px-3 py-2.5 text-center text-[8px] font-black uppercase tracking-widest text-accent-purple">CONF</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            {group.rows.map((row) => {
-                                                                                const topKey = gCols[0]?.key;
-                                                                                const maxTop = topKey ? Math.max(...group.rows.map(p => p.stats[topKey] ?? 0)) : 0;
-                                                                                return (
-                                                                                    <tr key={row.id} className="stat-grid-row border-b border-border-muted/50">
-                                                                                        <td className="px-4 py-3"><div className="flex items-center gap-1.5"><img src={row.teamLogo} alt={row.team} className="h-7 w-7 object-contain" onError={e=>{e.currentTarget.style.opacity='0'}} /><span className="text-[10px] font-black text-text-muted">{row.team}</span></div></td>
-                                                                                        <td className="px-4 py-3 min-w-[150px]">
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <div className="relative shrink-0">
-                                                                                                    <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-800">
-                                                                                                        {row.headshot || row.athleteId
-                                                                                                            ? <img
-                                                                                                                src={row.headshot || buildESPNHeadshotUrl(row.athleteId, row.sport as SportKey)}
-                                                                                                                alt={row.shortName}
-                                                                                                                className="h-full w-full object-cover"
-                                                                                                                onError={e => {
-                                                                                                                    const img = e.currentTarget;
-                                                                                                                    const alt = row.athleteId ? buildESPNHeadshotUrl(row.athleteId, row.sport as SportKey) : '';
-                                                                                                                    if (alt && img.src !== alt) { img.src = alt; } else { img.style.display = 'none'; }
-                                                                                                                }}
-                                                                                                              />
-                                                                                                            : <span className="material-symbols-outlined text-neutral-600 text-sm flex items-center justify-center h-full w-full">person</span>
-                                                                                                        }
-                                                                                                    </div>
-                                                                                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-black rounded-full p-[2px] z-10 flex items-center justify-center shadow-sm border border-neutral-800/80">
-                                                                                                        <img src={row.teamLogo} alt={row.team} className="w-full h-full object-contain drop-shadow-md" onError={e=>{e.currentTarget.style.opacity='0'}} />
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                                <div className="flex flex-col gap-0.5 mt-0.5">
-                                                                                                    <button onClick={(e)=>openPopup(row,e)} className="text-xs font-black text-text-main hover:text-primary transition-colors text-left leading-none underline-offset-2 hover:underline">{row.shortName}</button>
-                                                                                                    {row.isTrending && row.trendingText && <span className="text-[7.5px] font-black text-orange-400 bg-orange-500/10 px-1 py-0.5 rounded flex items-center gap-0.5 w-fit"><span className="material-symbols-outlined text-[9px] animate-pulse">local_fire_department</span>{row.trendingText}</span>}
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </td>
-                                                                                        {gCols.map(c=>(<SC key={c.key} v={row.stats[c.key]??0} baseline={c.baseline} hi={topKey===c.key&&(row.stats[c.key]??0)===maxTop} fmt={c.key==='avg'||c.key==='svpct'?c.key:undefined} inverted={c.key==='era'} />))}
-                                                                                        <td className="px-3 py-3 text-center"><span className={`text-[10px] font-black ${row.confidence>=80?'text-primary':row.confidence>=65?'text-accent-blue':'text-text-muted'}`}>{row.confidence}%</span></td>
-                                                                                    </tr>
-                                                                                );
-                                                                            })}
-                                                                        </tbody>
-                                                                    </table>
+                                                                <div className="p-4 bg-neutral-900/20">
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                                        {group.rows.map(row => (
+                                                                            <PlayerCard 
+                                                                                key={row.id} 
+                                                                                row={row} 
+                                                                                gCols={gCols} 
+                                                                                onPredict={(r, e) => openPopup(r, e)} 
+                                                                                onOpenPopup={(r, e) => openPopup(r, e)} 
+                                                                            />
+                                                                        ))}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         );
@@ -1574,14 +1688,17 @@ export const PrecisionHubView: React.FC = () => {
                                 })
                         }
                         {!loading && (
-                            <p className="text-[8px] text-text-muted text-center font-bold uppercase tracking-widest pb-4">
-                                AI projected stats seeded daily · Green = above baseline · Red = below baseline · Click player name for last game
-                            </p>
+                            <div className="rounded-[2rem] border border-border-muted bg-neutral-900/40 px-5 py-4 text-center space-y-1">
+                                <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest">
+                                    <span className="text-emerald-400">▲ Green</span> = above average for this sport  · 
+                                    <span className="text-red-400">▼ Red</span> = below average  · 
+                                    <span className="text-primary">⚡ Highlighted</span> = league leader in that stat today  · 
+                                    Click any player name to see last game + rolling trends
+                                </p>
+                            </div>
                         )}
                     </div>
                 )}
-
-            </div>{/* end max-w content wrapper */}
 
             {/* ── Player Popup (portal-style fixed) ── */}
             {popup && (

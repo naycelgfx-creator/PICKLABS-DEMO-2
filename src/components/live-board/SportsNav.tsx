@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../../lib/utils';
 import { SPORTS } from '../../data/mockGames';
 
 // ── Sport logos — 2-tier fallback ────────────────────────────────────────────
@@ -101,9 +102,9 @@ interface SportsNavProps {
 
 export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport, activeSports }) => {
     return (
-        <div className="bg-white dark:bg-neutral-900/40 border-b border-border-muted z-40 w-full overflow-hidden">
-            <div className="max-w-[1536px] mx-auto px-2 sm:px-6 py-3 sm:py-4">
-                <div className="flex overflow-x-auto scrollbar-hide items-center justify-between xl:justify-center gap-1 sm:gap-2 lg:gap-3 pb-3 sm:pb-2 w-full snap-x">
+        <div className="bg-white dark:bg-neutral-900/40 border-b border-border-muted z-40 w-full">
+            <div className="max-w-[1536px] mx-auto py-1 sm:py-2">
+                <div className="flex overflow-x-auto scrollbar-hide items-center justify-between xl:justify-center gap-2 sm:gap-3 lg:gap-4 px-4 py-4 w-full snap-x">
                     {SPORTS.map(sport => {
                         const entry = SPORT_LOGOS[sport];
                         const primarySrc = entry?.primary;
@@ -116,18 +117,30 @@ export const SportsNav: React.FC<SportsNavProps> = ({ activeSport, onSelectSport
                         return (
                             <div
                                 key={sport}
-                                className={`sport-chip shrink-0 snap-start flex-1 flex flex-col items-center justify-center text-center gap-1.5 p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer border hover:-translate-y-1 hover:shadow-lg hover:grayscale-0 hover:opacity-100 grayscale-0 opacity-100 ${activeSport === sport
-                                        ? 'bg-neutral-800 border-primary shadow-[0_0_15px_rgba(13,242,13,0.15)] text-white'
-                                        : 'bg-[#111] border-neutral-800 text-slate-400 hover:text-white hover:bg-neutral-800 hover:border-neutral-700'
-                                    } aspect-square min-w-[76px] sm:min-w-[85px] max-w-[90px] sm:max-w-[110px]`}
+                                className={cn(
+                                    "sport-chip shrink-0 snap-start flex-1 flex flex-col items-center justify-center text-center gap-1.5 p-1.5 sm:p-2 rounded-[2rem] transition-all cursor-pointer border hover:-translate-y-1 hover:shadow-lg",
+                                    activeSport === sport
+                                        ? "bg-neutral-800 border-primary shadow-[0_0_20px_rgba(163,255,0,0.15)] text-white z-10 scale-[1.05]"
+                                        : "bg-[#111] border-neutral-800/80 text-slate-400 hover:text-white hover:bg-neutral-800 hover:border-neutral-600",
+                                    "aspect-square min-w-[76px] sm:min-w-[85px] max-w-[90px] sm:max-w-[110px]"
+                                )}
                                 onClick={() => onSelectSport(sport)}
-                                title={isInactive ? 'No games scheduled' : ''}
+                                title={isInactive ? 'No games scheduled' : `${sport} Actions Available`}
                             >
-                                <span className="relative flex items-center justify-center w-full min-h-[32px] max-h-[44px] sm:max-h-[50px] mb-0.5">
+                                <span className={cn(
+                                    "relative flex items-center justify-center w-full min-h-[32px] max-h-[44px] sm:max-h-[50px] mb-0.5 transition-transform duration-300",
+                                    !isInactive && "group-hover:scale-110"
+                                )}>
+                                    {!isInactive && (
+                                        <div className="absolute inset-0 bg-primary/5 blur-xl rounded-full animate-pulse pointer-events-none" />
+                                    )}
                                     <img
                                         src={primarySrc}
                                         alt={sport}
-                                        className="h-full w-full object-contain drop-shadow-md"
+                                        className={cn(
+                                            "h-full w-full object-contain drop-shadow-md relative z-10",
+                                            isInactive ? "brightness-50" : "brightness-100"
+                                        )}
                                         onError={e => {
                                             const img = e.currentTarget;
                                             if (fallbackSrc && img.src !== fallbackSrc) {

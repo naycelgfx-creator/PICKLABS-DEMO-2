@@ -47,11 +47,11 @@ export function Header({ onNavigate }: HeaderProps) {
     return (
         <header
             className={cn(
-                'sticky top-0 z-50 mx-auto w-full max-w-7xl border-b border-transparent md:border md:transition-all md:ease-out text-slate-100',
+                'sticky top-0 z-50 mx-auto w-full max-w-7xl border-b border-transparent md:border md:transition-all md:ease-out text-slate-100 md:rounded-full',
                 {
                     'bg-[#0a0a0a]/95 supports-[backdrop-filter]:bg-[#0a0a0a]/80 border-border-muted backdrop-blur-lg md:top-4 md:shadow-lg':
                         scrolled && !open,
-                    'bg-[#0a0a0a]/90': open,
+                    'bg-[#0a0a0a]/90 md:rounded-none': open,
                 },
             )}
         >

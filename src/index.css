@@ -10,6 +10,8 @@
   :root,
   html.dark {
     --bg-dark: 10 10 12;
+    --bento-bg: 10 10 10;
+    --bento-card: 18 18 18;
     --neutral-800: 26 27 32;
     --neutral-900: 18 19 24;
     --border-muted: 38 40 52;
@@ -92,16 +94,18 @@
   html:not(.dark) [class*="bg-[#0"], html:not(.dark) [class*="bg-[#1"] { background-color: rgb(220 225 245) !important; color: rgb(12 16 40) !important; }
 
   body {
-    @apply font-display bg-background-dark text-text-main min-h-screen transition-colors duration-300;
+    @apply font-display text-text-main min-h-screen transition-colors duration-300;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     margin: 0;
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
     letter-spacing: -0.01em;
+    background-color: #050505;
     background-image:
-      radial-gradient(ellipse at 15% 0%, rgba(163,255,0,0.03) 0%, transparent 55%),
-      radial-gradient(ellipse at 85% 100%, rgba(56,128,250,0.025) 0%, transparent 55%);
+      radial-gradient(circle at 15% 30%, rgba(66, 227, 211, 0.08) 0%, transparent 45%),
+      radial-gradient(circle at 85% 0%, rgba(204, 255, 0, 0.06) 0%, transparent 45%),
+      radial-gradient(circle at 50% 80%, rgba(251, 146, 60, 0.05) 0%, transparent 50%);
   }
 
   #root, html { overflow-x: hidden; max-width: 100vw; width: 100%; }
@@ -110,34 +114,55 @@
 
 @layer components {
   .hero-gradient {
-    background: radial-gradient(ellipse at 50% 0%, rgba(163,255,0,0.06) 0%, transparent 65%);
+    background: radial-gradient(ellipse at 50% 0%, rgba(66,227,211,0.08) 0%, transparent 65%);
   }
 
-  /* ── Terminal panel — premium surface with neon hover ── */
+  /* ── 2026 Base Glass Panel ── */
+  .glass-panel {
+    @apply relative overflow-hidden backdrop-blur-2xl transition-all duration-300;
+    background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-top-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.02);
+  }
+
+  /* ── 2026 Bento Card — oval/pill ── */
+  .bento-card {
+    @apply glass-panel rounded-[3rem] flex flex-col;
+    padding: 2rem;
+    background: rgb(var(--bento-card)) !important;
+    border-color: rgba(255, 255, 255, 0.06);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .bento-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.65), inset 0 0 0 1px rgba(255,255,255,0.04);
+  }
+
+  /* ── 2026 Bento Grid Terminal Panel — oval/pill ── */
   .terminal-panel {
-    @apply bg-neutral-900/60 border border-border-muted rounded-lg backdrop-blur-sm transition-all duration-200;
-    border-color: rgba(38, 40, 52, 0.9);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03);
+    @apply glass-panel rounded-[3rem] overflow-hidden flex flex-col;
+    padding: 2rem;
+    background: rgb(var(--bento-card)) !important;
+    border-color: rgba(255, 255, 255, 0.06);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   }
-
   .terminal-panel:hover {
-    border-color: rgba(163,255,0,0.22);
-    box-shadow: 0 0 0 1px rgba(163,255,0,0.06), 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
-  }
-
-  /* ── Premium glassmorphism card ── */
-  .premium-card {
-    @apply relative rounded-xl border overflow-hidden transition-all duration-200;
-    background: linear-gradient(135deg, rgba(26,27,32,0.9) 0%, rgba(18,19,24,0.95) 100%);
-    border-color: rgba(38,40,52,0.8);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.04) inset;
-    backdrop-filter: blur(12px);
-  }
-
-  .premium-card:hover {
-    border-color: rgba(163,255,0,0.15);
-    box-shadow: 0 0 0 1px rgba(163,255,0,0.08), 0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.05) inset;
+    border-top-color: rgba(255,255,255,0.18);
+    box-shadow: 0 14px 44px rgba(0,0,0,0.65), inset 0 0 0 1px rgba(255,255,255,0.03);
     transform: translateY(-1px);
+  }
+
+  /* ── Premium glassmorphism card — oval/pill ── */
+  .premium-card {
+    @apply glass-panel rounded-[3rem];
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .premium-card:hover {
+    border-top-color: rgba(255,255,255,0.18);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 14px 44px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
+    transform: translateY(-3px);
   }
 
   /* ── Stat grid rows ── */
@@ -154,11 +179,17 @@
     background: rgba(255,255,255,0.012);
   }
 
-  /* ── Pricing card ── */
+  /* ── Pricing card — pill/oval ── */
   .pricing-card {
-    @apply relative overflow-hidden rounded-xl p-8 flex flex-col transition-all duration-300;
-    background: linear-gradient(135deg, rgba(26,27,32,0.9), rgba(18,19,24,0.95));
-    border: 1px solid rgba(38,40,52,0.8);
+    @apply relative overflow-hidden p-8 flex flex-col transition-all duration-300;
+    border-radius: 2.5rem;
+    background: linear-gradient(135deg, rgba(26,27,32,0.92), rgba(18,19,24,0.97));
+    border: 1px solid rgba(55,58,75,0.9);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .pricing-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
   }
 
   .pricing-card.featured {
@@ -189,14 +220,14 @@
     box-shadow: 0 0 16px rgba(163,255,0,0.4);
   }
 
-  /* ── Form badges ── */
-  .bell-curve-bar { @apply flex-1 rounded-t-sm transition-all duration-1000 ease-out opacity-25 hover:opacity-100 cursor-pointer; }
-  .form-badge-w { @apply w-5 h-5 rounded flex items-center justify-center text-[9px] font-black bg-primary/15 text-primary border border-primary/30; box-shadow: 0 0 6px rgba(163,255,0,0.15); }
-  .form-badge-l { @apply w-5 h-5 rounded flex items-center justify-center text-[9px] font-black bg-red-500/15 text-red-500 border border-red-500/30; }
+  /* ── Form badges — pill/oval ── */
+  .bell-curve-bar { @apply flex-1 rounded-t transition-all duration-700 ease-out opacity-30 hover:opacity-100 cursor-pointer; }
+  .form-badge-w { @apply w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black bg-primary/15 text-primary border border-primary/30; box-shadow: 0 0 8px rgba(163,255,0,0.2); }
+  .form-badge-l { @apply w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black bg-red-500/15 text-red-500 border border-red-500/30; }
 
   /* ── Sport chip ── */
   .sport-chip {
-    @apply flex-shrink-0 px-4 py-1.5 rounded-lg border border-border-muted bg-neutral-900/80 text-slate-400 font-bold text-[10px] uppercase tracking-widest transition-all duration-150 cursor-pointer;
+    @apply flex-shrink-0 px-5 py-2 rounded-full border border-border-muted bg-neutral-900/80 text-slate-400 font-bold text-[10px] uppercase tracking-widest transition-all duration-150 cursor-pointer;
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   }
   .sport-chip:hover { border-color: rgba(163,255,0,0.4); color: rgb(163,255,0); background: rgba(163,255,0,0.04); }
@@ -207,11 +238,12 @@
     box-shadow: 0 0 12px rgba(163,255,0,0.12), 0 0 1px rgba(163,255,0,0.3) inset;
   }
 
-  /* ── Odds box ── */
+  /* ── Odds box — pill ── */
   .odd-box {
-    @apply flex flex-col items-center justify-center p-2 rounded-lg border border-border-muted bg-white/[0.03] hover:bg-white/[0.06] transition-all cursor-pointer;
+    @apply flex flex-col items-center justify-center p-3 rounded-full border border-border-muted bg-white/[0.03] hover:bg-white/[0.06] transition-all cursor-pointer;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   }
-  .odd-box:hover { box-shadow: 0 0 10px rgba(163,255,0,0.08); border-color: rgba(163,255,0,0.2); }
+  .odd-box:hover { box-shadow: 0 0 14px rgba(163,255,0,0.14); border-color: rgba(163,255,0,0.35); }
 
   /* ── Animate marquee ── */
   .animate-marquee { animation: marquee 500s linear infinite; }
@@ -228,32 +260,35 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* ── Form inputs ── */
+  /* ── Form inputs — pill ── */
   .input-field {
-    @apply w-full rounded-xl px-4 py-4 text-white placeholder:text-slate-600 outline-none transition-all;
-    background: rgba(18,19,24,0.9);
-    border: 1px solid rgba(38,40,52,0.9);
+    @apply w-full rounded-full px-6 py-4 text-white placeholder:text-slate-500 outline-none transition-all;
+    background: rgba(18,19,24,0.95);
+    border: 1.5px solid rgba(50,54,72,0.95);
   }
   .input-field:focus {
-    border-color: rgba(163,255,0,0.5);
-    box-shadow: 0 0 0 3px rgba(163,255,0,0.08), 0 0 20px rgba(163,255,0,0.06);
+    border-color: rgba(163,255,0,0.55);
+    box-shadow: 0 0 0 4px rgba(163,255,0,0.09), 0 0 24px rgba(163,255,0,0.07);
   }
 
-  .social-btn { @apply w-full flex items-center justify-center gap-3 py-3 px-4 border border-border-muted rounded-xl bg-neutral-900 hover:bg-neutral-800 transition-all font-bold text-[10px] uppercase tracking-widest; }
+  .social-btn { @apply w-full flex items-center justify-center gap-3 py-3 px-5 border border-border-muted rounded-full bg-neutral-900/80 hover:bg-neutral-800 transition-all font-bold text-[10px] uppercase tracking-widest; }
 
-  /* ── Win / Loss badges ── */
-  .win-badge { @apply w-5 h-5 flex items-center justify-center text-[9px] font-bold rounded bg-primary/15 text-primary border border-primary/25; }
-  .loss-badge { @apply w-5 h-5 flex items-center justify-center text-[9px] font-bold rounded bg-red-500/10 text-red-500 border border-red-500/25; }
+  /* ── Win / Loss badges — pill ── */
+  .win-badge  { @apply w-6 h-6 flex items-center justify-center text-[9px] font-black rounded-full bg-primary/15 text-primary border border-primary/30; }
+  .loss-badge { @apply w-6 h-6 flex items-center justify-center text-[9px] font-black rounded-full bg-red-500/10 text-red-500 border border-red-500/30; }
 
-  /* ── Bet card ── */
+  /* ── Bet card — oval ── */
   .bet-card {
-    @apply flex-1 p-4 rounded-xl border border-border-muted flex flex-col items-center justify-center;
-    background: rgba(18,19,24,0.8);
+    @apply flex-1 p-5 border border-border-muted flex flex-col items-center justify-center;
+    border-radius: 2rem;
+    background: rgba(18,19,24,0.85);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
   }
+  .bet-card:hover { border-color: rgba(163,255,0,0.2); box-shadow: 0 0 16px rgba(163,255,0,0.05); }
 
   /* ── Prop chip ── */
   .prop-chip {
-    @apply shrink-0 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all whitespace-nowrap cursor-pointer;
+    @apply shrink-0 px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all whitespace-nowrap cursor-pointer;
     border-color: rgba(38, 40, 52, 0.9);
     background: rgba(18, 19, 24, 0.9);
     color: rgb(130 145 180);
@@ -266,26 +301,26 @@
     box-shadow: 0 0 12px rgba(163,255,0,0.2), 0 0 4px rgba(163,255,0,0.1) inset;
   }
 
-  /* ── Rank / medal chips ── */
-  .rank-chip-gold   { padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 900; background: rgba(234,179,8,0.15); color: rgb(234,179,8); border: 1px solid rgba(234,179,8,0.3); box-shadow: 0 0 8px rgba(234,179,8,0.15); }
-  .rank-chip-silver { padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 900; background: rgba(148,163,184,0.12); color: rgb(203,213,225); border: 1px solid rgba(148,163,184,0.25); }
-  .rank-chip-bronze { padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 900; background: rgba(217,119,6,0.12); color: rgb(217,119,6); border: 1px solid rgba(217,119,6,0.25); }
+  /* ── Rank / medal chips — pill ── */
+  .rank-chip-gold   { padding: 2px 8px; border-radius: 999px; font-size: 8px; font-weight: 900; background: rgba(234,179,8,0.18); color: rgb(234,179,8); border: 1px solid rgba(234,179,8,0.35); box-shadow: 0 0 10px rgba(234,179,8,0.18); }
+  .rank-chip-silver { padding: 2px 8px; border-radius: 999px; font-size: 8px; font-weight: 900; background: rgba(148,163,184,0.14); color: rgb(203,213,225); border: 1px solid rgba(148,163,184,0.28); }
+  .rank-chip-bronze { padding: 2px 8px; border-radius: 999px; font-size: 8px; font-weight: 900; background: rgba(217,119,6,0.14); color: rgb(217,119,6); border: 1px solid rgba(217,119,6,0.28); }
 
   /* ── AI badge ── */
   .ai-badge {
     display: inline-flex; align-items: center; gap: 4px;
-    padding: 2px 8px; border-radius: 6px; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 2px 10px; border-radius: 999px; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em;
     background: rgba(163,255,0,0.1); color: rgb(163,255,0); border: 1px solid rgba(163,255,0,0.2);
     box-shadow: 0 0 8px rgba(163,255,0,0.1);
   }
 
-  /* ── Hot badge ── */
+  /* ── Hot badge — pill ── */
   .hot-badge {
     display: inline-flex; align-items: center; gap: 4px;
-    padding: 2px 8px; border-radius: 8px; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em;
-    background: linear-gradient(90deg, rgba(249,115,22,0.15), rgba(249,115,22,0.05));
-    color: rgb(251,146,60); border: 1px solid rgba(249,115,22,0.3);
-    box-shadow: 0 0 10px rgba(249,115,22,0.12);
+    padding: 3px 10px; border-radius: 999px; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.07em;
+    background: linear-gradient(90deg, rgba(249,115,22,0.18), rgba(249,115,22,0.07));
+    color: rgb(251,146,60); border: 1px solid rgba(249,115,22,0.35);
+    box-shadow: 0 0 12px rgba(249,115,22,0.15);
   }
 
   /* ── Glow divider ── */
@@ -302,6 +337,17 @@
 }
 
 @layer utilities {
+  /* ── 2026 Global Glass Override ── */
+  .bg-neutral-950, .bg-neutral-900, .bg-background-darker, .bg-\[\#1c2037\] {
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%) !important;
+    backdrop-filter: blur(24px) !important;
+  }
+  
+  .bg-neutral-800, .bg-neutral-800\/50, .bg-neutral-900\/60 {
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%) !important;
+    backdrop-filter: blur(24px) !important;
+  }
+
   /* Neon glows */
   .neon-glow-green  { box-shadow: 0 0 20px rgba(163,255,0,0.15), 0 0 40px rgba(163,255,0,0.06); }
   .neon-glow-purple { box-shadow: 0 0 20px rgba(155,79,245,0.15), 0 0 40px rgba(155,79,245,0.06); }
@@ -345,12 +391,37 @@
 }
 
 /* ── Dashboard Grid ── */
-.dashboard-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; padding: 20px; }
-.bet-card, .betlist-card { flex: 1 1 350px; max-width: 400px; box-sizing: border-box; }
+.dashboard-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; padding: 1.5rem; }
+.bet-card, .betlist-card { flex: 1 1 340px; max-width: 420px; box-sizing: border-box; }
+
+/* ── Global pill overrides ── Every hard square gets softened ── */
+[class*="rounded-xl"]:not(.no-pill):not(img):not(video) { border-radius: 1.5rem !important; }
+[class*="rounded-lg"]:not(.no-pill):not(img):not(video) { border-radius: 1.25rem !important; }
+[class*="rounded-md"]:not(.no-pill):not(img):not(video) { border-radius: 1rem !important; }
+[class*="rounded-sm"]:not(.no-pill):not(img):not(video) { border-radius: 0.75rem !important; }
+
+/* ── Buttons: always pill shape ── */
+button:not(.no-pill):not([class*="rounded-"]) { border-radius: 9999px; }
+
+/* ── Table rows: softer ── */
+table { border-collapse: separate; border-spacing: 0; }
+thead th:first-child { border-radius: 1.5rem 0 0 0; }
+thead th:last-child  { border-radius: 0 1.5rem 0 0; }
+tbody tr:last-child td:first-child { border-radius: 0 0 0 1.5rem; }
+tbody tr:last-child td:last-child  { border-radius: 0 0 1.5rem 0; }
+
+/* ── Select / dropdown ── */
+select { border-radius: 9999px !important; padding: 0.5rem 1.25rem; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.15); border-radius: 9999px; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(163,255,0,0.35), rgba(56,128,250,0.35)); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(163,255,0,0.55); }
 
 @media (max-width: 768px) {
-  body { padding: 10px; }
-  .dashboard-grid { flex-direction: column; align-items: center; }
-  .bet-card, .betlist-card { width: 100%; max-width: 100%; margin-bottom: 15px; }
-  .library-header h1 { font-size: 24px; }
+  body { padding: 0; }
+  .dashboard-grid { flex-direction: column; align-items: stretch; gap: 1rem; padding: 1rem; }
+  .bet-card, .betlist-card { width: 100%; max-width: 100%; }
+  .library-header h1 { font-size: 22px; }
 }

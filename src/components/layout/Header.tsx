@@ -132,80 +132,53 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
         return () => window.removeEventListener('scroll', handleScroll);
     }, [lastScrollY]);
 
-    const navLinkClass = (view: ViewType, hoverColor = 'hover:text-primary') =>
-        `text-xs font-bold uppercase tracking-widest cursor-pointer transition-all duration-150 ${currentView === view
-            ? 'text-primary pb-1 text-glow-green'
-            : `text-text-muted ${hoverColor}`}` + (currentView === view ? ' border-b-2 border-primary' : '');
+    const navLinkClass = (view: ViewType) =>
+        `px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest cursor-pointer transition-all duration-300 ${currentView === view
+            ? 'bg-white/10 text-white shadow-inner border border-white/5'
+            : 'text-slate-400 hover:text-white hover:bg-white/5'}`;
 
     // Count of enabled books for badge
     const enabledCount = Object.values(enabledBooks).filter(Boolean).length;
 
     return (
-        <header className={`fixed top-[36px] left-0 right-0 z-50 border-b border-border-muted bg-background-dark/95 backdrop-blur-xl px-3 md:px-6 py-2 md:py-3 transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+36px)]'} max-w-[100vw]`} style={{ boxShadow: '0 1px 0 rgba(163,255,0,0.06), 0 4px 24px rgba(0,0,0,0.5)' }}>
-            <div className="max-w-[1536px] mx-auto flex items-center justify-between gap-3 md:gap-4">
+        <header className={`fixed top-[52px] left-1/2 -translate-x-1/2 z-50 w-[96%] max-w-6xl transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+52px)]'}`}>
+            <div className="glass-panel w-full rounded-full flex items-center justify-between px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
 
                 {/* ── Logo ── */}
-                <div className="flex items-center gap-3 sm:gap-6 xl:gap-10 min-w-0">
+                <div className="flex items-center shrink-0">
                     <a
-                        className="flex items-center gap-3 text-primary cursor-pointer group shrink-0"
+                        className="flex items-center cursor-pointer group shrink-0"
                         onClick={(e) => { e.preventDefault(); setCurrentView('home' as ViewType); }}
                     >
                         <img
                             src="/picklabs-logo.svg"
                             alt="PickLabs Logo"
-                            className="h-10 md:h-14 w-auto shrink-0 transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_12px_rgba(163,255,0,0.5)]"
+                            className="h-8 md:h-10 w-auto shrink-0 transition-transform duration-300 group-hover:scale-105"
+                            style={{ filter: logoFilter }}
                         />
                     </a>
-
-                    {/* ── Desktop Nav ── */}
-                    <nav className="hidden xl:flex items-center gap-2 xl:gap-5">
-                        <a className={navLinkClass('live-board')} onClick={(e) => { e.preventDefault(); setCurrentView('live-board'); }}>Live Board</a>
-                        <a
-                            className={`flex items-center gap-1 text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors ${currentView === 'precision-hub' ? 'text-yellow-400 border-b-2 border-yellow-400 pb-1' : 'text-yellow-500/70 hover:text-yellow-400'}`}
-                            onClick={(e) => { e.preventDefault(); setCurrentView('precision-hub'); }}
-                        >
-                            <span className="material-symbols-outlined text-[14px]">bolt</span>
-                            Precision Hub
-                        </a>
-                        <a
-                            className={`flex items-center gap-1 text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors ${currentView === 'sportsbook' ? 'text-[#A3FF00] border-b-2 border-[#A3FF00] pb-1' : 'text-text-muted hover:text-[#A3FF00]'}`}
-                            onClick={(e) => { e.preventDefault(); setCurrentView('sportsbook'); }}
-                        >
-                            <span className="material-symbols-outlined text-[14px]">casino</span>
-                            Sportsbook
-                        </a>
-                        <a className={navLinkClass('matchup-terminal')} onClick={(e) => { e.preventDefault(); setCurrentView('matchup-terminal'); }}>Matchup Terminal</a>
-                        <a className={navLinkClass('teams-directory')} onClick={(e) => { e.preventDefault(); setCurrentView('teams-directory'); }}>Teams</a>
-                        <a className={navLinkClass('player-directory')} onClick={(e) => { e.preventDefault(); setCurrentView('player-directory'); }}>Players</a>
-                        <a className={navLinkClass('sharp-tools')} onClick={(e) => { e.preventDefault(); setCurrentView('sharp-tools'); }}>Sharp Tools</a>
-                        <a className={navLinkClass('bankroll')} onClick={(e) => { e.preventDefault(); setCurrentView('bankroll'); }}>Bankroll</a>
-                        <a className={navLinkClass('social-dashboard')} onClick={(e) => { e.preventDefault(); setCurrentView('social-dashboard'); }}>Dashboard</a>
-
-                        <div className="h-4 w-px bg-border-muted mx-1" />
-
-                        <a
-                            className={`flex items-center gap-1 text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors ${currentView === 'popular-bets' ? 'text-orange-500 border-b-2 border-orange-500 pb-1' : 'text-orange-500/70 hover:text-orange-400'}`}
-                            onClick={(e) => { e.preventDefault(); setCurrentView('popular-bets'); }}
-                        >
-                            <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
-                            Popular
-                        </a>
-                        <a
-                            className={`flex items-center gap-1 text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors ${currentView === 'saved-picks' ? 'text-primary border-b-2 border-primary pb-1' : 'text-text-muted hover:text-primary'}`}
-                            onClick={(e) => { e.preventDefault(); setCurrentView('saved-picks'); }}
-                        >
-                            <span className="material-symbols-outlined text-[14px]">bookmark</span>
-                            Saved
-                        </a>
-                        <a
-                            className={`flex items-center gap-1 text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors ${currentView === 'value-finder' ? 'text-accent-blue border-b-2 border-accent-blue pb-1' : 'text-text-muted hover:text-accent-blue'}`}
-                            onClick={(e) => { e.preventDefault(); setCurrentView('value-finder'); }}
-                        >
-                            <span className="material-symbols-outlined text-[14px]">manage_search</span>
-                            Value Finder
-                        </a>
-                    </nav>
                 </div>
+
+                {/* ── Desktop Nav (Centered) ── */}
+                <nav className="hidden lg:flex items-center justify-center gap-2 lg:gap-4 flex-1 px-4">
+                    <a className={navLinkClass('social-dashboard')} onClick={(e) => { e.preventDefault(); setCurrentView('social-dashboard'); }}>Dashboard</a>
+                    <a className={navLinkClass('live-board')} onClick={(e) => { e.preventDefault(); setCurrentView('live-board'); }}>Live Board</a>
+                    <a
+                        className={`px-3 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest cursor-pointer transition-all duration-300 ${currentView === 'precision-hub' ? 'bg-cyan-500/20 text-cyan-400 shadow-inner border border-cyan-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                        onClick={(e) => { e.preventDefault(); setCurrentView('precision-hub'); }}
+                    >
+                        Precision Hub
+                    </a>
+                    <a
+                        className={`px-3 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest cursor-pointer transition-all duration-300 ${currentView === 'sportsbook' ? 'bg-cyan-500/20 text-cyan-400 shadow-inner border border-cyan-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                        onClick={(e) => { e.preventDefault(); setCurrentView('sportsbook'); }}
+                    >
+                        Sportsbook
+                    </a>
+                    <a className={navLinkClass('matchup-terminal')} onClick={(e) => { e.preventDefault(); setCurrentView('matchup-terminal'); }}>Matchup</a>
+                    <a className={navLinkClass('sharp-tools')} onClick={(e) => { e.preventDefault(); setCurrentView('sharp-tools'); }}>Tools</a>
+                    <a className={navLinkClass('bankroll')} onClick={(e) => { e.preventDefault(); setCurrentView('bankroll'); }}>Bankroll</a>
+                </nav>
 
                 {/* ── Right Controls ── */}
                 <div className="flex items-center gap-2 shrink-0">
@@ -240,7 +213,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
 
                         {/* Settings Dropdown Panel */}
                         {isSettingsOpen && (
-                            <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-neutral-950 border border-border-muted rounded-2xl overflow-hidden z-50" style={{ boxShadow: '0 0 0 1px rgba(163,255,0,0.08), 0 24px 60px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)' }}>
+                            <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-neutral-950 border border-border-muted rounded-2xl overflow-hidden z-50 max-h-[75vh] overflow-y-auto custom-scrollbar" style={{ boxShadow: '0 0 0 1px rgba(163,255,0,0.08), 0 24px 60px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)' }}>
                                 {/* Header / User Info */}
                                 <div className="px-4 py-4 border-b border-border-muted bg-neutral-50 dark:bg-neutral-900/80 flex flex-col gap-1">
                                     <div className="flex items-center gap-3 mb-3">
@@ -488,7 +461,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
 
                         {/* ── Dropdown Panel ── */}
                         {isBookieOpen && (
-                            <div className="absolute right-0 sm:right-0 -mr-12 sm:mr-0 top-[calc(100%+8px)] w-[90vw] sm:w-72 max-w-[320px] bg-neutral-950 border border-border-muted rounded-2xl overflow-hidden z-50" style={{ boxShadow: '0 0 0 1px rgba(163,255,0,0.08), 0 24px 60px rgba(0,0,0,0.6)' }}>
+                            <div className="absolute right-0 sm:right-0 -mr-12 sm:mr-0 top-[calc(100%+8px)] w-[90vw] sm:w-72 max-w-[320px] bg-neutral-950 border border-border-muted rounded-2xl overflow-hidden z-50 max-h-[85vh] flex flex-col" style={{ boxShadow: '0 0 0 1px rgba(163,255,0,0.08), 0 24px 60px rgba(0,0,0,0.6)' }}>
                                 {/* Header */}
                                 <div className="px-4 py-3 border-b border-border-muted bg-neutral-50 dark:bg-neutral-900/80 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -532,7 +505,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
                                 </div>
 
                                 {/* Book rows */}
-                                <ul className="py-2 max-h-72 overflow-y-auto custom-scrollbar">
+                                <ul className="py-2 flex-1 overflow-y-auto custom-scrollbar">
                                     {SPORTSBOOKS.filter(b => bookieTab === 'all' || b.category === bookieTab).map(book => {
                                         const on = enabledBooks[book.id];
                                         return (
